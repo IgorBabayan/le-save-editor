@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <PackageIcon>Logo.png</PackageIcon>
+    <ApplicationIcon>Icons\Logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Icons\Logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 

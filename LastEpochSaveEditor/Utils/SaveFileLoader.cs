@@ -37,8 +37,8 @@ namespace LastEpochSaveEditor.Utils
 				content = File.ReadAllText(file).Remove(0, EPOCH.Length);
 				result.Add(new CharacterInfo
 				{
-					Path = path,
-					Character = JsonConvert.DeserializeObject<Character>(content)
+					Path = file,
+					Character = JsonConvert.DeserializeObject<Character>(content)!
 				});
 			}
 			return result;
