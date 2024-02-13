@@ -1,0 +1,36 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Color x:Key="Black">#15141b</Color>
+	<SolidColorBrush x:Key="BackgroundColor" Color="{StaticResource Black}"></SolidColorBrush>
+
+	<Color x:Key="White">#bdbdbd</Color>
+	<SolidColorBrush x:Key="ForegroundColor" Color="{StaticResource White}"></SolidColorBrush>
+
+	<Color x:Key="Gray">#6d6d6d</Color>
+	<SolidColorBrush x:Key="MutedColor" Color="{StaticResource Gray}"></SolidColorBrush>
+
+	<Color x:Key="Purple">#8464c6</Color>
+	<SolidColorBrush x:Key="PrimaryColor" Color="{StaticResource Purple}"></SolidColorBrush>
+	<SolidColorBrush x:Key="SelectionColor" Color="{StaticResource Purple}" Opacity="0.5"></SolidColorBrush>
+
+	<Color x:Key="Pink">#c17ac8</Color>
+	<SolidColorBrush x:Key="QuaternaryColor" Color="{StaticResource Pink}"></SolidColorBrush>
+
+	<Color x:Key="Blue">#6cb2c7</Color>
+	<SolidColorBrush x:Key="QuinaryColor" Color="{StaticResource Blue}"></SolidColorBrush>
+
+	<Color x:Key="Green">#54c59f</Color>
+	<SolidColorBrush x:Key="SecondaryColor" Color="{StaticResource Green}"></SolidColorBrush>
+	<SolidColorBrush x:Key="SuccessColor" Color="{StaticResource Green}"></SolidColorBrush>
+
+	<Color x:Key="Orange">#c7a06f</Color>
+	<SolidColorBrush x:Key="TertiaryColor" Color="{StaticResource Orange}"></SolidColorBrush>
+	<SolidColorBrush x:Key="WarningColor" Color="{StaticResource Orange}"></SolidColorBrush>
+
+	<Color x:Key="Red">#c55858</Color>
+	<SolidColorBrush x:Key="SenaryColor" Color="{StaticResource Red}"></SolidColorBrush>
+	<SolidColorBrush x:Key="ErrorColor" Color="{StaticResource Red}"></SolidColorBrush>
+
+	<Color x:Key="SoftBlack">#252525</Color>
+	<SolidColorBrush x:Key="ToolbarBackground" Color="{StaticResource SoftBlack}"></SolidColorBrush>
+</ResourceDictionary>
