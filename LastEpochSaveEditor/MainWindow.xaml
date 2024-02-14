@@ -3,9 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:LastEpochSaveEditor"
-        mc:Ignorable="d" Background="{DynamicResource BackgroundColor}" ResizeMode="NoResize"
+        xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
+		xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+		mc:Ignorable="d" Background="{DynamicResource BackgroundColor}" ResizeMode="NoResize"
         Height="450" Width="800" WindowStartupLocation="CenterScreen" WindowStyle="None">
+	<Window.Resources>
+		<converters:VisibilityToBoolConverter x:Key="visibilityToBoolConverter"></converters:VisibilityToBoolConverter>
+	</Window.Resources>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="30" />
@@ -44,14 +48,17 @@
 				</Grid.RowDefinitions>
 
 				<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-					<Button Content="Character" Style="{DynamicResource LeftTabButton}" Command="{Binding CharacterTabActivePressedCommand}" IsDefault="{Binding CharacterTabActive}"></Button>
-					<Button Content="Character stash" Style="{DynamicResource TabButton}" Command="{Binding CharacterStashTabActivePressedCommand}" IsDefault="{Binding CharacterStashTabActive}"></Button>
-					<Button Content="Blessings" Style="{DynamicResource TabButton}" Command="{Binding BlessingsTabActivePressedCommand}" IsDefault="{Binding BlessingsTabActive}"></Button>
-					<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsTabActive}"></Button>
+					<Button Content="Character" Style="{DynamicResource LeftTabButton}" Command="{Binding CharacterTabActivePressedCommand}" IsDefault="{Binding CharacterControlVisiblity, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+					<Button Content="Character stash" Style="{DynamicResource TabButton}" Command="{Binding CharacterStashTabActivePressedCommand}" IsDefault="{Binding CharacterStashControlVisiblity, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+					<Button Content="Blessings" Style="{DynamicResource TabButton}" Command="{Binding BlessingsTabActivePressedCommand}" IsDefault="{Binding BlessingsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+					<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
 				</StackPanel>
 
-				<StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" DataContext="{Binding SelectedCharacter}">
-					
+				<StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+					<controls:CharacterControl Visibility="{Binding CharacterControlVisiblity}" Background="Green"></controls:CharacterControl>
+					<controls:CharacterControl Visibility="{Binding CharacterStashControlVisiblity}" Background="Aqua"></controls:CharacterControl>
+					<controls:CharacterControl Visibility="{Binding BlessingsControlVisibility}" Background="BlueViolet"></controls:CharacterControl>
+					<controls:CharacterControl Visibility="{Binding IdolsControlVisibility}" Background="DarkGoldenrod"></controls:CharacterControl>
 				</StackPanel>
 			</Grid>
 		</Border>

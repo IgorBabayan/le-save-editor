@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using LastEpochSaveEditor.Models;
 using LastEpochSaveEditor.Utils;
 using System.Collections.Generic;
+using System.Windows;
 
 namespace LastEpochSaveEditor.ViewModels
 {
@@ -17,16 +18,16 @@ namespace LastEpochSaveEditor.ViewModels
 		private CharacterInfo _selectedCharacter;
 
 		[ObservableProperty]
-		private bool _characterTabActive;
+		private Visibility _characterControlVisiblity = Visibility.Visible;
 
 		[ObservableProperty]
-		private bool _characterStashTabActive;
+		private Visibility _characterStashControlVisiblity = Visibility.Hidden;
 
 		[ObservableProperty]
-		private bool _blessingsTabActive;
+		private Visibility _blessingsControlVisibility = Visibility.Hidden;
 
 		[ObservableProperty]
-		private bool _idolsTabActive;
+		private Visibility _idolsControlVisibility = Visibility.Hidden;
 
 		#endregion
 
@@ -37,44 +38,44 @@ namespace LastEpochSaveEditor.ViewModels
 
 		#region Partials
 
-		partial void OnCharacterTabActiveChanged(bool value)
+		partial void OnCharacterControlVisiblityChanged(Visibility value)
 		{
-			if (!value)
+			if (value == Visibility.Hidden)
 				return;
 
-			CharacterStashTabActive = false;
-			BlessingsTabActive = false;
-			IdolsTabActive = false;
+			CharacterStashControlVisiblity = Visibility.Hidden;
+			BlessingsControlVisibility = Visibility.Hidden;
+			IdolsControlVisibility = Visibility.Hidden;
 		}
 
-		partial void OnCharacterStashTabActiveChanged(bool value)
+		partial void OnCharacterStashControlVisiblityChanged(Visibility value)
 		{
-			if (!value)
+			if (value == Visibility.Hidden)
 				return;
 
-			CharacterTabActive = false;
-			BlessingsTabActive = false;
-			IdolsTabActive = false;
+			CharacterControlVisiblity = Visibility.Hidden;
+			BlessingsControlVisibility = Visibility.Hidden;
+			IdolsControlVisibility = Visibility.Hidden;
 		}
 
-		partial void OnBlessingsTabActiveChanged(bool value)
+		partial void OnBlessingsControlVisibilityChanged(Visibility value)
 		{
-			if (!value)
+			if (value == Visibility.Hidden)
 				return;
 
-			CharacterTabActive = false;
-			CharacterStashTabActive = false;
-			IdolsTabActive = false;
+			CharacterControlVisiblity = Visibility.Hidden;
+			CharacterStashControlVisiblity = Visibility.Hidden;
+			IdolsControlVisibility = Visibility.Hidden;
 		}
 
-		partial void OnIdolsTabActiveChanged(bool value)
+		partial void OnIdolsControlVisibilityChanged(Visibility value)
 		{
-			if (!value)
+			if (value == Visibility.Hidden)
 				return;
 
-			CharacterTabActive = false;
-			CharacterStashTabActive = false;
-			BlessingsTabActive = false;
+			CharacterControlVisiblity = Visibility.Hidden;
+			CharacterStashControlVisiblity = Visibility.Hidden;
+			BlessingsControlVisibility = Visibility.Hidden;
 		}
 
 		#endregion
@@ -82,16 +83,16 @@ namespace LastEpochSaveEditor.ViewModels
 		#region Commands
 
 		[RelayCommand]
-		private void CharacterTabActivePressed() => CharacterTabActive = true;
+		private void CharacterTabActivePressed() => CharacterControlVisiblity = Visibility.Visible;
 
 		[RelayCommand]
-		private void CharacterStashTabActivePressed() => CharacterStashTabActive = true;
+		private void CharacterStashTabActivePressed() => CharacterStashControlVisiblity = Visibility.Visible;
 
 		[RelayCommand]
-		private void BlessingsTabActivePressed() => BlessingsTabActive = true;
+		private void BlessingsTabActivePressed() => BlessingsControlVisibility = Visibility.Visible;
 
 		[RelayCommand]
-		private void IdolsTabActivePressed() => IdolsTabActive = true;
+		private void IdolsTabActivePressed() => IdolsControlVisibility = Visibility.Visible;
 
 		#endregion
 	}
