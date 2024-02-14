@@ -18,6 +18,7 @@ namespace LastEpochSaveEditor.Utils
 		private const string CHARACTER_SLOT = "1CHARACTERSLOT_BETA_";
 		private const string BAK = ".bak";
 		private const string TEMP = "_temp";
+		private const string BACKUP = "Backup";
 
 		public static IEnumerable<CharacterInfo> Load()
 		{
@@ -42,6 +43,11 @@ namespace LastEpochSaveEditor.Utils
 				});
 			}
 			return result;
+		}
+
+		public static void Delete(string filePath)
+		{
+			throw new NotImplementedException();
 		}
 
 		public static void Save(IEnumerable<CharacterInfo> characters)

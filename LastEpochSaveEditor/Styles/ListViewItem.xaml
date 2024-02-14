@@ -7,13 +7,28 @@
 			<Setter.Value>
 				<ControlTemplate TargetType="ListViewItem">
 					<Border Background="{TemplateBinding Background}" CornerRadius="4" Margin="8,2,8,2">
-						<StackPanel Margin="10,0,10,0" Orientation="Horizontal" DataContext="{Binding Character}" Height="50">
-							<TextBlock Text="{Binding CharacterName}" FontFamily="Segoe UI"></TextBlock>
-							<StackPanel Orientation="Horizontal" DataContext="{Binding ClassInfo}">
-								<TextBlock Text="{Binding Name}" FontFamily="Segoe UI"></TextBlock>
-								<Image Source="{Binding Icon}"></Image>
+						<Grid DataContext="{Binding Character}">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="80*" />
+								<ColumnDefinition />
+							</Grid.ColumnDefinitions>
+
+							<StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
+								<TextBlock Text="{Binding CharacterName}" FontWeight="ExtraBold" Foreground="{DynamicResource ForegroundColor}"></TextBlock>
+								<StackPanel Orientation="Horizontal">
+									<TextBlock Text="lv. " Foreground="{DynamicResource TertiaryColor}"></TextBlock>
+									<TextBlock Text="{Binding Level}" Foreground="{DynamicResource TertiaryColor}"></TextBlock>
+									<TextBlock Text=" "></TextBlock>
+									<TextBlock DataContext="{Binding ClassInfo}" Text="{Binding Name}" Foreground="{DynamicResource QuinaryColor}"></TextBlock>
+									<TextBlock Text=" "></TextBlock>
+									<TextBlock Text="{Binding Challenge}" Foreground="{DynamicResource TertiaryColor}"></TextBlock>
+								</StackPanel>
 							</StackPanel>
-						</StackPanel>
+							
+							<StackPanel Grid.Column="1" HorizontalAlignment="Right" DataContext="{Binding ClassInfo}">
+								<Image Source="{Binding Icon}" Width="50" Height="50" Stretch="Uniform"></Image>
+							</StackPanel>
+						</Grid>
 					</Border>
 				</ControlTemplate>
 			</Setter.Value>

@@ -13,21 +13,29 @@
 		</Grid.RowDefinitions>
 
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="Auto" />
-			<ColumnDefinition />
+			<ColumnDefinition Width="40*" />
+			<ColumnDefinition Width="60*" />
 		</Grid.ColumnDefinitions>
 
 		<Border Grid.Row="0" Grid.ColumnSpan="2" Background="{DynamicResource ToolbarBackground}" MouseDown="OnMouseDown" MouseLeftButtonDown="OnMouseLeftButtonDown">
 			<Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
 				<Label Content="Last Epoch save editor" Foreground="{DynamicResource ForegroundColor}" HorizontalAlignment="Center"></Label>
 				<StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-					<Button Content="&#xf2d1;" Click="OnMinimizeClick" Width="44" Height="32"></Button>
-					<Button Content="&#xf2d0;" Click="OnMaximizedClick" Width="44" Height="32"></Button>
-					<Button Content="&#xf00d;" Click="OnCloseClick" Width="44" Height="32"></Button>
+					<Button Click="OnMinimizeClick" Width="44" Height="32">
+						<TextBlock FontFamily="{DynamicResource FontAwesomeRegular}" Text="&#xf2d1;"></TextBlock>
+					</Button>
+					<Button Click="OnMaximizedClick" Width="44" Height="32">
+						<TextBlock FontFamily="{DynamicResource FontAwesomeRegular}" Text="&#xf2d0;"></TextBlock>
+					</Button>
+					<Button Click="OnCloseClick" Width="44" Height="32">
+						<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
+					</Button>
 				</StackPanel>
 			</Grid>
 		</Border>
 
-		<ListView Grid.Row="1" Margin="10" ItemsSource="{Binding Characters}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
+		<ListView Grid.Row="1" Grid.Column="0" Margin="10" ItemsSource="{Binding Characters}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
+
+		<TextBlock Grid.Row="1" Grid.Column="1" Text="Hello world"></TextBlock>
 	</Grid>
 </Window>

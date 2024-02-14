@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace LastEpochSaveEditor.Models
 {
@@ -216,5 +217,23 @@ namespace LastEpochSaveEditor.Models
 
 		[JsonIgnore]
 		public ClassInfo ClassInfo => ClassInfo.Parse(CharacterClass, ChosenMastery);
+
+		[JsonIgnore]
+		public string Challenge
+		{
+			get
+			{
+				var builder = new StringBuilder();
+				if (SoloChallenge)
+					builder.Append("Solo");
+
+				if (Hardcore)
+					builder.Append("HC");
+				else
+					builder.Append("SC");
+
+				return builder.ToString();
+			}
+		}
 	}
 }
