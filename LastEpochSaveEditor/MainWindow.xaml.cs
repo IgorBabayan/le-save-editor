@@ -43,37 +43,5 @@ namespace LastEpochSaveEditor
 			if (e.LeftButton == MouseButtonState.Pressed)
 				DragMove();
 		}
-
-		private void Button_Click_1(object sender, RoutedEventArgs e)
-		{
-			btn1.IsDefault = true;
-			btn2.IsDefault = false;
-			btn3.IsDefault = false;
-			btn4.IsDefault = false;
-		}
-
-		private void Button_Click_2(object sender, RoutedEventArgs e)
-		{
-			btn1.IsDefault = false;
-			btn2.IsDefault = true;
-			btn3.IsDefault = false;
-			btn4.IsDefault = false;
-		}
-
-		private void Button_Click_3(object sender, RoutedEventArgs e)
-		{
-			btn1.IsDefault = false;
-			btn2.IsDefault = false;
-			btn3.IsDefault = true;
-			btn4.IsDefault = false;
-		}
-
-		private void Button_Click_4(object sender, RoutedEventArgs e)
-		{
-			btn1.IsDefault = false;
-			btn2.IsDefault = false;
-			btn3.IsDefault = false;
-			btn4.IsDefault = true;
-		}
 	}
 }

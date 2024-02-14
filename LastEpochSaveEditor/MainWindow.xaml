@@ -44,10 +44,14 @@
 				</Grid.RowDefinitions>
 
 				<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-					<Button Content="Character" Style="{DynamicResource LeftTabButton}" Click="Button_Click_1" x:Name="btn1"></Button>
-					<Button Content="Character stash" Style="{DynamicResource TabButton}" Click="Button_Click_2" x:Name="btn2"></Button>
-					<Button Content="Blessings" Style="{DynamicResource TabButton}" Click="Button_Click_3" x:Name="btn3"></Button>
-					<Button Content="Idols" Style="{DynamicResource RightTabButton}" Click="Button_Click_4" x:Name="btn4"></Button>
+					<Button Content="Character" Style="{DynamicResource LeftTabButton}" Command="{Binding CharacterTabActivePressedCommand}" IsDefault="{Binding CharacterTabActive}"></Button>
+					<Button Content="Character stash" Style="{DynamicResource TabButton}" Command="{Binding CharacterStashTabActivePressedCommand}" IsDefault="{Binding CharacterStashTabActive}"></Button>
+					<Button Content="Blessings" Style="{DynamicResource TabButton}" Command="{Binding BlessingsTabActivePressedCommand}" IsDefault="{Binding BlessingsTabActive}"></Button>
+					<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsTabActive}"></Button>
+				</StackPanel>
+
+				<StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" DataContext="{Binding SelectedCharacter}">
+					
 				</StackPanel>
 			</Grid>
 		</Border>
