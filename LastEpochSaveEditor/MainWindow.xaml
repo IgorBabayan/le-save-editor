@@ -13,7 +13,7 @@
 		</Grid.RowDefinitions>
 
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="200" />
+			<ColumnDefinition Width="Auto" />
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
 
@@ -29,19 +29,5 @@
 		</Border>
 
 		<ListView Grid.Row="1" Margin="10" ItemsSource="{Binding Characters}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
-
-		<!--<Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center">
-
-			<StackPanel Orientation="Horizontal" >
-
-				<TextBlock Text="I" FontSize="32" Margin="10" VerticalAlignment="Center"></TextBlock>
-
-
-				<TextBlock x:Name="tbFontAwesome" Text="&#xf004;" FontFamily="{StaticResource FontAwesomeSolid}" Foreground="Red" FontSize="32" Margin="10" VerticalAlignment="Center"></TextBlock>
-				<TextBlock Text="Font Awesome" FontSize="32" Margin="10" VerticalAlignment="Center"></TextBlock>
-
-			</StackPanel>
-
-		</Grid>-->
 	</Grid>
 </Window>

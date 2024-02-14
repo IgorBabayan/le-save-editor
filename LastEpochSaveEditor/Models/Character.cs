@@ -1,10 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using LastEpochSaveEditor.Models.Characters;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
 namespace LastEpochSaveEditor.Models
 {
-	public class Character
+    public class Character
 	{
 		[JsonProperty("partitionKey")]
 		public object PartitionKey { get; set; }
@@ -212,5 +213,8 @@ namespace LastEpochSaveEditor.Models
 
 		[JsonProperty("version")]
 		public int Version { get; set; }
+
+		[JsonIgnore]
+		public ClassInfo ClassInfo => ClassInfo.Parse(CharacterClass, ChosenMastery);
 	}
 }

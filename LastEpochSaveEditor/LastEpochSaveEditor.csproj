@@ -12,6 +12,26 @@
   <ItemGroup>
     <None Remove="Fonts\fa-regular-400.ttf" />
     <None Remove="Fonts\fa-solid-900.ttf" />
+    <None Remove="Icons\Classes\Acolyte.png" />
+    <None Remove="Icons\Classes\Beastmaster.png" />
+    <None Remove="Icons\Classes\Bladedancer.png" />
+    <None Remove="Icons\Classes\Druid.png" />
+    <None Remove="Icons\Classes\Falconer.png" />
+    <None Remove="Icons\Classes\ForgeGuard.png" />
+    <None Remove="Icons\Classes\Lich.png" />
+    <None Remove="Icons\Classes\Mage.png" />
+    <None Remove="Icons\Classes\Marksman.png" />
+    <None Remove="Icons\Classes\Necromancer.png" />
+    <None Remove="Icons\Classes\Paladin.png" />
+    <None Remove="Icons\Classes\Primalist.png" />
+    <None Remove="Icons\Classes\Rogue.png" />
+    <None Remove="Icons\Classes\Runemaster.png" />
+    <None Remove="Icons\Classes\Sentinel.png" />
+    <None Remove="Icons\Classes\Shaman.png" />
+    <None Remove="Icons\Classes\Sorcerer.png" />
+    <None Remove="Icons\Classes\Spellblade.png" />
+    <None Remove="Icons\Classes\VoidKnight.png" />
+    <None Remove="Icons\Classes\Warlock.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +48,26 @@
   <ItemGroup>
     <Resource Include="Fonts\fa-regular-400.ttf" />
     <Resource Include="Fonts\fa-solid-900.ttf" />
+    <Resource Include="Icons\Classes\Acolyte.png" />
+    <Resource Include="Icons\Classes\Beastmaster.png" />
+    <Resource Include="Icons\Classes\Bladedancer.png" />
+    <Resource Include="Icons\Classes\Druid.png" />
+    <Resource Include="Icons\Classes\Falconer.png" />
+    <Resource Include="Icons\Classes\ForgeGuard.png" />
+    <Resource Include="Icons\Classes\Sentinel.png" />
+    <Resource Include="Icons\Classes\Lich.png" />
+    <Resource Include="Icons\Classes\Mage.png" />
+    <Resource Include="Icons\Classes\Marksman.png" />
+    <Resource Include="Icons\Classes\Necromancer.png" />
+    <Resource Include="Icons\Classes\Paladin.png" />
+    <Resource Include="Icons\Classes\Primalist.png" />
+    <Resource Include="Icons\Classes\Rogue.png" />
+    <Resource Include="Icons\Classes\Runemaster.png" />
+    <Resource Include="Icons\Classes\Shaman.png" />
+    <Resource Include="Icons\Classes\Sorcerer.png" />
+    <Resource Include="Icons\Classes\Spellblade.png" />
+    <Resource Include="Icons\Classes\VoidKnight.png" />
+    <Resource Include="Icons\Classes\Warlock.png" />
   </ItemGroup>
 
   <ItemGroup>

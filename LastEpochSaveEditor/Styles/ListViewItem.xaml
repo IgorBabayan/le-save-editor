@@ -7,8 +7,12 @@
 			<Setter.Value>
 				<ControlTemplate TargetType="ListViewItem">
 					<Border Background="{TemplateBinding Background}" CornerRadius="4" Margin="8,2,8,2">
-						<StackPanel Margin="10,0,0,0" Orientation="Horizontal" DataContext="{Binding Character}" Height="50">
-							<TextBlock Text="{Binding CharacterName}"></TextBlock>
+						<StackPanel Margin="10,0,10,0" Orientation="Horizontal" DataContext="{Binding Character}" Height="50">
+							<TextBlock Text="{Binding CharacterName}" FontFamily="Segoe UI"></TextBlock>
+							<StackPanel Orientation="Horizontal" DataContext="{Binding ClassInfo}">
+								<TextBlock Text="{Binding Name}" FontFamily="Segoe UI"></TextBlock>
+								<Image Source="{Binding Icon}"></Image>
+							</StackPanel>
 						</StackPanel>
 					</Border>
 				</ControlTemplate>
@@ -17,6 +21,9 @@
 		
 		<Style.Triggers>
 			<Trigger Property="IsSelected" Value="True">
+				<Setter Property="Background" Value="{DynamicResource SelectionColor}"></Setter>
+			</Trigger>
+			<Trigger Property="IsMouseOver" Value="True">
 				<Setter Property="Background" Value="{DynamicResource SelectionColor}"></Setter>
 			</Trigger>
 		</Style.Triggers>
