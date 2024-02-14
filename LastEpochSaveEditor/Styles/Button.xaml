@@ -20,7 +20,88 @@
 			<Trigger Property="IsMouseOver" Value="True">
 				<Setter Property="Foreground" Value="{DynamicResource PrimaryColor}"></Setter>
 				<Setter Property="Background" Value="{DynamicResource SelectionColor}"></Setter>
-			</Trigger>	
+			</Trigger>
 		</Style.Triggers>
+	</Style>
+
+	<Style TargetType="Button" x:Key="LeftTabButton">
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="{x:Type Button}">
+					<Grid>
+						<Image Source="/Icons/Misc/Left.png" x:Name="bkgImage"></Image>
+						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+					</Grid>
+					
+					<ControlTemplate.Triggers>
+						<Trigger Property="IsMouseOver" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/HoverLeft.png"></Setter>
+						</Trigger>
+
+						<Trigger Property="IsPressed" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/PressedLeft.png"></Setter>
+						</Trigger>
+
+						<Trigger Property="IsDefault" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/ActiveLeft.png"></Setter>
+						</Trigger>
+					</ControlTemplate.Triggers>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
+	</Style>
+
+	<Style TargetType="Button" x:Key="RightTabButton">
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="{x:Type Button}">
+					<Grid>
+						<Image Source="/Icons/Misc/Right.png" x:Name="bkgImage"></Image>
+						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+					</Grid>
+
+					<ControlTemplate.Triggers>
+						<Trigger Property="IsMouseOver" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/HoverRight.png"></Setter>
+						</Trigger>
+
+						<Trigger Property="IsPressed" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/PressedRight.png"></Setter>
+						</Trigger>
+
+						<Trigger Property="IsDefault" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/RightActive.png"></Setter>
+						</Trigger>
+					</ControlTemplate.Triggers>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
+	</Style>
+
+	<Style TargetType="Button" x:Key="TabButton">
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="{x:Type Button}">
+					<Grid>
+						<Image Source="/Icons/Misc/Tab.png" x:Name="bkgImage"></Image>
+						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+					</Grid>
+
+					<ControlTemplate.Triggers>
+						<Trigger Property="IsMouseOver" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/HoverTab.png"></Setter>
+						</Trigger>
+
+						<Trigger Property="IsPressed" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/PressedTab.png"></Setter>
+						</Trigger>
+
+						<Trigger Property="IsDefault" Value="True">
+							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/ActiveTab.png"></Setter>
+						</Trigger>
+					</ControlTemplate.Triggers>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
 	</Style>
 </ResourceDictionary>

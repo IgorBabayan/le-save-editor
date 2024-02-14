@@ -8,6 +8,7 @@
 				<ResourceDictionary Source="./Styles/Fonts.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/Button.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/TextBlock.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="./Styles/TabItem.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/ListView.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/ListViewItem.xaml"></ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>

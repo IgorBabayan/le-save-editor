@@ -32,6 +32,21 @@
     <None Remove="Icons\Classes\Spellblade.png" />
     <None Remove="Icons\Classes\VoidKnight.png" />
     <None Remove="Icons\Classes\Warlock.png" />
+    <None Remove="Icons\Misc\ActiveLeft.png" />
+    <None Remove="Icons\Misc\ActiveTab.png" />
+    <None Remove="Icons\Misc\Character Inventory.png" />
+    <None Remove="Icons\Misc\HoverLeft.png" />
+    <None Remove="Icons\Misc\HoverRight.png" />
+    <None Remove="Icons\Misc\HoverTab.png" />
+    <None Remove="Icons\Misc\Idols.png" />
+    <None Remove="Icons\Misc\Left.png" />
+    <None Remove="Icons\Misc\PressedLeft.png" />
+    <None Remove="Icons\Misc\PressedRight.png" />
+    <None Remove="Icons\Misc\PressedTab.png" />
+    <None Remove="Icons\Misc\Right.png" />
+    <None Remove="Icons\Misc\RightActive.png" />
+    <None Remove="Icons\Misc\RightHover.png" />
+    <None Remove="Icons\Misc\Tab.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -68,6 +83,21 @@
     <Resource Include="Icons\Classes\Spellblade.png" />
     <Resource Include="Icons\Classes\VoidKnight.png" />
     <Resource Include="Icons\Classes\Warlock.png" />
+    <Resource Include="Icons\Misc\ActiveTab.png" />
+    <Resource Include="Icons\Misc\Character Inventory.png" />
+    <Resource Include="Icons\Misc\HoverRight.png" />
+    <Resource Include="Icons\Misc\HoverTab.png" />
+    <Resource Include="Icons\Misc\Idols.png" />
+    <Resource Include="Icons\Misc\Left.png" />
+    <Resource Include="Icons\Misc\ActiveLeft.png" />
+    <Resource Include="Icons\Misc\HoverLeft.png" />
+    <Resource Include="Icons\Misc\PressedLeft.png" />
+    <Resource Include="Icons\Misc\PressedRight.png" />
+    <Resource Include="Icons\Misc\PressedTab.png" />
+    <Resource Include="Icons\Misc\Right.png" />
+    <Resource Include="Icons\Misc\RightActive.png" />
+    <Resource Include="Icons\Misc\RightHover.png" />
+    <Resource Include="Icons\Misc\Tab.png" />
   </ItemGroup>
 
   <ItemGroup>
