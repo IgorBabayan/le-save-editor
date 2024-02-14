@@ -16,6 +16,12 @@ namespace LastEpochSaveEditor
 			AppTheme.ChangeTheme(false);
 
 			DataContext = dataContext;
+
+#if DEBUG
+			ResizeMode = ResizeMode.CanResize;
+#else
+			minimizeButton.Visibility = Visibility.Hidden;
+#endif
 		}
 
 		private void MinimizeOrMaximizeWindow()
@@ -36,13 +42,6 @@ namespace LastEpochSaveEditor
 		{
 			if (e.LeftButton == MouseButtonState.Pressed)
 				DragMove();
-		}
-
-		private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-		{
-			if (e.ClickCount == 2)
-				MinimizeOrMaximizeWindow();
-
 		}
 
 		private void Button_Click_1(object sender, RoutedEventArgs e)

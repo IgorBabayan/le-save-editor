@@ -33,6 +33,7 @@
     <None Remove="Icons\Classes\VoidKnight.png" />
     <None Remove="Icons\Classes\Warlock.png" />
     <None Remove="Icons\Misc\ActiveLeft.png" />
+    <None Remove="Icons\Misc\ActiveRight.png" />
     <None Remove="Icons\Misc\ActiveTab.png" />
     <None Remove="Icons\Misc\Character Inventory.png" />
     <None Remove="Icons\Misc\HoverLeft.png" />
@@ -44,8 +45,6 @@
     <None Remove="Icons\Misc\PressedRight.png" />
     <None Remove="Icons\Misc\PressedTab.png" />
     <None Remove="Icons\Misc\Right.png" />
-    <None Remove="Icons\Misc\RightActive.png" />
-    <None Remove="Icons\Misc\RightHover.png" />
     <None Remove="Icons\Misc\Tab.png" />
   </ItemGroup>
 
@@ -95,8 +94,7 @@
     <Resource Include="Icons\Misc\PressedRight.png" />
     <Resource Include="Icons\Misc\PressedTab.png" />
     <Resource Include="Icons\Misc\Right.png" />
-    <Resource Include="Icons\Misc\RightActive.png" />
-    <Resource Include="Icons\Misc\RightHover.png" />
+    <Resource Include="Icons\Misc\ActiveRight.png" />
     <Resource Include="Icons\Misc\Tab.png" />
   </ItemGroup>
 

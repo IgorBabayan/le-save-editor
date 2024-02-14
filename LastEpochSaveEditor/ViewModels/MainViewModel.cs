@@ -12,6 +12,9 @@ namespace LastEpochSaveEditor.ViewModels
 		[ObservableProperty]
 		private IEnumerable<CharacterInfo> _characters;
 
+		[ObservableProperty]
+		private CharacterInfo _selectedCharacter;
+
 		public MainViewModel()
 		{
 			Characters = SaveFileLoader.Load();
