@@ -54,12 +54,12 @@
 					<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
 				</StackPanel>
 
-				<StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+				<Grid Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 					<controls:CharacterControl Visibility="{Binding CharacterControlVisiblity}" Background="Green"></controls:CharacterControl>
 					<controls:CharacterControl Visibility="{Binding CharacterStashControlVisiblity}" Background="Aqua"></controls:CharacterControl>
 					<controls:CharacterControl Visibility="{Binding BlessingsControlVisibility}" Background="BlueViolet"></controls:CharacterControl>
 					<controls:CharacterControl Visibility="{Binding IdolsControlVisibility}" Background="DarkGoldenrod"></controls:CharacterControl>
-				</StackPanel>
+				</Grid>
 			</Grid>
 		</Border>
 	</Grid>

@@ -40,42 +40,42 @@ namespace LastEpochSaveEditor.ViewModels
 
 		partial void OnCharacterControlVisiblityChanged(Visibility value)
 		{
-			if (value == Visibility.Hidden)
+			if (value == Visibility.Collapsed)
 				return;
 
-			CharacterStashControlVisiblity = Visibility.Hidden;
-			BlessingsControlVisibility = Visibility.Hidden;
-			IdolsControlVisibility = Visibility.Hidden;
+			CharacterStashControlVisiblity = Visibility.Collapsed;
+			BlessingsControlVisibility = Visibility.Collapsed;
+			IdolsControlVisibility = Visibility.Collapsed;
 		}
 
 		partial void OnCharacterStashControlVisiblityChanged(Visibility value)
 		{
-			if (value == Visibility.Hidden)
+			if (value == Visibility.Collapsed)
 				return;
 
-			CharacterControlVisiblity = Visibility.Hidden;
-			BlessingsControlVisibility = Visibility.Hidden;
-			IdolsControlVisibility = Visibility.Hidden;
+			CharacterControlVisiblity = Visibility.Collapsed;
+			BlessingsControlVisibility = Visibility.Collapsed;
+			IdolsControlVisibility = Visibility.Collapsed;
 		}
 
 		partial void OnBlessingsControlVisibilityChanged(Visibility value)
 		{
-			if (value == Visibility.Hidden)
+			if (value == Visibility.Collapsed)
 				return;
 
-			CharacterControlVisiblity = Visibility.Hidden;
-			CharacterStashControlVisiblity = Visibility.Hidden;
-			IdolsControlVisibility = Visibility.Hidden;
+			CharacterControlVisiblity = Visibility.Collapsed;
+			CharacterStashControlVisiblity = Visibility.Collapsed;
+			IdolsControlVisibility = Visibility.Collapsed;
 		}
 
 		partial void OnIdolsControlVisibilityChanged(Visibility value)
 		{
-			if (value == Visibility.Hidden)
+			if (value == Visibility.Collapsed)
 				return;
 
-			CharacterControlVisiblity = Visibility.Hidden;
-			CharacterStashControlVisiblity = Visibility.Hidden;
-			BlessingsControlVisibility = Visibility.Hidden;
+			CharacterControlVisiblity = Visibility.Collapsed;
+			CharacterStashControlVisiblity = Visibility.Collapsed;
+			BlessingsControlVisibility = Visibility.Collapsed;
 		}
 
 		#endregion

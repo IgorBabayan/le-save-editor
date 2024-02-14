@@ -17,7 +17,7 @@ namespace LastEpochSaveEditor.Converters
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			var result = (bool)value;
-			return result == true ? Visibility.Visible : Visibility.Hidden;
+			return result == true ? Visibility.Visible : Visibility.Collapsed;
 		}
 	}
 }
