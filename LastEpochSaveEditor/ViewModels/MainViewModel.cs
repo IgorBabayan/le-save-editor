@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using LastEpochSaveEditor.Models;
 using LastEpochSaveEditor.Utils;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 namespace LastEpochSaveEditor.ViewModels
@@ -34,6 +35,7 @@ namespace LastEpochSaveEditor.ViewModels
 		public MainViewModel()
 		{
 			Characters = SaveFileLoader.Load();
+			SelectedCharacter = Characters!.FirstOrDefault();
 		}
 
 		#region Partials

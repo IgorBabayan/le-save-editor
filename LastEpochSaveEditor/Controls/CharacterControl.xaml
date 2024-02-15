@@ -6,7 +6,35 @@
              xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-		<TextBlock>Hello world</TextBlock>
-    </Grid>
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="82"></RowDefinition>
+			<RowDefinition Height="152"></RowDefinition>
+			<RowDefinition Height="48"></RowDefinition>
+			<RowDefinition Height="82"></RowDefinition>
+		</Grid.RowDefinitions>
+
+		<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10">
+			<Image Source="/Icons/Misc/Helm.png" Width="80" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Amulet.png" Width="54" Cursor="Hand"></Image>
+		</StackPanel>
+
+		<StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,10">
+			<Image Source="/Icons/Misc/Main Weapon.png" Width="79" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Body.png" Width="101" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Off Hand.png" Width="79" Cursor="Hand"></Image>
+		</StackPanel>
+
+		<StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,10">
+			<Image Source="/Icons/Misc/Left Ring.png" Width="51" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Belt.png" Width="101" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Right Ring.png" Width="51" Cursor="Hand"></Image>
+		</StackPanel>
+
+		<StackPanel Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+			<Image Source="/Icons/Misc/Gloves.png" Width="79" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Boots.png" Width="77" Cursor="Hand"></Image>
+			<Image Source="/Icons/Misc/Relic.png" Width="79" Cursor="Hand"></Image>
+		</StackPanel>
+	</Grid>
 </UserControl>

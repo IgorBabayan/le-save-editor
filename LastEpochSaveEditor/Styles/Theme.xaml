@@ -1,0 +1,23 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Color x:Key="Background">#1D1E22</Color>
+	<SolidColorBrush x:Key="BackgroundColor" Color="{StaticResource Background}"></SolidColorBrush>
+
+	<Color x:Key="Foreground">#D4D4DC</Color>
+	<SolidColorBrush x:Key="ForegroundColor" Color="{StaticResource Foreground}"></SolidColorBrush>
+
+	<Color x:Key="Hover">#393F4D</Color>
+	<SolidColorBrush x:Key="HoverColor" Color="{StaticResource Hover}"></SolidColorBrush>
+
+	<Color x:Key="Active">#363A57</Color>
+	<SolidColorBrush x:Key="ActiveColor" Color="{StaticResource Active}"></SolidColorBrush>
+
+	<Color x:Key="Tertiary">#E1EFF8</Color>
+	<SolidColorBrush x:Key="TertiaryColor" Color="{StaticResource Tertiary}"></SolidColorBrush>
+
+	<Color x:Key="Quinary">#F4FFDC</Color>
+	<SolidColorBrush x:Key="QuinaryColor" Color="{StaticResource Quinary}"></SolidColorBrush>
+
+	<Color x:Key="Error">#BF0D0D</Color>
+	<SolidColorBrush x:Key="ErrorColor" Color="{StaticResource Error}"></SolidColorBrush>
+</ResourceDictionary>

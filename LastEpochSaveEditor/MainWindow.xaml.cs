@@ -1,26 +1,18 @@
-﻿using LastEpochSaveEditor.Utils;
-using LastEpochSaveEditor.ViewModels;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 
 namespace LastEpochSaveEditor
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
+
 	public partial class MainWindow : Window
 	{
-		public MainWindow(MainViewModel dataContext)
+		public MainWindow()
 		{
 			InitializeComponent();
-			AppTheme.ChangeTheme(false);
-
-			DataContext = dataContext;
-
 #if DEBUG
 			ResizeMode = ResizeMode.CanResize;
 #else
-			minimizeButton.Visibility = Visibility.Hidden;
+			minimizeButton.Visibility = Visibility.Collapsed;
 #endif
 		}
 

@@ -1,4 +1,5 @@
-﻿using LastEpochSaveEditor.ViewModels;
+﻿using LastEpochSaveEditor.Controls;
+using LastEpochSaveEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Windows;
@@ -15,12 +16,50 @@ namespace LastEpochSaveEditor
         public App()
         {
 			AppHost = Host.CreateDefaultBuilder()
-				.ConfigureServices((host, services) => 
+				.ConfigureServices((_, services) => 
 				{
-					services.AddSingleton<MainWindow>();
-					services.AddSingleton<MainViewModel>();
+					RegisterWindows(services);
+					RegisterViewModels(services);
+					RegisterControls(services);
 				}).Build();
         }
+
+		private void RegisterWindows(IServiceCollection services)
+		{
+			services.AddSingleton<MainWindow>(provider => new MainWindow
+			{
+				DataContext = provider.GetRequiredService<MainViewModel>()
+			});
+		}
+
+		private void RegisterViewModels(IServiceCollection services)
+		{
+			services.AddSingleton<MainViewModel>();
+			services.AddSingleton<CharacterViewModel>();
+			services.AddSingleton<CharacterStashViewModel>();
+			services.AddSingleton<BlessingViewModel>();
+			services.AddSingleton<IdolViewModel>();
+		}
+
+		private void RegisterControls(IServiceCollection services)
+		{
+			services.AddSingleton<CharacterControl>(provider => new CharacterControl
+			{
+				DataContext = provider.GetRequiredService<CharacterViewModel>()
+			});
+			services.AddSingleton<CharacterStashControl>(provider => new CharacterStashControl
+			{
+				DataContext = provider.GetRequiredService<CharacterStashViewModel>()
+			});
+			services.AddSingleton<BlessingControl>(provider => new BlessingControl
+			{
+				DataContext = provider.GetRequiredService<BlessingViewModel>()
+			});
+			services.AddSingleton<IdolControl>(provider => new IdolControl
+			{
+				DataContext = provider.GetRequiredService<IdolViewModel>()
+			});
+		}
 
 		protected override async void OnStartup(StartupEventArgs e)
 		{
