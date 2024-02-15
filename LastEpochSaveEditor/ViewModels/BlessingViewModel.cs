@@ -2,7 +2,7 @@
 
 namespace LastEpochSaveEditor.ViewModels
 {
-	public class BlessingViewModel : ObservableObject
+	public partial class BlessingViewModel : ObservableObject
 	{
     }
 }

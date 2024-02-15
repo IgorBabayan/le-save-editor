@@ -2,7 +2,7 @@
 
 namespace LastEpochSaveEditor.ViewModels
 {
-	public class CharacterStashViewModel : ObservableObject
+	public partial class CharacterStashViewModel : ObservableObject
 	{
     }
 }

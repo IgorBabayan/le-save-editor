@@ -1,4 +1,5 @@
 ﻿using LastEpochSaveEditor.Controls;
+using LastEpochSaveEditor.Utils;
 using LastEpochSaveEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -64,6 +65,8 @@ namespace LastEpochSaveEditor
 		protected override async void OnStartup(StartupEventArgs e)
 		{
 			await AppHost!.StartAsync();
+			await DB.Load();
+
 			var mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
 			mainWindow.Show();
 

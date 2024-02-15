@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
+#pragma warning disable CS8601 // Possible null reference assignment.
+
 namespace LastEpochSaveEditor.ViewModels
 {
 	public partial class MainViewModel : ObservableObject
@@ -35,7 +37,7 @@ namespace LastEpochSaveEditor.ViewModels
 		public MainViewModel()
 		{
 			Characters = SaveFileLoader.Load();
-			SelectedCharacter = Characters!.FirstOrDefault();
+			SelectedCharacter = Characters.FirstOrDefault();
 		}
 
 		#region Partials
@@ -99,3 +101,5 @@ namespace LastEpochSaveEditor.ViewModels
 		#endregion
 	}
 }
+
+#pragma warning restore CS8601 // Possible null reference assignment.

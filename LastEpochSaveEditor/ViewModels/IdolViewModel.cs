@@ -2,7 +2,7 @@
 
 namespace LastEpochSaveEditor.ViewModels
 {
-	public class IdolViewModel : ObservableObject
+	public partial class IdolViewModel : ObservableObject
 	{
     }
 }
