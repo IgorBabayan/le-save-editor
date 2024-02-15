@@ -20,4 +20,7 @@
 
 	<Color x:Key="Error">#BF0D0D</Color>
 	<SolidColorBrush x:Key="ErrorColor" Color="{StaticResource Error}"></SolidColorBrush>
+
+	<Color x:Key="Success">#7A9A3E</Color>
+	<SolidColorBrush x:Key="SuccessColor" Color="{StaticResource Success}"></SolidColorBrush>
 </ResourceDictionary>

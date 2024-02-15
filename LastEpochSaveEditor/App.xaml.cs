@@ -1,4 +1,4 @@
-﻿using LastEpochSaveEditor.Controls;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using LastEpochSaveEditor.Utils;
 using LastEpochSaveEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,21 +7,17 @@ using System.Windows;
 
 namespace LastEpochSaveEditor
 {
-	/// <summary>
-	/// Interaction logic for App.xaml
-	/// </summary>
 	public partial class App : Application
 	{
-		public static IHost? AppHost { get; private set; }
+		public static IHost? Host { get; private set; }
 
         public App()
         {
-			AppHost = Host.CreateDefaultBuilder()
+			Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
 				.ConfigureServices((_, services) => 
 				{
 					RegisterWindows(services);
 					RegisterViewModels(services);
-					RegisterControls(services);
 				}).Build();
         }
 
@@ -42,32 +38,12 @@ namespace LastEpochSaveEditor
 			services.AddSingleton<IdolViewModel>();
 		}
 
-		private void RegisterControls(IServiceCollection services)
-		{
-			services.AddSingleton<CharacterControl>(provider => new CharacterControl
-			{
-				DataContext = provider.GetRequiredService<CharacterViewModel>()
-			});
-			services.AddSingleton<CharacterStashControl>(provider => new CharacterStashControl
-			{
-				DataContext = provider.GetRequiredService<CharacterStashViewModel>()
-			});
-			services.AddSingleton<BlessingControl>(provider => new BlessingControl
-			{
-				DataContext = provider.GetRequiredService<BlessingViewModel>()
-			});
-			services.AddSingleton<IdolControl>(provider => new IdolControl
-			{
-				DataContext = provider.GetRequiredService<IdolViewModel>()
-			});
-		}
-
 		protected override async void OnStartup(StartupEventArgs e)
 		{
-			await AppHost!.StartAsync();
+			await Host!.StartAsync();
 			await DB.Load();
 
-			var mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
+			var mainWindow = Host.Services.GetRequiredService<MainWindow>();
 			mainWindow.Show();
 
 			base.OnStartup(e);
@@ -75,8 +51,10 @@ namespace LastEpochSaveEditor
 
 		protected override async void OnExit(ExitEventArgs e)
 		{
-			await AppHost!.StopAsync();
-
+			var viewModel = Host!.Services.GetRequiredService<CharacterViewModel>();
+			WeakReferenceMessenger.Default.UnregisterAll(viewModel);
+			
+			await Host!.StopAsync();
 			base.OnExit(e);
 		}
 	}

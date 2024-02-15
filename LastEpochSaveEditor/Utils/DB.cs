@@ -1,7 +1,10 @@
 ﻿using LastEpochSaveEditor.Models.Database;
+using LastEpochSaveEditor.Utils.Exceptions;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -17,7 +20,7 @@ namespace LastEpochSaveEditor.Utils
 		private static readonly Lazy<DB> _instance = new Lazy<DB>(() => new DB());
 		public static DB Instance => _instance.Value;
 
-		public Database Database { get; private set; }
+		private Database Database { get; set; }
 
 		private static async Task LoadImpl()
         {
@@ -33,11 +36,9 @@ namespace LastEpochSaveEditor.Utils
 
 		internal static async Task Load()
 		{
+			await LoadImpl();
 			if (!File.Exists(FILE_PATH))
-			{
-				await LoadImpl();
 				await File.WriteAllTextAsync(FILE_PATH, JsonConvert.SerializeObject(Instance.Database, Formatting.Indented));
-			}
 		}
 
 		internal static async Task Reload()
@@ -49,7 +50,51 @@ namespace LastEpochSaveEditor.Utils
 		}
 
         private DB() { }
-    }
+
+		private IEnumerable<SubItem> Get(string type, string subType, int subTypeId)
+		{
+			var categories = Instance.Database?.ItemCategories?.FirstOrDefault(x => string.Equals(x.Name, type, StringComparison.OrdinalIgnoreCase))?.Categories;
+			if (categories == null)
+				throw new CategoryNotFoundException(type, subType, subTypeId);
+
+			var subCategories = categories.FirstOrDefault(x => string.Equals(x.Name, subType, StringComparison.OrdinalIgnoreCase))?.Entries;
+			if (subCategories == null)
+				throw new CategoryNotFoundException(type, subType, subTypeId);
+
+			var itemTypes = Instance!.Database!.ItemTypes.Where(x => subCategories.Contains(x.BaseTypeID));
+			if (!itemTypes.Any())
+				throw new CategoryNotFoundException(type, subType, subTypeId);
+
+			var subItems = itemTypes.FirstOrDefault(x => x.BaseTypeID == subTypeId)!.SubItems.Where(x => x.CannotDrop == false);
+			if (!subItems.Any())
+				throw new CategoryNotFoundException(type, subType, subTypeId);
+
+			return subItems;
+		}
+
+		public IEnumerable<SubItem> GetHelmets() => Get("Armour", "Armour", 0);
+
+		public IEnumerable<SubItem> GetAmulets() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetWeapons() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetArmors() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetOffHands() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetRings() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetBelts() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetGloves() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetBoots() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetRelics() => Get(string.Empty, string.Empty, -1);
+
+		public IEnumerable<SubItem> GetIdols() => Get(string.Empty, string.Empty, -1);
+
+	}
 }
 
 #pragma warning restore CS8601

@@ -13,5 +13,8 @@ namespace LastEpochSaveEditor.Models.Database
 
 		[JsonProperty("itemCategories")]
 		public List<ItemCategory> ItemCategories { get; set; }
+
+		[JsonProperty("uniques")]
+		public List<Unique> Uniques { get; set; }
 	}
 }
