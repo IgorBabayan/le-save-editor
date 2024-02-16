@@ -10,8 +10,11 @@ using System.Linq;
 
 namespace LastEpochSaveEditor.ViewModels
 {
-	public partial class CharacterViewModel : ObservableObject
+	internal partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 	{
+		private readonly IMessenger _messenger;
+		private readonly IDB _db;
+
 		#region Properties
 
 		[ObservableProperty]
@@ -54,8 +57,7 @@ namespace LastEpochSaveEditor.ViewModels
 		[RelayCommand]
 		private void HelmPressed()
 		{
-			var helmets = DB.Instance.GetHelmets();
-			var currentHelmet = helmets.FirstOrDefault();
+			throw new System.NotImplementedException();
 		}
 
 		[RelayCommand]
@@ -118,9 +120,19 @@ namespace LastEpochSaveEditor.ViewModels
 			throw new System.NotImplementedException();
 		}
 
-		#endregion
+        #endregion
 
-		public CharacterViewModel() => WeakReferenceMessenger.Default.Register<SelectedCharacterChangedMessage>(this, (_, message) => ParseCharacter(message.Value));
+        public CharacterViewModel(IMessenger messenger, IDB db)
+        {
+			_db = db;
+            _messenger = messenger; ;
+			_messenger.RegisterAll(this);
+        }
+
+        void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message)
+		{
+			ParseCharacter(message.Value);
+		}
 
 		private void ParseCharacter(CharacterInfo character)
 		{
@@ -139,57 +151,59 @@ namespace LastEpochSaveEditor.ViewModels
 
 		private void ParseHelm(CharacterInfo character)
 		{
-			HelmIcon = "/Icons/Misc/Helm.png";
+			var helms = _db.GetHelmets();
+			//var currentHelmet = helms.SubItems.FirstOrDefault(x => x.SubTypeID == character.Character.SavedItems);
+			//HelmIcon = currentHelmet == null ? "/Images/Misc/Helm.png" : "";
 		}
 
 		private void ParseAmulet(CharacterInfo character)
 		{
-			AmuletIcon = "/Icons/Misc/Amulet.png";
+			AmuletIcon = "/Images/Misc/Amulet.png";
 		}
 		
 		private void ParseWeapon(CharacterInfo character)
 		{
-			WeaponIcon = "/Icons/Misc/Main Weapon.png";
+			WeaponIcon = "/Images/Misc/Main Weapon.png";
 		}
 
 		private void ParseBody(CharacterInfo character)
 		{
-			BodyIcon = "/Icons/Misc/Body.png";
+			BodyIcon = "/Images/Misc/Body.png";
 		}
 
 		private void ParseOffHand(CharacterInfo character)
 		{
-			OffHandIcon = "/Icons/Misc/Off Hand.png";
+			OffHandIcon = "/Images/Misc/Off Hand.png";
 		}
 
 		private void ParseLeftRing(CharacterInfo character)
 		{
-			LeftRingIcon = "/Icons/Misc/Left Ring.png";
+			LeftRingIcon = "/Images/Misc/Left Ring.png";
 		}
 
 		private void ParseBelt(CharacterInfo character)
 		{
-			BeltIcon = "/Icons/Misc/Belt.png";
+			BeltIcon = "/Images/Misc/Belt.png";
 		}
 
 		private void ParseRightRing(CharacterInfo character)
 		{
-			RightRingIcon = "/Icons/Misc/Right Ring.png";
+			RightRingIcon = "/Images/Misc/Right Ring.png";
 		}
 
 		private void ParseGloves(CharacterInfo character)
 		{
-			GlovesIcon = "/Icons/Misc/Gloves.png";
+			GlovesIcon = "/Images/Misc/Gloves.png";
 		}
 
 		private void ParseBoots(CharacterInfo character)
 		{
-			BootsIcon = "/Icons/Misc/Boots.png";
+			BootsIcon = "/Images/Misc/Boots.png";
 		}
 
 		private void ParseRelics(CharacterInfo character)
 		{
-			RelicIcon = "/Icons/Misc/Relic.png";
+			RelicIcon = "/Images/Misc/Relic.png";
 		}
 	}
 }

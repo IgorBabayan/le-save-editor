@@ -13,8 +13,11 @@ using System.Windows;
 
 namespace LastEpochSaveEditor.ViewModels
 {
-	public partial class MainViewModel : ObservableObject
+	internal partial class MainViewModel : ObservableObject
 	{
+		private readonly IMessenger _messenger;
+		private readonly IDB _db;
+
 		#region Properties
 
 		[ObservableProperty]
@@ -41,8 +44,11 @@ namespace LastEpochSaveEditor.ViewModels
 
 		#endregion
 
-		public MainViewModel()
+		public MainViewModel(IMessenger messenger, IDB db)
 		{
+			_messenger = messenger;
+			_db = db;
+
 			Characters = SaveFileLoader.Load();
 			SelectedCharacter = Characters.FirstOrDefault();
 		}
@@ -86,13 +92,13 @@ namespace LastEpochSaveEditor.ViewModels
 		}
 
 		[RelayCommand]
-		private async Task ReloadDatabase() => await DB.Reload();
+		private async Task ReloadDatabase() => await _db.Reload();
 
 		#endregion
 
 		#region Partials
 
-		partial void OnSelectedCharacterChanged(CharacterInfo value) => WeakReferenceMessenger.Default.Send(new SelectedCharacterChangedMessage(value));
+		partial void OnSelectedCharacterChanged(CharacterInfo value) => _messenger.Send(new SelectedCharacterChangedMessage(value));
 
 		#endregion
 	}

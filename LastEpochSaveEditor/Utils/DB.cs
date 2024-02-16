@@ -12,18 +12,15 @@ using System.Threading.Tasks;
 
 namespace LastEpochSaveEditor.Utils
 {
-	internal sealed class DB
-    {
-        private const string URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
+	internal sealed class DB : IDB
+	{
+		private const string URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
 		private const string FILE_PATH = "data.json";
-
-		private static readonly Lazy<DB> _instance = new Lazy<DB>(() => new DB());
-		public static DB Instance => _instance.Value;
 
 		private Database Database { get; set; }
 
-		private static async Task LoadImpl()
-        {
+		private async Task LoadImpl()
+		{
 			string response;
 			using (var client = new HttpClient())
 			{
@@ -31,17 +28,19 @@ namespace LastEpochSaveEditor.Utils
 					response = await request.Content.ReadAsStringAsync();
 			}
 
-			Instance.Database = JsonConvert.DeserializeObject<Database>(response);
+			Database = JsonConvert.DeserializeObject<Database>(response);
+			foreach (var itemType in Database!.ItemTypes)
+				itemType.SubItems = itemType.SubItems.Where(x => x.CannotDrop == false).ToList();
 		}
 
-		internal static async Task Load()
+		public async Task Load()
 		{
 			await LoadImpl();
 			if (!File.Exists(FILE_PATH))
-				await File.WriteAllTextAsync(FILE_PATH, JsonConvert.SerializeObject(Instance.Database, Formatting.Indented));
+				await File.WriteAllTextAsync(FILE_PATH, JsonConvert.SerializeObject(Database, Formatting.Indented));
 		}
 
-		internal static async Task Reload()
+		public async Task Reload()
 		{
 			if (File.Exists(FILE_PATH))
 				File.Delete(FILE_PATH);
@@ -49,51 +48,58 @@ namespace LastEpochSaveEditor.Utils
 			await Load();
 		}
 
-        private DB() { }
-
-		private IEnumerable<SubItem> Get(string type, string subType, int subTypeId)
+		private IEnumerable<ItemType> Get(string type, string subType)
 		{
-			var categories = Instance.Database?.ItemCategories?.FirstOrDefault(x => string.Equals(x.Name, type, StringComparison.OrdinalIgnoreCase))?.Categories;
+			var categories = Database?.ItemCategories?.FirstOrDefault(x => string.Equals(x.Name, type, StringComparison.OrdinalIgnoreCase))?.Categories;
 			if (categories == null)
-				throw new CategoryNotFoundException(type, subType, subTypeId);
+				throw new CategoryNotFoundException(type, subType);
 
 			var subCategories = categories.FirstOrDefault(x => string.Equals(x.Name, subType, StringComparison.OrdinalIgnoreCase))?.Entries;
 			if (subCategories == null)
-				throw new CategoryNotFoundException(type, subType, subTypeId);
+				throw new CategoryNotFoundException(type, subType);
 
-			var itemTypes = Instance!.Database!.ItemTypes.Where(x => subCategories.Contains(x.BaseTypeID));
+			var itemTypes = Database!.ItemTypes.Where(x => subCategories.Contains(x.BaseTypeID));
 			if (!itemTypes.Any())
-				throw new CategoryNotFoundException(type, subType, subTypeId);
+				throw new CategoryNotFoundException(type, subType);
 
-			var subItems = itemTypes.FirstOrDefault(x => x.BaseTypeID == subTypeId)!.SubItems.Where(x => x.CannotDrop == false);
-			if (!subItems.Any())
-				throw new CategoryNotFoundException(type, subType, subTypeId);
-
-			return subItems;
+			return itemTypes;
 		}
 
-		public IEnumerable<SubItem> GetHelmets() => Get("Armour", "Armour", 0);
+		private ItemType Get(string type, string subType, int subTypeId)
+		{
+			var itemTypes = Get(type, subType);
+			var subItem = itemTypes.FirstOrDefault(x => x.BaseTypeID == subTypeId);
+			if (subItem == null)
+				throw new CategoryNotFoundException(type, subType, subTypeId);
 
-		public IEnumerable<SubItem> GetAmulets() => Get(string.Empty, string.Empty, -1);
+			return subItem;
+		}
 
-		public IEnumerable<SubItem> GetWeapons() => Get(string.Empty, string.Empty, -1);
+		public IEnumerable<ItemType> GetWeapons() => Get1HWeapons().Union(Get2HWeapons());
 
-		public IEnumerable<SubItem> GetArmors() => Get(string.Empty, string.Empty, -1);
+		public IEnumerable<ItemType> Get1HWeapons() => Get("Weapons", "One Handed Weapons");
 
-		public IEnumerable<SubItem> GetOffHands() => Get(string.Empty, string.Empty, -1);
+		public IEnumerable<ItemType> Get2HWeapons() => Get("Weapons", "Two Handed Weapons");
 
-		public IEnumerable<SubItem> GetRings() => Get(string.Empty, string.Empty, -1);
+		public IEnumerable<ItemType> GetOffHands() => Get("Off-Hand", "Off-Hand");
 
-		public IEnumerable<SubItem> GetBelts() => Get(string.Empty, string.Empty, -1);
+		public IEnumerable<ItemType> GetIdols() => Get("Misc", "Idols");
 
-		public IEnumerable<SubItem> GetGloves() => Get(string.Empty, string.Empty, -1);
+		public ItemType GetHelmets() => Get("Armour", "Armour", 0);
 
-		public IEnumerable<SubItem> GetBoots() => Get(string.Empty, string.Empty, -1);
+		public ItemType GetAmulets() => Get("Misc", "Accessories", 20);
 
-		public IEnumerable<SubItem> GetRelics() => Get(string.Empty, string.Empty, -1);
+		public ItemType GetArmors() => Get("Armour", "Armour", 1);
 
-		public IEnumerable<SubItem> GetIdols() => Get(string.Empty, string.Empty, -1);
+		public ItemType GetRings() => Get("Misc", "Accessories", 21);
 
+		public ItemType GetBelts() => Get("Armour", "Armour", 2);
+
+		public ItemType GetGloves() => Get("Armour", "Armour", 4);
+
+		public ItemType GetBoots() => Get("Armour", "Armour", 3);
+
+		public ItemType GetRelics() => Get("Misc", "Accessories", 22);
 	}
 }
 

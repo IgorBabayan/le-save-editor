@@ -87,21 +87,21 @@
 			<Setter.Value>
 				<ControlTemplate TargetType="{x:Type Button}">
 					<Grid>
-						<Image Source="/Icons/Misc/Left.png" x:Name="bkgImage" Stretch="UniformToFill"></Image>
+						<Image Source="/Images/Misc/Left.png" x:Name="bkgImage" Stretch="UniformToFill"></Image>
 						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
 					</Grid>
 					
 					<ControlTemplate.Triggers>
 						<Trigger Property="IsMouseOver" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/HoverLeft.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/HoverLeft.png"></Setter>
 						</Trigger>
 
 						<Trigger Property="IsPressed" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/PressedLeft.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/PressedLeft.png"></Setter>
 						</Trigger>
 
 						<Trigger Property="IsDefault" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/ActiveLeft.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/ActiveLeft.png"></Setter>
 						</Trigger>
 					</ControlTemplate.Triggers>
 				</ControlTemplate>
@@ -114,21 +114,21 @@
 			<Setter.Value>
 				<ControlTemplate TargetType="{x:Type Button}">
 					<Grid>
-						<Image Source="/Icons/Misc/Right.png" x:Name="bkgImage" Stretch="Fill"></Image>
+						<Image Source="/Images/Misc/Right.png" x:Name="bkgImage" Stretch="Fill"></Image>
 						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
 					</Grid>
 
 					<ControlTemplate.Triggers>
 						<Trigger Property="IsMouseOver" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/HoverRight.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/HoverRight.png"></Setter>
 						</Trigger>
 
 						<Trigger Property="IsPressed" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/PressedRight.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/PressedRight.png"></Setter>
 						</Trigger>
 
 						<Trigger Property="IsDefault" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/ActiveRight.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/ActiveRight.png"></Setter>
 						</Trigger>
 					</ControlTemplate.Triggers>
 				</ControlTemplate>
@@ -141,21 +141,21 @@
 			<Setter.Value>
 				<ControlTemplate TargetType="{x:Type Button}">
 					<Grid>
-						<Image Source="/Icons/Misc/Tab.png" x:Name="bkgImage" Stretch="Fill"></Image>
+						<Image Source="/Images/Misc/Tab.png" x:Name="bkgImage" Stretch="Fill"></Image>
 						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5"/>
 					</Grid>
 
 					<ControlTemplate.Triggers>
 						<Trigger Property="IsMouseOver" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/HoverTab.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/HoverTab.png"></Setter>
 						</Trigger>
 
 						<Trigger Property="IsPressed" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/PressedTab.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/PressedTab.png"></Setter>
 						</Trigger>
 
 						<Trigger Property="IsDefault" Value="True">
-							<Setter TargetName="bkgImage" Property="Source" Value="/Icons/Misc/ActiveTab.png"></Setter>
+							<Setter TargetName="bkgImage" Property="Source" Value="/Images/Misc/ActiveTab.png"></Setter>
 						</Trigger>
 					</ControlTemplate.Triggers>
 				</ControlTemplate>

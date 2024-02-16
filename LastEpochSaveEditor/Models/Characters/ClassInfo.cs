@@ -8,38 +8,38 @@ namespace LastEpochSaveEditor.Models.Characters
 		{
 			[0] = new List<ClassInfo>
 			{
-				new ClassInfo("Primalist", "/LastEpochSaveEditor;component/Icons/Classes/Primalist.png"),
-				new ClassInfo("Beastmaster", "/LastEpochSaveEditor;component/Icons/Classes/Beastmaster.png"),
-				new ClassInfo("Shaman", "/LastEpochSaveEditor;component/Icons/Classes/Shaman.png"),
-				new ClassInfo("Druid", "/LastEpochSaveEditor;component/Icons/Classes/Druid.png")
+				new ClassInfo("Primalist", "/LastEpochSaveEditor;component/Images/Classes/Primalist.png"),
+				new ClassInfo("Beastmaster", "/LastEpochSaveEditor;component/Images/Classes/Beastmaster.png"),
+				new ClassInfo("Shaman", "/LastEpochSaveEditor;component/Images/Classes/Shaman.png"),
+				new ClassInfo("Druid", "/LastEpochSaveEditor;component/Images/Classes/Druid.png")
 			},
 			[1] = new List<ClassInfo>
 			{
-				new ClassInfo("Mage", "/LastEpochSaveEditor;component/Icons/Classes/Mage.png"),
-				new ClassInfo("Sorcerer", "/LastEpochSaveEditor;component/Icons/Classes/Sorcerer.png"),
-				new ClassInfo("Spellblade", "/LastEpochSaveEditor;component/Icons/Classes/Spellblade.png"),
-				new ClassInfo("Runemaster", "/LastEpochSaveEditor;component/Icons/Classes/Runemaster.png")
+				new ClassInfo("Mage", "/LastEpochSaveEditor;component/Images/Classes/Mage.png"),
+				new ClassInfo("Sorcerer", "/LastEpochSaveEditor;component/Images/Classes/Sorcerer.png"),
+				new ClassInfo("Spellblade", "/LastEpochSaveEditor;component/Images/Classes/Spellblade.png"),
+				new ClassInfo("Runemaster", "/LastEpochSaveEditor;component/Images/Classes/Runemaster.png")
 			},
 			[2] = new List<ClassInfo>
 			{
-				new ClassInfo("Sentinel", "/LastEpochSaveEditor;component/Icons/Classes/Sentinel.png"),
-				new ClassInfo("Void Knight", "/LastEpochSaveEditor;component/Icons/Classes/VoidKnight.png"),
-				new ClassInfo("Forge Guard", "/LastEpochSaveEditor;component/Icons/Classes/ForgeGuard.png"),
-				new ClassInfo("Paladin", "/LastEpochSaveEditor;component/Icons/Classes/Paladin.png")
+				new ClassInfo("Sentinel", "/LastEpochSaveEditor;component/Images/Classes/Sentinel.png"),
+				new ClassInfo("Void Knight", "/LastEpochSaveEditor;component/Images/Classes/VoidKnight.png"),
+				new ClassInfo("Forge Guard", "/LastEpochSaveEditor;component/Images/Classes/ForgeGuard.png"),
+				new ClassInfo("Paladin", "/LastEpochSaveEditor;component/Images/Classes/Paladin.png")
 			},
 			[3] = new List<ClassInfo>
 			{
-				new ClassInfo("Acolyte", "/LastEpochSaveEditor;component/Icons/Classes/Acolyte.png"),
-				new ClassInfo("Necromancer", "/LastEpochSaveEditor;component/Icons/Classes/Necromancer.png"),
-				new ClassInfo("Lich", "/LastEpochSaveEditor;component/Icons/Classes/Lich.png"),
-				new ClassInfo("Warlock", "/LastEpochSaveEditor;component/Icons/Classes/Warlock.png")
+				new ClassInfo("Acolyte", "/LastEpochSaveEditor;component/IImagescons/Classes/Acolyte.png"),
+				new ClassInfo("Necromancer", "/LastEpochSaveEditor;component/Images/Classes/Necromancer.png"),
+				new ClassInfo("Lich", "/LastEpochSaveEditor;component/Images/Classes/Lich.png"),
+				new ClassInfo("Warlock", "/LastEpochSaveEditor;component/Images/Classes/Warlock.png")
 			},
 			[4] = new List<ClassInfo>
 			{
-				new ClassInfo("Rogue", "/LastEpochSaveEditor;component/Icons/Classes/Rogue.png"),
-				new ClassInfo("Bladedancer", "/LastEpochSaveEditor;component/Icons/Classes/Bladedancer.png"),
-				new ClassInfo("Marksman", "/LastEpochSaveEditor;component/Icons/Classes/Marksman.png"),
-				new ClassInfo("Falconer", "/LastEpochSaveEditor;component/Icons/Classes/Falconer.png")
+				new ClassInfo("Rogue", "/LastEpochSaveEditor;component/Images/Classes/Rogue.png"),
+				new ClassInfo("Bladedancer", "/LastEpochSaveEditor;component/Images/Classes/Bladedancer.png"),
+				new ClassInfo("Marksman", "/LastEpochSaveEditor;component/Images/Classes/Marksman.png"),
+				new ClassInfo("Falconer", "/LastEpochSaveEditor;component/Images/Classes/Falconer.png")
 			}
 		};
 

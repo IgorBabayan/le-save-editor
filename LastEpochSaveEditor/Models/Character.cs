@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace LastEpochSaveEditor.Models
@@ -234,6 +235,36 @@ namespace LastEpochSaveEditor.Models
 
 				return builder.ToString();
 			}
+		}
+
+		[JsonIgnore]
+		public CharacterInventory CharacterInventory { get; set; }
+
+		public void ParseSavedData()
+		{
+			ParseCharacterInventory();
+		}
+
+		private void ParseCharacterInventory()
+		{
+			var characterInventory = SavedItems.First(x => x.ContainerID == 5);
+			var data = characterInventory.Data;
+			CharacterInventory = new()
+			{
+				IsNewType = data[0],
+				Type = data[1],
+				Id = data[2],
+				Quality = data[3],
+				InstabilityOrForgingPotencial = data[7],
+				AffixNumberOrUniqueOrSetId = data[8],
+				Affix1 = new(data[9], data[10], data[11]),
+				Affix2 = new(data[12], data[13], data[14]),
+				Affix3 = new(data[15], data[16], data[17]),
+				Affix4 = new(data[18], data[19], data[20])
+			};
+			CharacterInventory.Prefixes.Add(data[4]);
+			CharacterInventory.Prefixes.Add(data[5]);
+			CharacterInventory.Prefixes.Add(data[6]);
 		}
 	}
 }

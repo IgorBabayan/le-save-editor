@@ -16,10 +16,17 @@ namespace LastEpochSaveEditor
 			Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
 				.ConfigureServices((_, services) => 
 				{
+					RegisterMisc(services);
 					RegisterWindows(services);
 					RegisterViewModels(services);
+					RegisterMessenger(services);
 				}).Build();
         }
+
+		private void RegisterMisc(IServiceCollection services)
+		{
+			services.AddSingleton<IDB, DB>();
+		}
 
 		private void RegisterWindows(IServiceCollection services)
 		{
@@ -38,10 +45,18 @@ namespace LastEpochSaveEditor
 			services.AddSingleton<IdolViewModel>();
 		}
 
+		private void RegisterMessenger(IServiceCollection services)
+		{
+			services.AddSingleton<WeakReferenceMessenger>();
+			services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider => provider.GetRequiredService<WeakReferenceMessenger>());
+		}
+
 		protected override async void OnStartup(StartupEventArgs e)
 		{
 			await Host!.StartAsync();
-			await DB.Load();
+
+			var db = Host.Services.GetRequiredService<IDB>();
+			await db.Load();
 
 			var mainWindow = Host.Services.GetRequiredService<MainWindow>();
 			mainWindow.Show();

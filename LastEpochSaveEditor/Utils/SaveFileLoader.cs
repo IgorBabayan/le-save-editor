@@ -36,10 +36,13 @@ namespace LastEpochSaveEditor.Utils
 			foreach ( var file in files)
 			{
 				content = File.ReadAllText(file).Remove(0, EPOCH.Length);
+				var character = JsonConvert.DeserializeObject<Character>(content)!;
+				character.ParseSavedData();
+
 				result.Add(new CharacterInfo
 				{
 					Path = file,
-					Character = JsonConvert.DeserializeObject<Character>(content)!
+					Character = character
 				});
 			}
 			return result;
