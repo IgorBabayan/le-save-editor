@@ -151,9 +151,8 @@ namespace LastEpochSaveEditor.ViewModels
 
 		private void ParseHelm(CharacterInfo character)
 		{
-			var helms = _db.GetHelmets();
-			//var currentHelmet = helms.SubItems.FirstOrDefault(x => x.SubTypeID == character.Character.SavedItems);
-			//HelmIcon = currentHelmet == null ? "/Images/Misc/Helm.png" : "";
+			var currentHelmet = character.Character.CharacterInventory.Helm;
+			HelmIcon = currentHelmet == null ? "/Images/Misc/Helm.png" : "";
 		}
 
 		private void ParseAmulet(CharacterInfo character)

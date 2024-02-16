@@ -127,8 +127,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\DTO\" />
-  </ItemGroup>
-
 </Project>
