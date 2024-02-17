@@ -2,6 +2,7 @@
 {
 	public enum QualityType
 	{
+		None = -1,
 		Basic = 0,
 		Magic = 2,
 		Rare = 3,

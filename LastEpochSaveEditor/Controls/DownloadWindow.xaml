@@ -1,0 +1,56 @@
+﻿<UserControl x:Class="LastEpochSaveEditor.Controls.DownloadWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
+             mc:Ignorable="d" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+		<Rectangle Fill="{DynamicResource PopupColor}" Opacity=".5"></Rectangle>
+
+		<Border CornerRadius="10" Background="{DynamicResource BackgroundColor}" HorizontalAlignment="Center" VerticalAlignment="Center"
+				Height="Auto">
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="30" />
+					<RowDefinition />
+				</Grid.RowDefinitions>
+
+				<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
+					<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
+						<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
+					</Button>
+				</StackPanel>
+
+				<Grid Grid.Row="1" Margin="10">
+					<Grid.RowDefinitions>
+						<RowDefinition />
+						<RowDefinition />
+						<RowDefinition />
+					</Grid.RowDefinitions>
+
+					<StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Vertical">
+						<ProgressBar Width="300" Height="15" Value="{Binding DownloadProgress}" Minimum="0" Maximum="{Binding Count}"></ProgressBar>
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="Download: "></TextBlock>
+							<TextBlock Text="{Binding DownloadProgressText}"></TextBlock>
+						</StackPanel>
+					</StackPanel>
+
+					<StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Vertical" Margin="0,5,0,0">
+						<ProgressBar Width="300" Height="15" Value="{Binding ConvertProgress}" Minimum="0" Maximum="{Binding Count}"></ProgressBar>
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="Convert: "></TextBlock>
+							<TextBlock Text="{Binding ConvertProgressText}"></TextBlock>
+						</StackPanel>
+					</StackPanel>
+
+					<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+						<Button Content="Download" Command="{Binding DowloadCommand}"></Button>
+					</StackPanel>
+				</Grid>
+			</Grid>
+		</Border>
+    </Grid>
+</UserControl>

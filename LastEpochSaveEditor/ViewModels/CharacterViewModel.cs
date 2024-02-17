@@ -3,17 +3,13 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using LastEpochSaveEditor.Messages;
 using LastEpochSaveEditor.Models;
-using LastEpochSaveEditor.Utils;
-using System.Linq;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+using LastEpochSaveEditor.Models.Characters;
 
 namespace LastEpochSaveEditor.ViewModels
 {
 	internal partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 	{
 		private readonly IMessenger _messenger;
-		private readonly IDB _db;
 
 		#region Properties
 
@@ -122,9 +118,8 @@ namespace LastEpochSaveEditor.ViewModels
 
         #endregion
 
-        public CharacterViewModel(IMessenger messenger, IDB db)
+        public CharacterViewModel(IMessenger messenger)
         {
-			_db = db;
             _messenger = messenger; ;
 			_messenger.RegisterAll(this);
         }
@@ -152,7 +147,7 @@ namespace LastEpochSaveEditor.ViewModels
 		private void ParseHelm(CharacterInfo character)
 		{
 			var currentHelmet = character.Character.CharacterInventory.Helm;
-			HelmIcon = currentHelmet == null ? "/Images/Misc/Helm.png" : "";
+			HelmIcon = currentHelmet == ItemDataInfo.Empty ? "/Images/Misc/Helm.png" : "";
 		}
 
 		private void ParseAmulet(CharacterInfo character)
@@ -206,5 +201,3 @@ namespace LastEpochSaveEditor.ViewModels
 		}
 	}
 }
-
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

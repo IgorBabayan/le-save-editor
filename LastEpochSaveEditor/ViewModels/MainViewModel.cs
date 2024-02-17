@@ -9,8 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-#pragma warning disable CS8601 // Possible null reference assignment.
-
 namespace LastEpochSaveEditor.ViewModels
 {
 	internal partial class MainViewModel : ObservableObject
@@ -103,5 +101,3 @@ namespace LastEpochSaveEditor.ViewModels
 		#endregion
 	}
 }
-
-#pragma warning restore CS8601 // Possible null reference assignment.

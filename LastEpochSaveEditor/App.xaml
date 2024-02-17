@@ -11,6 +11,7 @@
 				<ResourceDictionary Source="./Styles/TextBlock.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/ListView.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/ListViewItem.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="./Styles/Tooltip.xaml"></ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</Application.Resources>

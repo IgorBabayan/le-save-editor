@@ -1,51 +1,82 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
+using LastEpochSaveEditor.Controls;
+using LastEpochSaveEditor.Models.Characters;
 using LastEpochSaveEditor.Utils;
 using LastEpochSaveEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
 using System.Windows;
 
 namespace LastEpochSaveEditor
 {
 	public partial class App : Application
 	{
-		public static IHost? Host { get; private set; }
+		private readonly static IHost? _host;
 
-        public App()
+        static App()
         {
-			Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
-				.ConfigureServices((_, services) => 
+			_host = Host.CreateDefaultBuilder()
+				.UseSerilog((_, builder) =>
+				{
+					builder
+						.WriteTo.Debug(restrictedToMinimumLevel: LogEventLevel.Debug)
+						.WriteTo.File("Logs/log.txt", restrictedToMinimumLevel: LogEventLevel.Error, rollingInterval: RollingInterval.Day);
+				})
+				.ConfigureServices((_, services) =>
 				{
 					RegisterMisc(services);
 					RegisterWindows(services);
+					RegisterControls(services);
 					RegisterViewModels(services);
 					RegisterMessenger(services);
 				}).Build();
-        }
-
-		private void RegisterMisc(IServiceCollection services)
-		{
-			services.AddSingleton<IDB, DB>();
 		}
 
-		private void RegisterWindows(IServiceCollection services)
+        public App() { }
+
+		public static TService GetService<TService>()
+			where TService : class => _host!.Services.GetRequiredService<TService>();
+
+		private static void RegisterMisc(IServiceCollection services)
+		{
+			services.AddSingleton<IDB, DB>();
+			services.AddTransient<CharacterInventory>();
+		}
+
+		private static void RegisterWindows(IServiceCollection services)
 		{
 			services.AddSingleton<MainWindow>(provider => new MainWindow
 			{
 				DataContext = provider.GetRequiredService<MainViewModel>()
 			});
+			/*services.AddSingleton<DownloadWindow>(provider => new DownloadWindow
+			{
+				DataContext = provider.GetRequiredService<DownloadViewModel>()
+			});*/
 		}
 
-		private void RegisterViewModels(IServiceCollection services)
+		private static void RegisterControls(IServiceCollection services)
+		{
+			services.AddSingleton<CharacterControl>();
+			services.AddSingleton<CharacterStashControl>();
+			services.AddSingleton<BlessingControl>();
+			services.AddSingleton<IdolControl>();
+			services.AddTransient<DownloadWindow>();
+		}
+
+		private static void RegisterViewModels(IServiceCollection services)
 		{
 			services.AddSingleton<MainViewModel>();
+			services.AddSingleton<DownloadViewModel>();
 			services.AddSingleton<CharacterViewModel>();
 			services.AddSingleton<CharacterStashViewModel>();
 			services.AddSingleton<BlessingViewModel>();
 			services.AddSingleton<IdolViewModel>();
 		}
 
-		private void RegisterMessenger(IServiceCollection services)
+		private static void RegisterMessenger(IServiceCollection services)
 		{
 			services.AddSingleton<WeakReferenceMessenger>();
 			services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider => provider.GetRequiredService<WeakReferenceMessenger>());
@@ -53,12 +84,12 @@ namespace LastEpochSaveEditor
 
 		protected override async void OnStartup(StartupEventArgs e)
 		{
-			await Host!.StartAsync();
+			await _host!.StartAsync();
 
-			var db = Host.Services.GetRequiredService<IDB>();
+			var db = _host.Services.GetRequiredService<IDB>();
 			await db.Load();
 
-			var mainWindow = Host.Services.GetRequiredService<MainWindow>();
+			var mainWindow = _host.Services.GetRequiredService<MainWindow>();
 			mainWindow.Show();
 
 			base.OnStartup(e);
@@ -66,10 +97,10 @@ namespace LastEpochSaveEditor
 
 		protected override async void OnExit(ExitEventArgs e)
 		{
-			var viewModel = Host!.Services.GetRequiredService<CharacterViewModel>();
+			var viewModel = _host!.Services.GetRequiredService<CharacterViewModel>();
 			WeakReferenceMessenger.Default.UnregisterAll(viewModel);
 			
-			await Host!.StopAsync();
+			await _host!.StopAsync();
 			base.OnExit(e);
 		}
 	}

@@ -1,14 +1,10 @@
-﻿using LastEpochSaveEditor.Models.Characters;
-using LastEpochSaveEditor.Models.Utils;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace LastEpochSaveEditor.Models
 {
-    public class Character
+	public partial class Character
 	{
 		[JsonProperty("partitionKey")]
 		public object PartitionKey { get; set; }
@@ -216,40 +212,5 @@ namespace LastEpochSaveEditor.Models
 
 		[JsonProperty("version")]
 		public int Version { get; set; }
-
-		[JsonIgnore]
-		public ClassInfo ClassInfo => ClassInfo.Parse(CharacterClass, ChosenMastery);
-
-		[JsonIgnore]
-		public string Challenge
-		{
-			get
-			{
-				var builder = new StringBuilder();
-				if (SoloChallenge)
-					builder.Append("Solo");
-
-				if (Hardcore)
-					builder.Append("HC");
-				else
-					builder.Append("SC");
-
-				return builder.ToString();
-			}
-		}
-
-		[JsonIgnore]
-		public CharacterInventory CharacterInventory { get; set; }
-
-		public void ParseSavedData()
-		{
-			ParseCharacterInventory();
-		}
-
-		private void ParseCharacterInventory()
-		{
-			var characterInventory = SavedItems.Where(x => ItemDataParser.CharacterInventoryIds.Contains(x.ContainerID)).ToDictionary(x => x.ContainerID, x => x.Data);
-			CharacterInventory = new(characterInventory);
-		}
 	}
 }

@@ -1,5 +1,4 @@
 ﻿using LastEpochSaveEditor.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Controls;
 
 namespace LastEpochSaveEditor.Controls
@@ -9,7 +8,7 @@ namespace LastEpochSaveEditor.Controls
 		public CharacterControl()
 		{
 			InitializeComponent();
-			DataContext = App.Host!.Services.GetRequiredService<CharacterViewModel>();
+			DataContext = App.GetService<CharacterViewModel>();
 		}
 	}
 }

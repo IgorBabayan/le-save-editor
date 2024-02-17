@@ -23,4 +23,10 @@
 
 	<Color x:Key="Success">#7A9A3E</Color>
 	<SolidColorBrush x:Key="SuccessColor" Color="{StaticResource Success}"></SolidColorBrush>
+
+	<Color x:Key="Popup">#B8B4BE</Color>
+	<SolidColorBrush x:Key="PopupColor" Color="{StaticResource Popup}"></SolidColorBrush>
+
+	<Color x:Key="Pressed">#758C92</Color>
+	<SolidColorBrush x:Key="PressedColor" Color="{StaticResource Pressed}"></SolidColorBrush>
 </ResourceDictionary>

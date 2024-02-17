@@ -3,12 +3,11 @@ using LastEpochSaveEditor.Utils.Exceptions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-
-#pragma warning disable CS8601
 
 namespace LastEpochSaveEditor.Utils
 {
@@ -28,7 +27,7 @@ namespace LastEpochSaveEditor.Utils
 					response = await request.Content.ReadAsStringAsync();
 			}
 
-			Database = JsonConvert.DeserializeObject<Database>(response);
+			Database = JsonConvert.DeserializeObject<Database>(response)!;
 			foreach (var itemType in Database!.ItemTypes)
 				itemType.SubItems = itemType.SubItems.Where(x => x.CannotDrop == false).ToList();
 		}
@@ -65,42 +64,107 @@ namespace LastEpochSaveEditor.Utils
 			return itemTypes;
 		}
 
-		private ItemType Get(string type, string subType, int subTypeId)
+		private IEnumerable<Unique> GetUniques(int baseType, bool isSet)
 		{
-			var itemTypes = Get(type, subType);
-			var subItem = itemTypes.FirstOrDefault(x => x.BaseTypeID == subTypeId);
-			if (subItem == null)
-				throw new CategoryNotFoundException(type, subType, subTypeId);
+			var uniques = Database!.Uniques.Where(x => x.BaseType == baseType && x.IsSetItem == isSet);
+			if (uniques?.Any() == false)
+				Enumerable.Empty<Unique>();
 
-			return subItem;
+			return uniques!;
 		}
 
-		public IEnumerable<ItemType> GetWeapons() => Get1HWeapons().Union(Get2HWeapons());
+		private ItemType GetBaseItemsGroup(string type, string subType, int subTypeId)
+		{
+			var baseItemsGroup = Get(type, subType);
+			var baseItems = baseItemsGroup.FirstOrDefault(x => x.BaseTypeID == subTypeId);
+			if (baseItems == null)
+				throw new CategoryNotFoundException(type, subType, subTypeId);
 
-		public IEnumerable<ItemType> Get1HWeapons() => Get("Weapons", "One Handed Weapons");
+			return baseItems;
+		}
 
-		public IEnumerable<ItemType> Get2HWeapons() => Get("Weapons", "Two Handed Weapons");
+		private IEnumerable<Unique> GetUniquesGroup(int subTypeId, bool isSet)
+		{
+			var uniques = GetUniques(subTypeId, isSet);
+			return uniques;
+		}
 
-		public IEnumerable<ItemType> GetOffHands() => Get("Off-Hand", "Off-Hand");
+		private Item Get(string type, string subType, int subTypeId)
+		{
+			var baseItems = GetBaseItemsGroup(type, subType, subTypeId);
+			var uniques = GetUniquesGroup(subTypeId, false);
+			var sets = GetUniquesGroup(subTypeId, true);
 
-		public IEnumerable<ItemType> GetIdols() => Get("Misc", "Idols");
+			return new()
+			{
+				Base = baseItems,
+				Uniques = uniques,
+				Sets = sets
+			};
+		}
 
-		public ItemType GetHelmets() => Get("Armour", "Armour", 0);
+		public Item GetOneHandAxes() => Get("Weapons", "One Handed Weapons", 5);
 
-		public ItemType GetAmulets() => Get("Misc", "Accessories", 20);
+		public Item GetOneHandDaggers() => Get("Weapons", "One Handed Weapons", 6);
 
-		public ItemType GetArmors() => Get("Armour", "Armour", 1);
+		public Item GetOneHandMaces() => Get("Weapons", "One Handed Weapons", 7);
 
-		public ItemType GetRings() => Get("Misc", "Accessories", 21);
+		public Item GetOneHandScepters() => Get("Weapons", "One Handed Weapons", 8);
 
-		public ItemType GetBelts() => Get("Armour", "Armour", 2);
+		public Item GetOneHandSwords() => Get("Weapons", "One Handed Weapons", 9);
 
-		public ItemType GetGloves() => Get("Armour", "Armour", 4);
+		public Item GetWands() => Get("Weapons", "One Handed Weapons", 10);
 
-		public ItemType GetBoots() => Get("Armour", "Armour", 3);
+		public Item GetTwoHandAxes() => Get("Weapons", "Two Handed Weapons", 12);
 
-		public ItemType GetRelics() => Get("Misc", "Accessories", 22);
+		public Item GetTwoHandMaces() => Get("Weapons", "Two Handed Weapons", 13);
+
+		public Item GetTwoHandSpears() => Get("Weapons", "Two Handed Weapons", 14);
+
+		public Item GetStaffs() => Get("Weapons", "Two Handed Weapons", 15);
+
+		public Item GetTwoHandSwords() => Get("Weapons", "Two Handed Weapons", 16);
+
+		public Item GetBows() => Get("Weapons", "Two Handed Weapons", 23);
+
+		public Item GetQuivers() => Get("Off-Hand", "Off-Hand", 17);
+
+		public Item GetShields() => Get("Off-Hand", "Off-Hand", 18);
+
+		public Item GetCatalysts() => Get("Off-Hand", "Off-Hand", 19);
+
+		public Item GetSmallIdols() => Get("Misc", "Idols", 25);
+
+		public Item GetSmallLagonianIdols() => Get("Misc", "Idols", 26);
+
+		public Item GetHumbleIdols() => Get("Misc", "Idols", 27);
+
+		public Item GetStoutIdols() => Get("Misc", "Idols", 28);
+
+		public Item GetGrandIdols() => Get("Misc", "Idols", 29);
+
+		public Item GetLargeIdols() => Get("Misc", "Idols", 30);
+
+		public Item GetOrnateIdols() => Get("Misc", "Idols", 31);
+
+		public Item GetHugeIdols() => Get("Misc", "Idols", 31);
+
+		public Item GetAdornedIdols() => Get("Misc", "Idols", 33);
+
+		public Item GetHelmets() => Get("Armour", "Armour", 0);
+
+		public Item GetAmulets() => Get("Misc", "Accessories", 20);
+
+		public Item GetBody() => Get("Armour", "Armour", 1);
+
+		public Item GetRings() => Get("Misc", "Accessories", 21);
+
+		public Item GetBelts() => Get("Armour", "Armour", 2);
+
+		public Item GetGloves() => Get("Armour", "Armour", 4);
+
+		public Item GetBoots() => Get("Armour", "Armour", 3);
+
+		public Item GetRelics() => Get("Misc", "Accessories", 22);
 	}
 }
-
-#pragma warning restore CS8601

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using LastEpochSaveEditor.Controls;
+using System.Windows;
 using System.Windows.Input;
 
 namespace LastEpochSaveEditor
@@ -35,5 +36,11 @@ namespace LastEpochSaveEditor
 			if (e.LeftButton == MouseButtonState.Pressed)
 				DragMove();
 		}
-	}
+
+		private void OnDownloadClick(object sender, RoutedEventArgs e)
+		{
+			var popup = App.GetService<DownloadWindow>();
+			MainGrid.Children.Add(popup);
+        }
+    }
 }

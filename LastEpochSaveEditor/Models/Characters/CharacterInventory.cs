@@ -1,10 +1,14 @@
 ﻿using LastEpochSaveEditor.Models.Utils;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 
 namespace LastEpochSaveEditor.Models.Characters
 {
 	public class CharacterInventory
 	{
+		private readonly ILogger<CharacterInventory> _logger;
+
         public ItemDataInfo Helm { get; set; }
         public ItemDataInfo Body { get; set; }
         public ItemDataInfo Weapon { get; set; }
@@ -17,40 +21,49 @@ namespace LastEpochSaveEditor.Models.Characters
         public ItemDataInfo Amulet { get; set; }
         public ItemDataInfo Relic { get; set; }
 
-        public CharacterInventory(Dictionary<int, List<int>> collection)
+		public CharacterInventory(ILogger<CharacterInventory> logger) => _logger = logger;
+
+		public void Parse(Dictionary<int, List<int>> data)
         {
-            if (collection.ContainsKey(2))
-                Helm = ItemDataParser.ParseData(collection[2]);
+			Helm = Parse(data, 2, "Helm");
+			Body = Parse(data, 3, "Body");
+			Weapon = Parse(data, 4, "Weapon");
+			OffHand = Parse(data, 5, "Off-hand");
+			Gloves = Parse(data, 6, "Gloves");
+			Belt = Parse(data, 7, "Belt");
+			Boots = Parse(data, 8, "Boots");
+			LeftRing = Parse(data, 9, "Left ring");
+			RightRing = Parse(data, 10, "Right ring");
+			Amulet = Parse(data, 11, "Amulet");
+			Relic = Parse(data, 12, "Relic");
+		}
 
-			if (collection.ContainsKey(3))
-				Body = ItemDataParser.ParseData(collection[3]);
+		private ItemDataInfo Parse(Dictionary<int, List<int>> data, int index, string name)
+		{
+			var hasError = false;
+			var result = ItemDataInfo.Empty;
+			try
+			{
+				_logger.LogInformation($"Begin parse '{name}' data.");
 
-			if (collection.ContainsKey(4))
-				Weapon = ItemDataParser.ParseData(collection[4]);
+				if (data.ContainsKey(index))
+					result = ItemDataParser.ParseData(data[index]);
+			}
+			catch (Exception exception)
+			{
+				hasError = true;
+				_logger.LogError(exception, $"Can't parse '{name}' data.");
+			}
+			finally
+			{
+				if (hasError)
+					_logger.LogWarning($"Parsing '{name}' data ended with error.");
+				else
+					_logger.LogInformation($"Parsing '{name}' data ended successfully.");
 
-			if (collection.ContainsKey(5))
-				OffHand = ItemDataParser.ParseData(collection[5]);
-
-			if (collection.ContainsKey(6))
-				Gloves = ItemDataParser.ParseData(collection[6]);
-
-			if (collection.ContainsKey(7))
-				Belt = ItemDataParser.ParseData(collection[7]);
-
-			if (collection.ContainsKey(8))
-				Boots = ItemDataParser.ParseData(collection[8]);
-
-			if (collection.ContainsKey(9))
-				LeftRing = ItemDataParser.ParseData(collection[9]);
-
-			if (collection.ContainsKey(10))
-				RightRing = ItemDataParser.ParseData(collection[10]);
-
-			if (collection.ContainsKey(11))
-				Amulet = ItemDataParser.ParseData(collection[11]);
-
-			if (collection.ContainsKey(12))
-				Relic = ItemDataParser.ParseData(collection[12]);
-        }
-    }
+			}
+			
+			return result;
+		}
+	}
 }

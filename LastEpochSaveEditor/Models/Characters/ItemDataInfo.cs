@@ -19,5 +19,21 @@ namespace LastEpochSaveEditor.Models.Characters
         public IList<AffixInfo> Affixes { get; set; } = new List<AffixInfo>();
         public IList<AffixInfo> SealedAffixes { get; set; } = new List<AffixInfo>();
         public IList<AffixInfo> LegendaryAffixes { get; set; } = new List<AffixInfo>();
-    }
+
+        public static readonly ItemDataInfo Empty;
+
+		static ItemDataInfo() => Empty = new()
+		{
+			IsSeal = false,
+			UniqueOrSetId = -1,
+			Patch = -1,
+			Type = -1,
+			Id = -1,
+			LegendaryPotencial = -1,
+			Instability = -1,
+			ForgingPotencial = -1,
+			AffixCount = -1,
+			Quality = QualityType.None
+		};
+	}
 }
