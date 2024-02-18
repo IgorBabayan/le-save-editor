@@ -3,7 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using LastEpochSaveEditor.Models.Database;
 using LastEpochSaveEditor.Utils;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 
@@ -14,7 +16,7 @@ namespace LastEpochSaveEditor.ViewModels
 		private const string IMAGE_FOLDER_NAME = "Images";
 		private const string BASIC_FOLDER_NAME = "Basic";
 		private const string SET_FOLDER_NAME = "Set";
-		private const string UNIQUE_FOLDER_NAME = "Unique";
+		private const string UNIQUE_FOLDER_NAME = "Uniques";
 		
 		private readonly ILogger<DownloadViewModel> _logger;
 		private readonly IDB _db;
@@ -36,6 +38,9 @@ namespace LastEpochSaveEditor.ViewModels
 		[ObservableProperty]
 		private int _count;
 
+		[ObservableProperty]
+		private bool _canDownload;
+
 		#endregion
 
 		#region Command
@@ -44,6 +49,7 @@ namespace LastEpochSaveEditor.ViewModels
 		private void Dowload()
 		{
 			Count = _db.Count();
+			CanDownload = false;
 			PrepareFolders();
 			DownloadImages();
 		}
@@ -56,6 +62,7 @@ namespace LastEpochSaveEditor.ViewModels
 			_db = db;
 
 			Count = int.MaxValue;
+			CanDownload = true;
 		}
 
 		private void PrepareFolders()
@@ -66,51 +73,133 @@ namespace LastEpochSaveEditor.ViewModels
 
 			string rootPath;
 			string path;
+			string folderPath;
 			foreach (var item in _db.GetFolderStructure())
 			{
-				throw new System.NotImplementedException();
+				rootPath = Path.Combine(IMAGE_FOLDER_NAME, item.Key);
+				if (!Directory.Exists(rootPath))
+					Directory.CreateDirectory(rootPath);
+
+				foreach (var type in item.Value)
+				{
+					var name = type.Base.BaseTypeName;
+					path = Path.Combine(rootPath, name);
+					if (!Directory.Exists(path))
+						Directory.CreateDirectory(path);
+
+					folderPath = Path.Combine(path, BASIC_FOLDER_NAME);
+					Directory.CreateDirectory(folderPath);
+
+					folderPath = Path.Combine(path, UNIQUE_FOLDER_NAME);
+					Directory.CreateDirectory(folderPath);
+
+					folderPath = Path.Combine(path, SET_FOLDER_NAME);
+					Directory.CreateDirectory(folderPath);
+				}
 			}
-			//foreach (var folder in _db!.GetGroupNames())
-			//{
-			//	rootPath = Path.Combine(IMAGE_FOLDER_NAME, folder);
-			//	Directory.CreateDirectory(rootPath);
-
-			//	path = Path.Combine(rootPath, BASIC_FOLDER_NAME);
-			//	Directory.CreateDirectory(path);
-
-			//	path = Path.Combine(rootPath, UNIQUE_FOLDER_NAME);
-			//	Directory.CreateDirectory(path);
-
-			//	path = Path.Combine(rootPath, SET_FOLDER_NAME);
-			//	Directory.CreateDirectory(path);
-			//}
 		}
 
 		private void DownloadImages()
 		{
 			var allItems = _db.GetAll();
+			DownloadProgress = 0;
+			ConvertProgress = 0;
 
-			SetDownloadCount(allItems);
-			//DownloadHelmets();
+			var files = GetFilesForDownload(allItems);
+			var worker = new BackgroundWorker();
+			worker.WorkerReportsProgress = true;
+			worker.DoWork += async (s, e) =>
+			{
+				foreach (var item in files)
+				{
+					var filePath = item;
+					
+
+					foreach (var path in item.PathList)
+					{
+						try
+						{
+							DownloadProgressText = Path.GetFileName(path);
+							_logger.LogInformation($"Download: {DownloadProgressText}");
+
+							await FileDownloader.DownloadFile(item.Type, path);
+							DownloadProgress++;
+						}
+						catch (Exception exception)
+						{
+							_logger.LogError($"Failed to download: {DownloadProgressText}", exception);
+						}
+					}
+
+					/*foreach (var path in item.PathList)
+					{
+						try
+						{
+							ConvertProgressText = Path.GetFileName(path);
+							_logger.LogInformation($"Convert: {ConvertProgressText}");
+
+							await WebPConverter.Convert(path);
+							ConvertProgress++;
+						}
+						catch (Exception exception)
+						{
+							_logger.LogError($"Failed to convert: {ConvertProgressText}", exception);
+						}
+					}*/
+				}
+
+				CanDownload = true;
+			};
+			
+			worker.RunWorkerAsync();
 		}
 
-		/*private void DownloadHelmets()
+		private IEnumerable<FolderStructure> GetFilesForDownload(IEnumerable<Item> allItems)
 		{
-			var helmets = _db.GetHelmets();
-
-		}*/
-
-		private void SetDownloadCount(IEnumerable<Item> items)
-		{
-			if (items?.Any() == false)
+			string rootPath;
+			string path;
+			string folderPath;
+			string fileName;
+			var result = new List<FolderStructure>(3);
+			var baseItems = new List<Item>();
+			var uniques = new List<string>();
+			foreach (var item in _db.GetFolderStructure())
 			{
-				Count = 0;
-				return;
+				rootPath = Path.Combine(IMAGE_FOLDER_NAME, item.Key);
+				foreach (var type in item.Value)
+				{
+					var name = type.Base.BaseTypeName;
+					var pathList = new List<string>(type.Base.SubItems.Count + type.Uniques.Count() + type.Sets.Count());
+					path = Path.Combine(rootPath, name);
+
+					folderPath = Path.Combine(path, BASIC_FOLDER_NAME);
+					foreach (var baseItem in type.Base.SubItems)
+					{
+						fileName = baseItem.Name.ToLowerInvariant().Replace(" ", "_");
+						pathList.Add($"{Path.Combine(folderPath, fileName)}.webp");
+					}
+
+					folderPath = Path.Combine(path, UNIQUE_FOLDER_NAME);
+					foreach (var unique in type.Uniques)
+					{
+						fileName = unique.Name.ToLowerInvariant().Replace(" ", "_");
+						pathList.Add($"{Path.Combine(folderPath, fileName)}.webp");
+					}
+
+					folderPath = Path.Combine(path, SET_FOLDER_NAME);
+					foreach (var set in type.Sets)
+					{
+						fileName = set.Name.ToLowerInvariant().Replace(" ", "_");
+						pathList.Add($"{Path.Combine(folderPath, fileName)}.webp");
+					}
+
+					result.Add(new FolderStructure(name.ToLowerInvariant().Replace(" ", "_"), pathList));
+				}
 			}
 
-			Count = 0;
-			foreach (var item in items!)
-				Count += item.Base.SubItems.Count + item.Uniques.Count() + item.Sets.Count();
+			/*result.Add(new(BASIC_FOLDER_NAME, baseItems));
+			result.Add(new(UNIQUE_FOLDER_NAME, uni));*/
+			return result;
 		}
 	}
 }

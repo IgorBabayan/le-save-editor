@@ -18,7 +18,7 @@
 				</Grid.RowDefinitions>
 
 				<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
-					<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
+					<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close" IsEnabled="{Binding CanDownload}">
 						<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
 					</Button>
 				</StackPanel>
@@ -47,7 +47,7 @@
 					</StackPanel>
 
 					<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-						<Button Content="Download" Command="{Binding DowloadCommand}"></Button>
+						<Button Content="Download" Command="{Binding DowloadCommand}" IsEnabled="{Binding CanDownload}" Height="20"></Button>
 					</StackPanel>
 				</Grid>
 			</Grid>
