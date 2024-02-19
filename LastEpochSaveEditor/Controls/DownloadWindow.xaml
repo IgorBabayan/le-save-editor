@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
              mc:Ignorable="d" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
@@ -28,6 +27,7 @@
 						<RowDefinition />
 						<RowDefinition />
 						<RowDefinition />
+						<RowDefinition />
 					</Grid.RowDefinitions>
 
 					<StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Vertical">
@@ -46,7 +46,15 @@
 						</StackPanel>
 					</StackPanel>
 
-					<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+					<StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Vertical" Margin="0,5,0,0">
+						<ProgressBar Width="300" Height="15" Value="{Binding RemoveProgress}" Minimum="0" Maximum="{Binding Count}"></ProgressBar>
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="Remove: "></TextBlock>
+							<TextBlock Text="{Binding RemoveProgressText}"></TextBlock>
+						</StackPanel>
+					</StackPanel>
+
+					<StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
 						<Button Content="Download" Command="{Binding DowloadCommand}" IsEnabled="{Binding CanDownload}" Height="20"></Button>
 					</StackPanel>
 				</Grid>

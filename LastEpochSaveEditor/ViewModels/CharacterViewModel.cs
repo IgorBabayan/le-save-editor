@@ -124,81 +124,21 @@ namespace LastEpochSaveEditor.ViewModels
 			_messenger.RegisterAll(this);
         }
 
-        void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message)
-		{
-			ParseCharacter(message.Value);
-		}
+		void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 
-		private void ParseCharacter(CharacterInfo character)
+		private void ParseCharacter(CharacterInfo characterInfo)
 		{
-			ParseHelm(character);
-			ParseAmulet(character);
-			ParseWeapon(character);
-			ParseBody(character);
-			ParseOffHand(character);
-			ParseLeftRing(character);
-			ParseBelt(character);
-			ParseRightRing(character);
-			ParseGloves(character);
-			ParseBoots(character);
-			ParseRelics(character);
-		}
-
-		private void ParseHelm(CharacterInfo character)
-		{
-			var currentHelmet = character.Character.CharacterInventory.Helm;
-			//HelmIcon = currentHelmet == ItemDataInfo.Empty ? "/Images/Misc/Helm.png" : "";
-			HelmIcon = "/Images/Misc/Helm.png";
-		}
-
-		private void ParseAmulet(CharacterInfo character)
-		{
-			AmuletIcon = "/Images/Misc/Amulet.png";
-		}
-		
-		private void ParseWeapon(CharacterInfo character)
-		{
-			WeaponIcon = "/Images/Misc/Main Weapon.png";
-		}
-
-		private void ParseBody(CharacterInfo character)
-		{
-			BodyIcon = "/Images/Misc/Body.png";
-		}
-
-		private void ParseOffHand(CharacterInfo character)
-		{
-			OffHandIcon = "/Images/Misc/Off Hand.png";
-		}
-
-		private void ParseLeftRing(CharacterInfo character)
-		{
-			LeftRingIcon = "/Images/Misc/Left Ring.png";
-		}
-
-		private void ParseBelt(CharacterInfo character)
-		{
-			BeltIcon = "/Images/Misc/Belt.png";
-		}
-
-		private void ParseRightRing(CharacterInfo character)
-		{
-			RightRingIcon = "/Images/Misc/Right Ring.png";
-		}
-
-		private void ParseGloves(CharacterInfo character)
-		{
-			GlovesIcon = "/Images/Misc/Gloves.png";
-		}
-
-		private void ParseBoots(CharacterInfo character)
-		{
-			BootsIcon = "/Images/Misc/Boots.png";
-		}
-
-		private void ParseRelics(CharacterInfo character)
-		{
-			RelicIcon = "/Images/Misc/Relic.png";
+			HelmIcon = characterInfo.Character.CharacterInventory.Helm.Icon;
+			BodyIcon = characterInfo.Character.CharacterInventory.Body.Icon;
+			WeaponIcon = characterInfo.Character.CharacterInventory.Weapon.Icon;
+			OffHandIcon = characterInfo.Character.CharacterInventory.OffHand.Icon;
+			GlovesIcon = characterInfo.Character.CharacterInventory.Gloves.Icon;
+			BeltIcon = characterInfo.Character.CharacterInventory.Belt.Icon;
+			BootsIcon = characterInfo.Character.CharacterInventory.Boots.Icon;
+			LeftRingIcon = characterInfo.Character.CharacterInventory.LeftRing.Icon;
+			RightRingIcon = characterInfo.Character.CharacterInventory.RightRing.Icon;
+			AmuletIcon = characterInfo.Character.CharacterInventory.Amulet.Icon;
+			RelicIcon = characterInfo.Character.CharacterInventory.Relic.Icon;
 		}
 	}
 }

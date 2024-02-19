@@ -42,7 +42,7 @@ namespace LastEpochSaveEditor
 		private static void RegisterMisc(IServiceCollection services)
 		{
 			services.AddSingleton<IDB, DB>();
-			services.AddTransient<CharacterInventory>();
+			services.AddTransient<ICharacterInventory, CharacterInventory>();
 		}
 
 		private static void RegisterWindows(IServiceCollection services)
@@ -51,10 +51,6 @@ namespace LastEpochSaveEditor
 			{
 				DataContext = provider.GetRequiredService<MainViewModel>()
 			});
-			/*services.AddSingleton<DownloadWindow>(provider => new DownloadWindow
-			{
-				DataContext = provider.GetRequiredService<DownloadViewModel>()
-			});*/
 		}
 
 		private static void RegisterControls(IServiceCollection services)

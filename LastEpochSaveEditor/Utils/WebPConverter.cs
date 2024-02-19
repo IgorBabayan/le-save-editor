@@ -11,9 +11,9 @@ namespace LastEpochSaveEditor.Utils
 			if (!File.Exists(webpFilePath))
 				throw new FileNotFoundException($"File {Path.GetFileName(webpFilePath)} does not exists");
 
-			var rootPath = Path.GetPathRoot(webpFilePath);
+			var rootPath = Directory.GetParent(webpFilePath);
 			var fileName = Path.GetFileNameWithoutExtension(webpFilePath);
-			var fullPath = Path.Combine(rootPath!, $"{fileName}.png");
+			var fullPath = Path.Combine(rootPath!.FullName, $"{fileName}.png");
 			if (File.Exists(fullPath))
 				File.Delete(fullPath);
 

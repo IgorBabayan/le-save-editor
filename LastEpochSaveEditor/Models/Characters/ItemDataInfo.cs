@@ -19,6 +19,7 @@ namespace LastEpochSaveEditor.Models.Characters
         public IList<AffixInfo> Affixes { get; set; } = new List<AffixInfo>();
         public IList<AffixInfo> SealedAffixes { get; set; } = new List<AffixInfo>();
         public IList<AffixInfo> LegendaryAffixes { get; set; } = new List<AffixInfo>();
+        public string Icon { get; set; }
 
         public static readonly ItemDataInfo Empty;
 

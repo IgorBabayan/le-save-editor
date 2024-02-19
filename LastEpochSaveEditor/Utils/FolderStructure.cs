@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace LastEpochSaveEditor.Utils
+﻿namespace LastEpochSaveEditor.Utils
 {
-	internal record class FolderStructure(string Type, IEnumerable<string> PathList);
+	internal record class FolderStructure(string Type, string Path);
 }

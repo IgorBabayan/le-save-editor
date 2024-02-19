@@ -31,7 +31,7 @@ namespace LastEpochSaveEditor.Models
 		}
 
 		[JsonIgnore]
-		public CharacterInventory CharacterInventory { get; set; }
+		public ICharacterInventory CharacterInventory { get; set; }
 
 		public void ParseSavedData()
 		{
@@ -44,7 +44,7 @@ namespace LastEpochSaveEditor.Models
 		private void ParseCharacterInventory()
 		{
 			var data = SavedItems.Where(x => ItemDataParser.CharacterInventoryIds.Contains(x.ContainerID)).ToDictionary(x => x.ContainerID, x => x.Data);
-			CharacterInventory = App.GetService<CharacterInventory>();
+			CharacterInventory = App.GetService<ICharacterInventory>();
 			CharacterInventory.Parse(data);
 		}
 	}

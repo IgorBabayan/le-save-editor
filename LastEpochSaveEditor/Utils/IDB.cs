@@ -23,7 +23,7 @@ namespace LastEpochSaveEditor.Utils
 		Item GetBows();
 		Item GetTwoHandSwords();
 		Item GetAmulets();
-		Item GetBody();
+		Item GetBodies();
 		Item GetBelts();
 		Item GetBoots();
 		Item GetGloves();
@@ -54,7 +54,7 @@ namespace LastEpochSaveEditor.Utils
 
 		IEnumerable<Item> GetAccessories() => new[] { GetAmulets(), GetRings(), GetRelics() };
 
-		IEnumerable<Item> GetArmours() => new[] { GetHelmets(), GetBody(), GetBelts(), GetBoots(), GetGloves() };
+		IEnumerable<Item> GetArmours() => new[] { GetHelmets(), GetBodies(), GetBelts(), GetBoots(), GetGloves() };
 
 		IEnumerable<Item> GetOffHands() => new[] { GetQuivers(), GetShields(), GetCatalysts() };
 

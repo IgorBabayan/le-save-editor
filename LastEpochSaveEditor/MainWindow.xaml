@@ -47,7 +47,7 @@
 				</Grid>
 			</Border>
 
-			<ListView Grid.Row="1" Grid.Column="0" Margin="10" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter, Mode=TwoWay}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
+			<ListView Grid.Row="1" Grid.Column="0" Margin="10" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
 
 			<Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource ToolbarBackground}" Margin="10" CornerRadius="3">
 				<Grid>

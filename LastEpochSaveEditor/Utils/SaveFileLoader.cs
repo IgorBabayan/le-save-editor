@@ -9,33 +9,22 @@ namespace LastEpochSaveEditor.Utils
 {
 	internal static class SaveFileLoader
 	{
-		private const string EPOCH = "EPOCH";
-		private const string ADD_DATA = "AppData";
-		private const string LOCAL_LOW = "LocalLow";
-		private const string ELEVENTH_HOUR_GAMES = "Eleventh Hour Games";
-		private const string LAST_EPOCH = "Last Epoch";
-		private const string SAVES = "Saves";
-		private const string CHARACTER_SLOT = "1CHARACTERSLOT_BETA_";
-		private const string BAK = ".bak";
-		private const string TEMP = "_temp";
-		private const string BACKUP = "Backup";
-
 		public static IEnumerable<CharacterInfo> Load()
 		{
 			var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-			var path = Path.Combine(userFolder, ADD_DATA, LOCAL_LOW, ELEVENTH_HOUR_GAMES, LAST_EPOCH, SAVES);
+			var path = Path.Combine(userFolder, Consts.ADD_DATA, Consts.LOCAL_LOW, Consts.ELEVENTH_HOUR_GAMES, Consts.LAST_EPOCH, Consts.SAVES);
 
 			if (!Directory.Exists(path))
 				throw new DirectoryNotFoundException();
 
 			var files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly)
-				.Where(x => !x.EndsWith(BAK, StringComparison.OrdinalIgnoreCase) && !x.Contains(TEMP) && x.Contains(CHARACTER_SLOT));
+				.Where(x => !x.EndsWith(Consts.BAK, StringComparison.OrdinalIgnoreCase) && !x.Contains(Consts.TEMP) && x.Contains(Consts.CHARACTER_SLOT));
 			
 			var result = new List<CharacterInfo>(files.Count());
 			string content;
 			foreach ( var file in files)
 			{
-				content = File.ReadAllText(file).Remove(0, EPOCH.Length);
+				content = File.ReadAllText(file).Remove(0, Consts.EPOCH.Length);
 				var character = JsonConvert.DeserializeObject<Character>(content)!;
 				character.ParseSavedData();
 

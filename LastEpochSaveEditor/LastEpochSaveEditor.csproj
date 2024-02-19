@@ -46,6 +46,7 @@
     <None Remove="Images\Misc\HoverRight.png" />
     <None Remove="Images\Misc\HoverTab.png" />
     <None Remove="Images\Misc\Idols.png" />
+    <None Remove="Images\Misc\Item bacground.png" />
     <None Remove="Images\Misc\Left Ring.png" />
     <None Remove="Images\Misc\Left.png" />
     <None Remove="Images\Misc\Main Weapon.png" />
@@ -110,6 +111,7 @@
     <Resource Include="Images\Misc\HoverRight.png" />
     <Resource Include="Images\Misc\HoverTab.png" />
     <Resource Include="Images\Misc\Idols.png" />
+    <Resource Include="Images\Misc\Item bacground.png" />
     <Resource Include="Images\Misc\Left Ring.png" />
     <Resource Include="Images\Misc\Left.png" />
     <Resource Include="Images\Misc\ActiveLeft.png" />

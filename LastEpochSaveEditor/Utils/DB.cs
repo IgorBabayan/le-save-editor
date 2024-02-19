@@ -13,9 +13,6 @@ namespace LastEpochSaveEditor.Utils
 {
 	internal sealed class DB : IDB
 	{
-		private const string URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
-		private const string FILE_PATH = "data.json";
-
 		private Database Database { get; set; }
 
 		private async Task LoadImpl()
@@ -23,7 +20,7 @@ namespace LastEpochSaveEditor.Utils
 			string response;
 			using (var client = new HttpClient())
 			{
-				using (var request = await client.GetAsync(URL))
+				using (var request = await client.GetAsync(Consts.DATA_URL))
 					response = await request.Content.ReadAsStringAsync();
 			}
 
@@ -35,14 +32,14 @@ namespace LastEpochSaveEditor.Utils
 		public async Task Load()
 		{
 			await LoadImpl();
-			if (!File.Exists(FILE_PATH))
-				await File.WriteAllTextAsync(FILE_PATH, JsonConvert.SerializeObject(Database, Formatting.Indented));
+			if (!File.Exists(Consts.FILE_PATH))
+				await File.WriteAllTextAsync(Consts.FILE_PATH, JsonConvert.SerializeObject(Database, Formatting.Indented));
 		}
 
 		public async Task Reload()
 		{
-			if (File.Exists(FILE_PATH))
-				File.Delete(FILE_PATH);
+			if (File.Exists(Consts.FILE_PATH))
+				File.Delete(Consts.FILE_PATH);
 
 			await Load();
 		}
@@ -155,7 +152,7 @@ namespace LastEpochSaveEditor.Utils
 
 		public Item GetAmulets() => Get("Misc", "Accessories", 20);
 
-		public Item GetBody() => Get("Armour", "Armour", 1);
+		public Item GetBodies() => Get("Armour", "Armour", 1);
 
 		public Item GetRings() => Get("Misc", "Accessories", 21);
 
