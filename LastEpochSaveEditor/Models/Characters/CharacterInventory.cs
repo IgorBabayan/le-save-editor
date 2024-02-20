@@ -2,7 +2,6 @@
 using LastEpochSaveEditor.Models.Utils;
 using LastEpochSaveEditor.Utils;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp.ColorSpaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -70,6 +69,7 @@ namespace LastEpochSaveEditor.Models.Characters
 				case QualityType.Basic:
 				case QualityType.Magic:
 				case QualityType.Rare:
+				case QualityType.Exalted:
 					return Consts.BASIC_FOLDER_NAME;
 
 				case QualityType.Unique:
@@ -81,7 +81,7 @@ namespace LastEpochSaveEditor.Models.Characters
 			}
 		}
 
-		private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string defaultPath)
+		private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string defaultPath, string? baseTypeName = null)
 		{
 			var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.Id;
 			var name = item.FindName(itemInfo.Quality, id);
@@ -90,7 +90,23 @@ namespace LastEpochSaveEditor.Models.Characters
 				return defaultPath;
 
 			var quality = GetQualityFolderName(itemInfo.Quality);
-			return Path.GetFullPath($"{basePath}{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
+			if (string.IsNullOrEmpty(basePath))
+				return Path.GetFullPath($"{basePath}{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
+
+			return Path.GetFullPath($"{basePath}{baseTypeName}/{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
+		}
+
+		private static string GetIcon(IEnumerable<Item> items, ItemDataInfo itemInfo, string basePath, string defaultPath)
+		{
+			var path = string.Empty;
+			foreach (var item in items)
+			{
+				path = GetIcon(item, itemInfo, basePath, defaultPath, item.Base.BaseTypeName);
+				if (!string.Equals(path, defaultPath, StringComparison.OrdinalIgnoreCase))
+					break;
+			}
+
+			return path;
 		}
 
 		private void ParseHelm(IDictionary<int, List<int>> data)
@@ -108,13 +124,18 @@ namespace LastEpochSaveEditor.Models.Characters
 		private void ParseWeapon(IDictionary<int, List<int>> data)
 		{
 			Weapon = Parse(data, 4, "Weapon");
-			//Weapon.Icon = GetIcon(_db.GetBodies(), Body, Consts.BODY_ARMOR, Consts.DEFAULT_BODY_ARMOR);
+
+			var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Consts.ONE_HAND_WEAPONS, Consts.DEFAULT_WEAPON);
+			if (string.Equals(icon, Consts.DEFAULT_WEAPON, StringComparison.OrdinalIgnoreCase))
+				icon = GetIcon(_db.Get2HandWeapons(), Weapon, Consts.TWO_HAND_WEAPONS, Consts.DEFAULT_WEAPON);
+			
+			Weapon.Icon = icon;
 		}
 
 		private void ParseOffHand(IDictionary<int, List<int>> data)
 		{
 			OffHand = Parse(data, 5, "Off-hand");
-			//OffHand.Icon = GetIcon(_db.GetOffHands(), Body, Consts.BODY_ARMOR, Consts.DEFAULT_BODY_ARMOR);
+			OffHand.Icon = GetIcon(_db.GetOffHands(), OffHand, Consts.OFF_HAND, Consts.DEFAULT_OFF_HAND);
 		}
 
 		private void ParseGloves(IDictionary<int, List<int>> data)

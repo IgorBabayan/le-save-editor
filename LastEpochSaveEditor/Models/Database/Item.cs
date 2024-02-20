@@ -24,6 +24,7 @@ namespace LastEpochSaveEditor.Models.Database
 				case QualityType.Basic:
 				case QualityType.Magic:
 				case QualityType.Rare:
+				case QualityType.Exalted:
 					return Base.SubItems.FirstOrDefault(x => x.SubTypeID == id)?.Name;
 			}
 

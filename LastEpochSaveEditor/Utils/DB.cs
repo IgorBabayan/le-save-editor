@@ -32,14 +32,14 @@ namespace LastEpochSaveEditor.Utils
 		public async Task Load()
 		{
 			await LoadImpl();
-			if (!File.Exists(Consts.FILE_PATH))
-				await File.WriteAllTextAsync(Consts.FILE_PATH, JsonConvert.SerializeObject(Database, Formatting.Indented));
+			if (!File.Exists(Consts.DATA_FILE_PATH))
+				await File.WriteAllTextAsync(Consts.DATA_FILE_PATH, JsonConvert.SerializeObject(Database, Formatting.Indented));
 		}
 
 		public async Task Reload()
 		{
-			if (File.Exists(Consts.FILE_PATH))
-				File.Delete(Consts.FILE_PATH);
+			if (File.Exists(Consts.DATA_FILE_PATH))
+				File.Delete(Consts.DATA_FILE_PATH);
 
 			await Load();
 		}

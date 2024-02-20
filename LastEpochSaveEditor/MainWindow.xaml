@@ -27,7 +27,7 @@
 					<Label Content="Last Epoch save editor" Foreground="{DynamicResource ForegroundColor}" HorizontalAlignment="Center"></Label>
 					<StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
 						<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
-							<Button Click="OnDownloadClick" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item database">
+							<Button Click="OnDownloadClick" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item icons">
 								<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf019;"></TextBlock>
 							</Button>
 							<Button Command="{Binding ReloadDatabaseCommand}" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item database">

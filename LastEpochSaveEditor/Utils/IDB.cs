@@ -49,6 +49,8 @@ namespace LastEpochSaveEditor.Utils
 		IEnumerable<Item> Get2HandWeapons() => new[] { GetTwoHandAxes(), GetTwoHandMaces(), GetTwoHandSpears(), GetStaffs(),
 			GetTwoHandSwords(), GetBows() };
 
+		IEnumerable<Item> GetWeapons() => Get1HandWeapons().Union(Get2HandWeapons());
+
 		IEnumerable<Item> GetIdols() => new[] { GetSmallIdols(), GetSmallLagonianIdols(), GetHumbleIdols(), GetStoutIdols(), GetGrandIdols(),
 			GetLargeIdols(), GetOrnateIdols(), GetHugeIdols(), GetAdornedIdols() };
 
