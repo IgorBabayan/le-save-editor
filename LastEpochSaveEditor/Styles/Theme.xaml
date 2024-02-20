@@ -29,22 +29,4 @@
 
 	<Color x:Key="Pressed">#758C92</Color>
 	<SolidColorBrush x:Key="PressedColor" Color="{StaticResource Pressed}"></SolidColorBrush>
-
-	<Color x:Key="Set">#5ABA64</Color>
-	<SolidColorBrush x:Key="SetColor" Color="{StaticResource Set}"></SolidColorBrush>
-
-	<Color x:Key="Unique">#BC5C08</Color>
-	<SolidColorBrush x:Key="UniqueColor" Color="{StaticResource Unique}"></SolidColorBrush>
-
-	<Color x:Key="Legendary">#EB0F5D</Color>
-	<SolidColorBrush x:Key="LegendaryColor" Color="{StaticResource Legendary}"></SolidColorBrush>
-
-	<Color x:Key="Normal">#AAAAAA</Color>
-	<SolidColorBrush x:Key="NormalColor" Color="{StaticResource Normal}"></SolidColorBrush>
-
-	<Color x:Key="Magic">#36A3E2</Color>
-	<SolidColorBrush x:Key="MagicColor" Color="{StaticResource Magic}"></SolidColorBrush>
-
-	<Color x:Key="Rare">#E3D157</Color>
-	<SolidColorBrush x:Key="RareColor" Color="{StaticResource Rare}"></SolidColorBrush>
 </ResourceDictionary>

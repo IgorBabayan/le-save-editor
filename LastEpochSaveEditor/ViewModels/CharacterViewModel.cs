@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using LastEpochSaveEditor.Messages;
 using LastEpochSaveEditor.Models;
+using LastEpochSaveEditor.Models.Characters;
 using System.Windows.Media.Imaging;
 
 namespace LastEpochSaveEditor.ViewModels
@@ -45,6 +46,9 @@ namespace LastEpochSaveEditor.ViewModels
 
 		[ObservableProperty]
 		private BitmapImage _relicIcon;
+
+		[ObservableProperty]
+		private QualityType _helmQuality;
 
 		#endregion
 
@@ -129,6 +133,8 @@ namespace LastEpochSaveEditor.ViewModels
 		private void ParseCharacter(CharacterInfo characterInfo)
 		{
 			HelmIcon = characterInfo.Character.CharacterInventory.Helm.Icon;
+			HelmQuality = characterInfo.Character.CharacterInventory.Helm.Quality;
+
 			BodyIcon = characterInfo.Character.CharacterInventory.Body.Icon;
 			WeaponIcon = characterInfo.Character.CharacterInventory.Weapon.Icon;
 			OffHandIcon = characterInfo.Character.CharacterInventory.OffHand.Icon;

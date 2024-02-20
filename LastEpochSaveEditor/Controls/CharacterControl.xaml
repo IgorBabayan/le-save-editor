@@ -3,20 +3,28 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
-             mc:Ignorable="d" Background="{DynamicResource BackgroundColor}"
+			 xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+			 mc:Ignorable="d" Background="{DynamicResource BackgroundColor}"
              d:DesignHeight="450" d:DesignWidth="800">
+	<UserControl.Resources>
+		<converters:QualityToColorConverter x:Key="qualityToColorConverter"></converters:QualityToColorConverter>
+	</UserControl.Resources>
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="82"></RowDefinition>
+			<RowDefinition></RowDefinition>
 			<RowDefinition Height="152"></RowDefinition>
 			<RowDefinition Height="48"></RowDefinition>
 			<RowDefinition Height="82"></RowDefinition>
 		</Grid.RowDefinitions>
 
-		<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10">
-			<Button Style="{DynamicResource ImageButton}" Command="{Binding HelmPressedCommand}">
-				<Image Source="{Binding HelmIcon}" Width="80"></Image>
+		<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,10">
+			<Button Style="{DynamicResource ImageButton}" Command="{Binding HelmPressedCommand}" Background="{Binding HelmQuality, Converter={StaticResource qualityToColorConverter}}">
+				<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+					<Grid.Background>
+						<ImageBrush ImageSource="/Images/Misc/Item background.png" Stretch="Fill" Opacity="0.9" />
+					</Grid.Background>
+					<Image Source="{Binding HelmIcon}"></Image>
+				</Grid>
 			</Button>
 			<Button Style="{DynamicResource ImageButton}" Command="{Binding AmuletPressedCommand}">
 				<Image Source="{Binding AmuletIcon}" Width="54" Cursor="Hand"></Image>
