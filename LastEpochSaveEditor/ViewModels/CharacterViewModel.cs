@@ -50,6 +50,36 @@ namespace LastEpochSaveEditor.ViewModels
 		[ObservableProperty]
 		private QualityType _helmQuality;
 
+		[ObservableProperty]
+		private QualityType _amuletQuality;
+
+		[ObservableProperty]
+		private QualityType _weaponQuality;
+
+		[ObservableProperty]
+		private QualityType _bodyQuality;
+
+		[ObservableProperty]
+		private QualityType _offHandQuality;
+
+		[ObservableProperty]
+		private QualityType _leftRingQuality;
+
+		[ObservableProperty]
+		private QualityType _beltQuality;
+
+		[ObservableProperty]
+		private QualityType _rightRingQuality;
+
+		[ObservableProperty]
+		private QualityType _glovesQuality;
+
+		[ObservableProperty]
+		private QualityType _bootsQuality;
+
+		[ObservableProperty]
+		private QualityType _relicQuality;
+
 		#endregion
 
 		#region Commands
@@ -136,15 +166,34 @@ namespace LastEpochSaveEditor.ViewModels
 			HelmQuality = characterInfo.Character.CharacterInventory.Helm.Quality;
 
 			BodyIcon = characterInfo.Character.CharacterInventory.Body.Icon;
+			BodyQuality = characterInfo.Character.CharacterInventory.Body.Quality;
+
 			WeaponIcon = characterInfo.Character.CharacterInventory.Weapon.Icon;
+			WeaponQuality = characterInfo.Character.CharacterInventory.Weapon.Quality;
+
 			OffHandIcon = characterInfo.Character.CharacterInventory.OffHand.Icon;
+			OffHandQuality = characterInfo.Character.CharacterInventory.OffHand.Quality;
+
 			GlovesIcon = characterInfo.Character.CharacterInventory.Gloves.Icon;
+			GlovesQuality = characterInfo.Character.CharacterInventory.Gloves.Quality;
+
 			BeltIcon = characterInfo.Character.CharacterInventory.Belt.Icon;
+			BeltQuality = characterInfo.Character.CharacterInventory.Belt.Quality;
+
 			BootsIcon = characterInfo.Character.CharacterInventory.Boots.Icon;
+			BootsQuality = characterInfo.Character.CharacterInventory.Boots.Quality;
+
 			LeftRingIcon = characterInfo.Character.CharacterInventory.LeftRing.Icon;
+			LeftRingQuality = characterInfo.Character.CharacterInventory.LeftRing.Quality;
+
 			RightRingIcon = characterInfo.Character.CharacterInventory.RightRing.Icon;
+			RightRingQuality = characterInfo.Character.CharacterInventory.RightRing.Quality;
+
 			AmuletIcon = characterInfo.Character.CharacterInventory.Amulet.Icon;
+			AmuletQuality = characterInfo.Character.CharacterInventory.Amulet.Quality;
+
 			RelicIcon = characterInfo.Character.CharacterInventory.Relic.Icon;
+			RelicQuality = characterInfo.Character.CharacterInventory.Relic.Quality;
 		}
 	}
 }
