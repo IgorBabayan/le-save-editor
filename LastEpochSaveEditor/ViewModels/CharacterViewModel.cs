@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using LastEpochSaveEditor.Messages;
 using LastEpochSaveEditor.Models;
-using LastEpochSaveEditor.Models.Characters;
+using System.Windows.Media.Imaging;
 
 namespace LastEpochSaveEditor.ViewModels
 {
@@ -14,37 +14,37 @@ namespace LastEpochSaveEditor.ViewModels
 		#region Properties
 
 		[ObservableProperty]
-		private string _helmIcon;
+		private BitmapImage _helmIcon;
 
 		[ObservableProperty]
-		private string _amuletIcon;
+		private BitmapImage _amuletIcon;
 
 		[ObservableProperty]
-		private string _weaponIcon;
+		private BitmapImage _weaponIcon;
 
 		[ObservableProperty]
-		private string _bodyIcon;
+		private BitmapImage _bodyIcon;
 
 		[ObservableProperty]
-		private string _offHandIcon;
+		private BitmapImage _offHandIcon;
 
 		[ObservableProperty]
-		private string _leftRingIcon;
+		private BitmapImage _leftRingIcon;
 
 		[ObservableProperty]
-		private string _beltIcon;
+		private BitmapImage _beltIcon;
 
 		[ObservableProperty]
-		private string _rightRingIcon;
+		private BitmapImage _rightRingIcon;
 
 		[ObservableProperty]
-		private string _glovesIcon;
+		private BitmapImage _glovesIcon;
 
 		[ObservableProperty]
-		private string _bootsIcon;
+		private BitmapImage _bootsIcon;
 
 		[ObservableProperty]
-		private string _relicIcon;
+		private BitmapImage _relicIcon;
 
 		#endregion
 
@@ -116,13 +116,13 @@ namespace LastEpochSaveEditor.ViewModels
 			throw new System.NotImplementedException();
 		}
 
-        #endregion
+		#endregion
 
-        public CharacterViewModel(IMessenger messenger)
-        {
-            _messenger = messenger; ;
+		public CharacterViewModel(IMessenger messenger)
+		{
+			_messenger = messenger; ;
 			_messenger.RegisterAll(this);
-        }
+		}
 
 		void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 

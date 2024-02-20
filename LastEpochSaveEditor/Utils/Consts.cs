@@ -43,6 +43,10 @@
 		public const string DEFAULT_OFF_HAND = "/Images/Misc/Off Hand.png";
 		public const string DEFAULT_WEAPON = "/Images/Misc/Main Weapon.png";
 
+		public static string[] DefaultList = new[] { DEFAULT_HELMET, DEFAULT_BODY_ARMOR, DEFAULT_GLOVES, DEFAULT_GLOVES, DEFAULT_BOOTS,
+			DEFAULT_LEFT_RING, DEFAULT_RIGHT_RING, DEFAULT_AMULET, DEFAULT_RELIC, DEFAULT_OFF_HAND, DEFAULT_WEAPON, DEFAULT_BELTS
+		};
+
 		public const string DATA_URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
 		public const string DATA_FILE_PATH = "data.json";
 

@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Windows.Media.Imaging;
 
 namespace LastEpochSaveEditor.Models.Characters
 {
@@ -28,17 +30,17 @@ namespace LastEpochSaveEditor.Models.Characters
 		private readonly ILogger<CharacterInventory> _logger;
 		private readonly IDB _db;
 
-        public ItemDataInfo Helm { get; set; }
-        public ItemDataInfo Body { get; set; }
-        public ItemDataInfo Weapon { get; set; }
-        public ItemDataInfo OffHand { get; set; }
-        public ItemDataInfo Gloves { get; set; }
-        public ItemDataInfo Belt { get; set; }
-        public ItemDataInfo Boots { get; set; }
-        public ItemDataInfo LeftRing { get; set; }
-        public ItemDataInfo RightRing { get; set; }
-        public ItemDataInfo Amulet { get; set; }
-        public ItemDataInfo Relic { get; set; }
+		public ItemDataInfo Helm { get; set; }
+		public ItemDataInfo Body { get; set; }
+		public ItemDataInfo Weapon { get; set; }
+		public ItemDataInfo OffHand { get; set; }
+		public ItemDataInfo Gloves { get; set; }
+		public ItemDataInfo Belt { get; set; }
+		public ItemDataInfo Boots { get; set; }
+		public ItemDataInfo LeftRing { get; set; }
+		public ItemDataInfo RightRing { get; set; }
+		public ItemDataInfo Amulet { get; set; }
+		public ItemDataInfo Relic { get; set; }
 
 		public CharacterInventory(ILogger<CharacterInventory> logger)
 		{
@@ -47,7 +49,7 @@ namespace LastEpochSaveEditor.Models.Characters
 		}
 
 		public void Parse(IDictionary<int, List<int>> data)
-        {
+		{
 			ParseHelm(data);
 			ParseBody(data);
 			ParseWeapon(data);
@@ -59,6 +61,22 @@ namespace LastEpochSaveEditor.Models.Characters
 			ParseRightRing(data);
 			ParseAmulet(data);
 			ParseRelic(data);
+		}
+
+		private static BitmapImage CreateImage(string path)
+		{
+			var icon = new BitmapImage();
+			icon.BeginInit();
+			icon.CacheOption = BitmapCacheOption.OnLoad;
+			icon.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+			icon.DecodePixelWidth = 200;
+			if (Consts.DefaultList.Any(x => string.Equals(x, path, StringComparison.OrdinalIgnoreCase)))
+				icon.UriSource = new($"pack://application:,,,/LastEpochSaveEditor;component{path}", UriKind.RelativeOrAbsolute);
+			else
+				icon.UriSource = new(path);
+			icon.EndInit();
+
+			return icon;
 		}
 
 		private static string GetQualityFolderName(QualityType quality)
@@ -112,13 +130,13 @@ namespace LastEpochSaveEditor.Models.Characters
 		private void ParseHelm(IDictionary<int, List<int>> data)
 		{
 			Helm = Parse(data, 2, "Helm");
-			Helm.Icon = GetIcon(_db.GetHelmets(), Helm, Consts.HELMETS, Consts.DEFAULT_HELMET);
+			Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Consts.HELMETS, Consts.DEFAULT_HELMET));
 		}
 
 		private void ParseBody(IDictionary<int, List<int>> data)
 		{
 			Body = Parse(data, 3, "Body");
-			Body.Icon = GetIcon(_db.GetBodies(), Body, Consts.BODY_ARMOR, Consts.DEFAULT_BODY_ARMOR);
+			Body.Icon = CreateImage(GetIcon(_db.GetBodies(), Body, Consts.BODY_ARMOR, Consts.DEFAULT_BODY_ARMOR));
 		}
 
 		private void ParseWeapon(IDictionary<int, List<int>> data)
@@ -128,56 +146,56 @@ namespace LastEpochSaveEditor.Models.Characters
 			var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Consts.ONE_HAND_WEAPONS, Consts.DEFAULT_WEAPON);
 			if (string.Equals(icon, Consts.DEFAULT_WEAPON, StringComparison.OrdinalIgnoreCase))
 				icon = GetIcon(_db.Get2HandWeapons(), Weapon, Consts.TWO_HAND_WEAPONS, Consts.DEFAULT_WEAPON);
-			
-			Weapon.Icon = icon;
+
+			Weapon.Icon = CreateImage(icon);
 		}
 
 		private void ParseOffHand(IDictionary<int, List<int>> data)
 		{
 			OffHand = Parse(data, 5, "Off-hand");
-			OffHand.Icon = GetIcon(_db.GetOffHands(), OffHand, Consts.OFF_HAND, Consts.DEFAULT_OFF_HAND);
+			OffHand.Icon = CreateImage(GetIcon(_db.GetOffHands(), OffHand, Consts.OFF_HAND, Consts.DEFAULT_OFF_HAND));
 		}
 
 		private void ParseGloves(IDictionary<int, List<int>> data)
 		{
 			Gloves = Parse(data, 6, "Gloves");
-			Gloves.Icon = GetIcon(_db.GetGloves(), Gloves, Consts.GLOVES, Consts.DEFAULT_GLOVES);
+			Gloves.Icon = CreateImage(GetIcon(_db.GetGloves(), Gloves, Consts.GLOVES, Consts.DEFAULT_GLOVES));
 		}
 
 		private void ParseBelt(IDictionary<int, List<int>> data)
 		{
 			Belt = Parse(data, 7, "Belt");
-			Belt.Icon = GetIcon(_db.GetBelts(), Belt, Consts.BELTS, Consts.DEFAULT_BELTS);
+			Belt.Icon = CreateImage(GetIcon(_db.GetBelts(), Belt, Consts.BELTS, Consts.DEFAULT_BELTS));
 		}
 
 		private void ParseBoots(IDictionary<int, List<int>> data)
 		{
 			Boots = Parse(data, 8, "Boots");
-			Boots.Icon = GetIcon(_db.GetBoots(), Boots, Consts.BOOTS, Consts.DEFAULT_BOOTS);
+			Boots.Icon = CreateImage(GetIcon(_db.GetBoots(), Boots, Consts.BOOTS, Consts.DEFAULT_BOOTS));
 		}
 
 		private void ParseLeftRing(IDictionary<int, List<int>> data)
 		{
 			LeftRing = Parse(data, 9, "Left ring");
-			LeftRing.Icon = GetIcon(_db.GetRings(), LeftRing, Consts.RING, Consts.DEFAULT_LEFT_RING);
+			LeftRing.Icon = CreateImage(GetIcon(_db.GetRings(), LeftRing, Consts.RING, Consts.DEFAULT_LEFT_RING));
 		}
 
 		private void ParseRightRing(IDictionary<int, List<int>> data)
 		{
 			RightRing = Parse(data, 10, "Right ring");
-			RightRing.Icon = GetIcon(_db.GetRings(), RightRing, Consts.RING, Consts.DEFAULT_RIGHT_RING);
+			RightRing.Icon = CreateImage(GetIcon(_db.GetRings(), RightRing, Consts.RING, Consts.DEFAULT_RIGHT_RING));
 		}
 
 		private void ParseAmulet(IDictionary<int, List<int>> data)
 		{
 			Amulet = Parse(data, 11, "Amulet");
-			Amulet.Icon = GetIcon(_db.GetAmulets(), Amulet, Consts.AMULET, Consts.DEFAULT_AMULET);
+			Amulet.Icon = CreateImage(GetIcon(_db.GetAmulets(), Amulet, Consts.AMULET, Consts.DEFAULT_AMULET));
 		}
 
 		private void ParseRelic(IDictionary<int, List<int>> data)
 		{
 			Relic = Parse(data, 12, "Relic");
-			Relic.Icon = GetIcon(_db.GetRelics(), Relic, Consts.RELIC, Consts.DEFAULT_RELIC);
+			Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Consts.RELIC, Consts.DEFAULT_RELIC));
 		}
 
 		private ItemDataInfo Parse(IDictionary<int, List<int>> data, int index, string name)
@@ -203,7 +221,7 @@ namespace LastEpochSaveEditor.Models.Characters
 				else
 					_logger.LogInformation($"Parsing '{name}' data ended successfully.");
 			}
-			
+
 			return result;
 		}
 	}
