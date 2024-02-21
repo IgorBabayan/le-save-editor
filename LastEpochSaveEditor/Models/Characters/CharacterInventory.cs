@@ -60,8 +60,8 @@
 			icon.CacheOption = BitmapCacheOption.OnLoad;
 			icon.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
 			icon.DecodePixelWidth = 200;
-			if (Consts.DefaultList.Any(x => string.Equals(x, path, StringComparison.OrdinalIgnoreCase)))
-				icon.UriSource = new($"pack://application:,,,/LastEpochSaveEditor;component{path}", UriKind.RelativeOrAbsolute);
+			if (string.IsNullOrWhiteSpace(path))
+				icon.UriSource = new("pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/ItemBackground.png", UriKind.RelativeOrAbsolute);
 			else
 				icon.UriSource = new(path);
 			icon.EndInit();
@@ -89,13 +89,13 @@
 			}
 		}
 
-		private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string defaultPath, string? baseTypeName = null)
+		private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string? baseTypeName = null)
 		{
 			var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.Id;
 			var name = item.FindName(itemInfo.Quality, id);
 
 			if (string.IsNullOrEmpty(name))
-				return defaultPath;
+				return string.Empty;
 
 			var quality = GetQualityFolderName(itemInfo.Quality);
 			if (string.IsNullOrEmpty(basePath))
@@ -104,13 +104,13 @@
 			return Path.GetFullPath($"{basePath}{baseTypeName}/{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
 		}
 
-		private static string GetIcon(IEnumerable<Item> items, ItemDataInfo itemInfo, string basePath, string defaultPath)
+		private static string GetIcon(IEnumerable<Item> items, ItemDataInfo itemInfo, string basePath)
 		{
 			var path = string.Empty;
 			foreach (var item in items)
 			{
-				path = GetIcon(item, itemInfo, basePath, defaultPath, item.Base.BaseTypeName);
-				if (!string.Equals(path, defaultPath, StringComparison.OrdinalIgnoreCase))
+				path = GetIcon(item, itemInfo, basePath, item.Base.BaseTypeName);
+				if (!string.IsNullOrWhiteSpace(path))
 					break;
 			}
 
@@ -120,72 +120,94 @@
 		private void ParseHelm(IDictionary<int, List<int>> data)
 		{
 			Helm = Parse(data, 2, "Helm");
-			Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Consts.HELMETS, Consts.DEFAULT_HELMET));
+			Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Consts.HELMETS));
+			Helm.Width = 69;
+			Helm.Height = 69;
 		}
 
 		private void ParseBody(IDictionary<int, List<int>> data)
 		{
 			Body = Parse(data, 3, "Body");
-			Body.Icon = CreateImage(GetIcon(_db.GetBodies(), Body, Consts.BODY_ARMOR, Consts.DEFAULT_BODY_ARMOR));
+			Body.Icon = CreateImage(GetIcon(_db.GetBodies(), Body, Consts.BODY_ARMOR));
+			Body.Width = 93;
+			Body.Height = 139;
 		}
 
 		private void ParseWeapon(IDictionary<int, List<int>> data)
 		{
 			Weapon = Parse(data, 4, "Weapon");
 
-			var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Consts.ONE_HAND_WEAPONS, Consts.DEFAULT_WEAPON);
-			if (string.Equals(icon, Consts.DEFAULT_WEAPON, StringComparison.OrdinalIgnoreCase))
-				icon = GetIcon(_db.Get2HandWeapons(), Weapon, Consts.TWO_HAND_WEAPONS, Consts.DEFAULT_WEAPON);
+			var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Consts.ONE_HAND_WEAPONS);
+			if (string.IsNullOrWhiteSpace(icon))
+				icon = GetIcon(_db.Get2HandWeapons(), Weapon, Consts.TWO_HAND_WEAPONS);
 
 			Weapon.Icon = CreateImage(icon);
+			Weapon.Width = 69;
+			Weapon.Height = 139;
 		}
 
 		private void ParseOffHand(IDictionary<int, List<int>> data)
 		{
 			OffHand = Parse(data, 5, "Off-hand");
-			OffHand.Icon = CreateImage(GetIcon(_db.GetOffHands(), OffHand, Consts.OFF_HAND, Consts.DEFAULT_OFF_HAND));
+			OffHand.Icon = CreateImage(GetIcon(_db.GetOffHands(), OffHand, Consts.OFF_HAND));
+			OffHand.Width = 69;
+			OffHand.Height = 139;
 		}
 
 		private void ParseGloves(IDictionary<int, List<int>> data)
 		{
 			Gloves = Parse(data, 6, "Gloves");
-			Gloves.Icon = CreateImage(GetIcon(_db.GetGloves(), Gloves, Consts.GLOVES, Consts.DEFAULT_GLOVES));
+			Gloves.Icon = CreateImage(GetIcon(_db.GetGloves(), Gloves, Consts.GLOVES));
+			Gloves.Width = 69;
+			Gloves.Height = 69;
 		}
 
 		private void ParseBelt(IDictionary<int, List<int>> data)
 		{
 			Belt = Parse(data, 7, "Belt");
-			Belt.Icon = CreateImage(GetIcon(_db.GetBelts(), Belt, Consts.BELTS, Consts.DEFAULT_BELTS));
+			Belt.Icon = CreateImage(GetIcon(_db.GetBelts(), Belt, Consts.BELTS));
+			Belt.Width = 93;
+			Belt.Height = 39;
 		}
 
 		private void ParseBoots(IDictionary<int, List<int>> data)
 		{
 			Boots = Parse(data, 8, "Boots");
-			Boots.Icon = CreateImage(GetIcon(_db.GetBoots(), Boots, Consts.BOOTS, Consts.DEFAULT_BOOTS));
+			Boots.Icon = CreateImage(GetIcon(_db.GetBoots(), Boots, Consts.BOOTS));
+			Boots.Width = 69;
+			Boots.Height = 69;
 		}
 
 		private void ParseLeftRing(IDictionary<int, List<int>> data)
 		{
 			LeftRing = Parse(data, 9, "Left ring");
-			LeftRing.Icon = CreateImage(GetIcon(_db.GetRings(), LeftRing, Consts.RING, Consts.DEFAULT_LEFT_RING));
+			LeftRing.Icon = CreateImage(GetIcon(_db.GetRings(), LeftRing, Consts.RING));
+			LeftRing.Width = 39;
+			LeftRing.Height = 39;
 		}
 
 		private void ParseRightRing(IDictionary<int, List<int>> data)
 		{
 			RightRing = Parse(data, 10, "Right ring");
-			RightRing.Icon = CreateImage(GetIcon(_db.GetRings(), RightRing, Consts.RING, Consts.DEFAULT_RIGHT_RING));
+			RightRing.Icon = CreateImage(GetIcon(_db.GetRings(), RightRing, Consts.RING));
+			RightRing.Width = 39;
+			RightRing.Height = 39;
 		}
 
 		private void ParseAmulet(IDictionary<int, List<int>> data)
 		{
 			Amulet = Parse(data, 11, "Amulet");
-			Amulet.Icon = CreateImage(GetIcon(_db.GetAmulets(), Amulet, Consts.AMULET, Consts.DEFAULT_AMULET));
+			Amulet.Icon = CreateImage(GetIcon(_db.GetAmulets(), Amulet, Consts.AMULET));
+			Amulet.Width = 43;
+			Amulet.Height = 43;
 		}
 
 		private void ParseRelic(IDictionary<int, List<int>> data)
 		{
 			Relic = Parse(data, 12, "Relic");
-			Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Consts.RELIC, Consts.DEFAULT_RELIC));
+			Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Consts.RELIC));
+			Relic.Width = 69;
+			Relic.Height = 69;
 		}
 
 		private ItemDataInfo Parse(IDictionary<int, List<int>> data, int index, string name)

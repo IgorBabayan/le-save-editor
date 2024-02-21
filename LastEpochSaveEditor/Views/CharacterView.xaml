@@ -26,79 +26,79 @@
 
 		<!-- Helm -->
 		<UniformGrid Grid.Row="0" Grid.Column="1">
-			<controls:ItemButton Quality="{Binding HelmQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding HelmPressedCommand}" IconWidth="69" IconHeight="69"
-								 Icon="{Binding HelmIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Helm.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+								 Command="{Binding HelmPressedCommand}" IconWidth="{Binding Helm.Width}" IconHeight="{Binding Helm.Height}"
+								 Icon="{Binding Helm.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Amulet -->
 		<UniformGrid Grid.Row="0" Grid.Column="2" Margin="10">
-			<controls:ItemButton Quality="{Binding AmuletQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding AmuletPressedCommand}" IconWidth="43" IconHeight="43" HorizontalAlignment="Left"
-								 Icon="{Binding AmuletIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Amulet.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left"
+								 Command="{Binding AmuletPressedCommand}" IconWidth="{Binding Amulet.Width}" IconHeight="{Binding Amulet.Height}"
+								 Icon="{Binding Amulet.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Weapon -->
 		<UniformGrid Grid.Row="1" Grid.Column="0" Margin="10">
-			<controls:ItemButton Quality="{Binding WeaponQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding WeaponPressedCommand}" IconWidth="69" IconHeight="139" HorizontalAlignment="Right"
-								 Icon="{Binding WeaponIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Weapon.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right"
+								 Command="{Binding WeaponPressedCommand}" IconWidth="{Binding Weapon.Width}" IconHeight="{Binding Weapon.Height}"
+								 Icon="{Binding Weapon.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Body -->
 		<UniformGrid Grid.Row="1" Grid.Column="1">
-			<controls:ItemButton Quality="{Binding BodyQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding BodyPressedCommand}" IconWidth="93" IconHeight="139"
-								 Icon="{Binding BodyIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Body.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+								 Command="{Binding BodyPressedCommand}" IconWidth="{Binding Body.Width}" IconHeight="{Binding Body.Height}"
+								 Icon="{Binding Body.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 
 		<!-- Off-hand -->
 		<UniformGrid Grid.Row="1" Grid.Column="2" Margin="10">
-			<controls:ItemButton Quality="{Binding OffHandQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding OffHandPressedCommand}" IconWidth="69" IconHeight="139" HorizontalAlignment="Left"
-								 Icon="{Binding OffHandIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding OffHand.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left"
+								 Command="{Binding OffHandPressedCommand}" IconWidth="{Binding OffHand.Width}" IconHeight="{Binding OffHand.Height}"
+								 Icon="{Binding OffHand.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Left ring -->
 		<UniformGrid Grid.Row="2" Grid.Column="0" Margin="10">
-			<controls:ItemButton Quality="{Binding LeftRingQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding LeftRingPressedCommand}" IconWidth="39" IconHeight="39" HorizontalAlignment="Right"
-								 Icon="{Binding LeftRingIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding LeftRing.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right"
+								 Command="{Binding LeftRingPressedCommand}" IconWidth="{Binding LeftRing.Width}" IconHeight="{Binding LeftRing.Height}"
+								 Icon="{Binding LeftRing.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 
 		<!-- Belt -->
 		<UniformGrid Grid.Row="2" Grid.Column="1" Margin="10">
-			<controls:ItemButton Quality="{Binding BeltQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding BeltPressedCommand}" IconWidth="93" IconHeight="39"
-								 Icon="{Binding BeltIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Belt.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+								 Command="{Binding BeltPressedCommand}" IconWidth="{Binding Belt.Width}" IconHeight="{Binding Belt.Height}"
+								 Icon="{Binding Belt.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Right ring -->
 		<UniformGrid Grid.Row="2" Grid.Column="2" Margin="10">
-			<controls:ItemButton Quality="{Binding RightRingQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding RightRingPressedCommand}" IconWidth="39" IconHeight="39" HorizontalAlignment="Left"
-								 Icon="{Binding RightRingIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding RightRing.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left"
+								 Command="{Binding RightRingPressedCommand}" IconWidth="{Binding RightRing.Width}" IconHeight="{Binding RightRing.Height}"
+								 Icon="{Binding RightRing.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Gloves -->
 		<UniformGrid Grid.Row="3" Grid.Column="0" Margin="10">
-			<controls:ItemButton Quality="{Binding GlovesQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding GlovesPressedCommand}" IconWidth="69" IconHeight="69" HorizontalAlignment="Right"
-								 Icon="{Binding GlovesIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Gloves.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right"
+								 Command="{Binding GlovesPressedCommand}" IconWidth="{Binding Gloves.Width}" IconHeight="{Binding Gloves.Height}"
+								 Icon="{Binding Gloves.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Boots -->
 		<UniformGrid Grid.Row="3" Grid.Column="1" Margin="10">
-			<controls:ItemButton Quality="{Binding BootsQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding BootsPressedCommand}" IconWidth="69" IconHeight="69"
-								 Icon="{Binding BootsIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Boots.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+								 Command="{Binding BootsPressedCommand}" IconWidth="{Binding Boots.Width}" IconHeight="{Binding Boots.Height}"
+								 Icon="{Binding Boots.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 		
 		<!-- Relic -->
 		<UniformGrid Grid.Row="3" Grid.Column="2" Margin="10">
-			<controls:ItemButton Quality="{Binding RelicQuality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 Command="{Binding RelicPressedCommand}" IconWidth="69" IconHeight="69" HorizontalAlignment="Left"
-								 Icon="{Binding RelicIcon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+			<controls:ItemButton Quality="{Binding Relic.Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left"
+								 Command="{Binding RelicPressedCommand}" IconWidth="{Binding Relic.Width}" IconHeight="{Binding Relic.Height}"
+								 Icon="{Binding Relic.Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
 		</UniformGrid>
 	</Grid>
 </UserControl>

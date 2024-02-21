@@ -81,6 +81,13 @@
 		[RelayCommand]
 		private async Task ReloadDatabase() => await _db.Reload();
 
+		[RelayCommand]
+		private void Download()
+		{
+			var popup = App.GetService<DownloadWindow>();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(popup);
+		}
+
 		#endregion
 
 		#region Partials

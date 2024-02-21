@@ -18,8 +18,10 @@
 		public IList<AffixInfo> SealedAffixes { get; set; } = new List<AffixInfo>();
 		public IList<AffixInfo> LegendaryAffixes { get; set; } = new List<AffixInfo>();
 		public BitmapImage Icon { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
 
-		public static readonly ItemDataInfo Empty;
+        public static readonly ItemDataInfo Empty;
 
 		static ItemDataInfo() => Empty = new()
 		{

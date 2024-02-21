@@ -49,6 +49,7 @@
 			services.AddSingleton<BlessingView>();
 			services.AddSingleton<IdolView>();
 			services.AddTransient<DownloadWindow>();
+			services.AddTransient<ItemWindow>();
 		}
 
 		private static void RegisterViewModels(IServiceCollection services)
@@ -59,6 +60,7 @@
 			services.AddSingleton<CharacterStashViewModel>();
 			services.AddSingleton<BlessingViewModel>();
 			services.AddSingleton<IdolViewModel>();
+			services.AddSingleton<ItemViewModel>();
 		}
 
 		private static void RegisterMessenger(IServiceCollection services)

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+			 xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
              xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
 			 Width="{Binding IconWidth}"
 			 Height="{Binding IconHeight}"
@@ -14,14 +15,7 @@
 	<Button DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ItemButton}}}"
 			Style="{DynamicResource ImageButton}" Command="{Binding Command}"
 			Background="{Binding Quality, Converter={StaticResource qualityToColorConverter}}">
-		<Border BorderThickness="1" BorderBrush="{Binding Quality, Converter={StaticResource qualityToColorConverter}}">
-			<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-				<Grid.Background>
-					<ImageBrush ImageSource="/Images/Misc/Item background.png" Stretch="UniformToFill" Opacity="0.9" />
-				</Grid.Background>
-				<Image Source="{Binding Icon}" Stretch="Uniform" Margin="{Binding IconMargin}"
-					   Width="{Binding IconWidth}" Height="{Binding IconHeight}" Cursor="Hand"></Image>
-			</Grid>
-		</Border>
+		<controls:ItemImage Quality="{Binding Quality}" Source="{Binding Icon}"
+							IconHeight="{Binding IconHeight}" IconWidth="{Binding IconWidth}"></controls:ItemImage>
 	</Button>
 </UserControl>

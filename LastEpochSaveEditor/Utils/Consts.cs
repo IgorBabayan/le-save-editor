@@ -31,22 +31,6 @@
 		public const string RELIC = "Images/Accessories/Relic/";
 		public const string OFF_HAND = "Images/Off Hands/";
 
-		public const string DEFAULT_HELMET = "/Images/Misc/Helm.png";
-		public const string DEFAULT_BODY_ARMOR = "/Images/Misc/Body.png";
-		public const string DEFAULT_GLOVES = "/Images/Misc/Gloves.png";
-		public const string DEFAULT_BELTS = "/Images/Misc/Belt.png";
-		public const string DEFAULT_BOOTS = "/Images/Misc/Boots.png";
-		public const string DEFAULT_LEFT_RING = "/Images/Misc/Left Ring.png";
-		public const string DEFAULT_RIGHT_RING = "/Images/Misc/Right Ring.png";
-		public const string DEFAULT_AMULET = "/Images/Misc/Amulet.png";
-		public const string DEFAULT_RELIC = "/Images/Misc/Relic.png";
-		public const string DEFAULT_OFF_HAND = "/Images/Misc/Off Hand.png";
-		public const string DEFAULT_WEAPON = "/Images/Misc/Main Weapon.png";
-
-		public static string[] DefaultList = new[] { DEFAULT_HELMET, DEFAULT_BODY_ARMOR, DEFAULT_GLOVES, DEFAULT_GLOVES, DEFAULT_BOOTS,
-			DEFAULT_LEFT_RING, DEFAULT_RIGHT_RING, DEFAULT_AMULET, DEFAULT_RELIC, DEFAULT_OFF_HAND, DEFAULT_WEAPON, DEFAULT_BELTS
-		};
-
 		public const string DATA_URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
 		public const string DATA_FILE_PATH = "data.json";
 

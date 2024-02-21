@@ -3,74 +3,44 @@
 	internal partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 	{
 		private readonly IMessenger _messenger;
+		private readonly UserControl _itemInfoWindow;
+
+		private Character _selectedCharacter;
 
 		#region Properties
 
 		[ObservableProperty]
-		private BitmapImage _helmIcon;
+		private ItemDataInfo _helm;
 
 		[ObservableProperty]
-		private BitmapImage _amuletIcon;
+		private ItemDataInfo _amulet;
 
 		[ObservableProperty]
-		private BitmapImage _weaponIcon;
+		private ItemDataInfo _weapon;
 
 		[ObservableProperty]
-		private BitmapImage _bodyIcon;
+		private ItemDataInfo _body;
 
 		[ObservableProperty]
-		private BitmapImage _offHandIcon;
+		private ItemDataInfo _offHand;
 
 		[ObservableProperty]
-		private BitmapImage _leftRingIcon;
+		private ItemDataInfo _leftRing;
 
 		[ObservableProperty]
-		private BitmapImage _beltIcon;
+		private ItemDataInfo _belt;
 
 		[ObservableProperty]
-		private BitmapImage _rightRingIcon;
+		private ItemDataInfo _rightRing;
 
 		[ObservableProperty]
-		private BitmapImage _glovesIcon;
+		private ItemDataInfo _gloves;
 
 		[ObservableProperty]
-		private BitmapImage _bootsIcon;
+		private ItemDataInfo _boots;
 
 		[ObservableProperty]
-		private BitmapImage _relicIcon;
-
-		[ObservableProperty]
-		private QualityType _helmQuality;
-
-		[ObservableProperty]
-		private QualityType _amuletQuality;
-
-		[ObservableProperty]
-		private QualityType _weaponQuality;
-
-		[ObservableProperty]
-		private QualityType _bodyQuality;
-
-		[ObservableProperty]
-		private QualityType _offHandQuality;
-
-		[ObservableProperty]
-		private QualityType _leftRingQuality;
-
-		[ObservableProperty]
-		private QualityType _beltQuality;
-
-		[ObservableProperty]
-		private QualityType _rightRingQuality;
-
-		[ObservableProperty]
-		private QualityType _glovesQuality;
-
-		[ObservableProperty]
-		private QualityType _bootsQuality;
-
-		[ObservableProperty]
-		private QualityType _relicQuality;
+		private ItemDataInfo _relic;
 
 		#endregion
 
@@ -79,67 +49,78 @@
 		[RelayCommand]
 		private void HelmPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Helm));
 		}
 
 		[RelayCommand]
 		private void AmuletPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Amulet));
 		}
 
 		[RelayCommand]
 		private void WeaponPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Weapon));
 		}
 
 		[RelayCommand]
 		private void BodyPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Body));
 		}
 
 		[RelayCommand]
 		private void OffHandPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.OffHand));
 		}
 
 		[RelayCommand]
 		private void LeftRingPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.LeftRing));
 		}
 
 		[RelayCommand]
 		private void BeltPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Belt));
 		}
 
 		[RelayCommand]
 		private void RightRingPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.RightRing));
 		}
 
 		[RelayCommand]
 		private void GlovesPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Gloves));
 		}
 
 		[RelayCommand]
 		private void BootsPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Boots));
 		}
 
 		[RelayCommand]
 		private void RelicPressed()
 		{
-			throw new System.NotImplementedException();
+			((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+			_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Relic));
 		}
 
 		#endregion
@@ -148,44 +129,27 @@
 		{
 			_messenger = messenger; ;
 			_messenger.RegisterAll(this);
+
+			_itemInfoWindow = App.GetService<ItemWindow>();
 		}
 
 		void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 
 		private void ParseCharacter(CharacterInfo characterInfo)
 		{
-			HelmIcon = characterInfo.Character.CharacterInventory.Helm.Icon;
-			HelmQuality = characterInfo.Character.CharacterInventory.Helm.Quality;
+			_selectedCharacter = characterInfo.Character;
 
-			BodyIcon = characterInfo.Character.CharacterInventory.Body.Icon;
-			BodyQuality = characterInfo.Character.CharacterInventory.Body.Quality;
-
-			WeaponIcon = characterInfo.Character.CharacterInventory.Weapon.Icon;
-			WeaponQuality = characterInfo.Character.CharacterInventory.Weapon.Quality;
-
-			OffHandIcon = characterInfo.Character.CharacterInventory.OffHand.Icon;
-			OffHandQuality = characterInfo.Character.CharacterInventory.OffHand.Quality;
-
-			GlovesIcon = characterInfo.Character.CharacterInventory.Gloves.Icon;
-			GlovesQuality = characterInfo.Character.CharacterInventory.Gloves.Quality;
-
-			BeltIcon = characterInfo.Character.CharacterInventory.Belt.Icon;
-			BeltQuality = characterInfo.Character.CharacterInventory.Belt.Quality;
-
-			BootsIcon = characterInfo.Character.CharacterInventory.Boots.Icon;
-			BootsQuality = characterInfo.Character.CharacterInventory.Boots.Quality;
-
-			LeftRingIcon = characterInfo.Character.CharacterInventory.LeftRing.Icon;
-			LeftRingQuality = characterInfo.Character.CharacterInventory.LeftRing.Quality;
-
-			RightRingIcon = characterInfo.Character.CharacterInventory.RightRing.Icon;
-			RightRingQuality = characterInfo.Character.CharacterInventory.RightRing.Quality;
-
-			AmuletIcon = characterInfo.Character.CharacterInventory.Amulet.Icon;
-			AmuletQuality = characterInfo.Character.CharacterInventory.Amulet.Quality;
-
-			RelicIcon = characterInfo.Character.CharacterInventory.Relic.Icon;
-			RelicQuality = characterInfo.Character.CharacterInventory.Relic.Quality;
+			Helm = _selectedCharacter.CharacterInventory.Helm;
+			Body = _selectedCharacter.CharacterInventory.Body;
+			Weapon = _selectedCharacter.CharacterInventory.Weapon;
+			OffHand = _selectedCharacter.CharacterInventory.OffHand;
+			Gloves = _selectedCharacter.CharacterInventory.Gloves;
+			Belt = _selectedCharacter.CharacterInventory.Belt;
+			Boots = _selectedCharacter.CharacterInventory.Boots;
+			LeftRing = _selectedCharacter.CharacterInventory.LeftRing;
+			RightRing = _selectedCharacter.CharacterInventory.RightRing;
+			Amulet = _selectedCharacter.CharacterInventory.Amulet;
+			Relic = _selectedCharacter.CharacterInventory.Relic;
 		}
 	}
 }
