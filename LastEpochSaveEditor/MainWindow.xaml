@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
 		xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+		xmlns:views="clr-namespace:LastEpochSaveEditor.Views"
 		mc:Ignorable="d" Background="{DynamicResource BackgroundColor}" ResizeMode="NoResize"
         Height="470" Width="800" WindowStartupLocation="CenterScreen" WindowStyle="None">
 	<Window.Resources>
@@ -64,10 +64,10 @@
 					</StackPanel>
 
 					<Grid Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-						<controls:CharacterControl Visibility="{Binding CharacterControlVisiblity, Mode=TwoWay}"></controls:CharacterControl>
-						<controls:CharacterStashControl Visibility="{Binding CharacterStashControlVisiblity, Mode=TwoWay}"></controls:CharacterStashControl>
-						<controls:BlessingControl Visibility="{Binding BlessingsControlVisibility, Mode=TwoWay}"></controls:BlessingControl>
-						<controls:IdolControl Visibility="{Binding IdolsControlVisibility, Mode=TwoWay}"></controls:IdolControl>
+						<views:CharacterView Visibility="{Binding CharacterControlVisiblity, Mode=TwoWay}"></views:CharacterView>
+						<views:CharacterStashView Visibility="{Binding CharacterStashControlVisiblity, Mode=TwoWay}"></views:CharacterStashView>
+						<views:BlessingView Visibility="{Binding BlessingsControlVisibility, Mode=TwoWay}"></views:BlessingView>
+						<views:IdolView Visibility="{Binding IdolsControlVisibility, Mode=TwoWay}"></views:IdolView>
 					</Grid>
 				</Grid>
 			</Border>

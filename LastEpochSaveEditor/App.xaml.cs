@@ -1,8 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
-using LastEpochSaveEditor.Controls;
 using LastEpochSaveEditor.Models.Characters;
+using LastEpochSaveEditor.Popups;
 using LastEpochSaveEditor.Utils;
 using LastEpochSaveEditor.ViewModels;
+using LastEpochSaveEditor.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -55,10 +56,10 @@ namespace LastEpochSaveEditor
 
 		private static void RegisterControls(IServiceCollection services)
 		{
-			services.AddSingleton<CharacterControl>();
-			services.AddSingleton<CharacterStashControl>();
-			services.AddSingleton<BlessingControl>();
-			services.AddSingleton<IdolControl>();
+			services.AddSingleton<CharacterView>();
+			services.AddSingleton<CharacterStashView>();
+			services.AddSingleton<BlessingView>();
+			services.AddSingleton<IdolView>();
 			services.AddTransient<DownloadWindow>();
 		}
 

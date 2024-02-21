@@ -1,7 +1,7 @@
 ﻿using LastEpochSaveEditor.ViewModels;
 using System.Windows.Controls;
 
-namespace LastEpochSaveEditor.Controls
+namespace LastEpochSaveEditor.Popups
 {
 	public partial class DownloadWindow : UserControl
 	{
