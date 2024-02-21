@@ -10,7 +10,7 @@
 	<UserControl.Resources>
 		<converters:QualityToColorConverter x:Key="qualityToColorConverter"></converters:QualityToColorConverter>
 	</UserControl.Resources>
-	<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10" ShowGridLines="True">
+	<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />

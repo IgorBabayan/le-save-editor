@@ -10,62 +10,64 @@
 	<Window.Resources>
 		<converters:VisibilityToBoolConverter x:Key="visibilityToBoolConverter"></converters:VisibilityToBoolConverter>
 	</Window.Resources>
-	<Grid x:Name="MainGrid">
-		<Grid>
-			<Grid.RowDefinitions>
-				<RowDefinition Height="30" />
-				<RowDefinition />
-			</Grid.RowDefinitions>
+	<Border BorderThickness="2" BorderBrush="Aqua">
+		<Grid x:Name="MainGrid">
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="30" />
+					<RowDefinition />
+				</Grid.RowDefinitions>
 
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="40*" />
-				<ColumnDefinition Width="60*" />
-			</Grid.ColumnDefinitions>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="40*" />
+					<ColumnDefinition Width="60*" />
+				</Grid.ColumnDefinitions>
 
-			<Border Grid.Row="0" Grid.ColumnSpan="2" Background="{DynamicResource BackgroundColor}" MouseDown="OnMouseDown">
-				<Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
-					<Label Content="Last Epoch save editor" Foreground="{DynamicResource ForegroundColor}" HorizontalAlignment="Center"></Label>
-					<StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-						<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
-							<Button Click="OnDownloadClick" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item icons">
-								<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf019;"></TextBlock>
+				<Border Grid.Row="0" Grid.ColumnSpan="2" Background="{DynamicResource BackgroundColor}" MouseDown="OnMouseDown">
+					<Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
+						<Label Content="Last Epoch save editor" Foreground="{DynamicResource ForegroundColor}" HorizontalAlignment="Center"></Label>
+						<StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+							<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
+								<Button Click="OnDownloadClick" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item icons">
+									<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf019;"></TextBlock>
+								</Button>
+								<Button Command="{Binding ReloadDatabaseCommand}" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item database">
+									<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf021;"></TextBlock>
+								</Button>
+							</StackPanel>
+							<Button Click="OnMinimizeClick" Width="44" Height="32">
+								<TextBlock FontFamily="{DynamicResource FontAwesomeRegular}" Text="&#xf2d1;" ToolTip="Minimize"></TextBlock>
 							</Button>
-							<Button Command="{Binding ReloadDatabaseCommand}" Width="44" Height="32" Style="{DynamicResource ReloadButton}" ToolTip="Download item database">
-								<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf021;"></TextBlock>
+							<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
+								<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
 							</Button>
 						</StackPanel>
-						<Button Click="OnMinimizeClick" Width="44" Height="32">
-							<TextBlock FontFamily="{DynamicResource FontAwesomeRegular}" Text="&#xf2d1;" ToolTip="Minimize"></TextBlock>
-						</Button>
-						<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
-							<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
-						</Button>
-					</StackPanel>
-				</Grid>
-			</Border>
+					</Grid>
+				</Border>
 
-			<ListView Grid.Row="1" Grid.Column="0" Margin="10" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
+				<ListView Grid.Row="1" Grid.Column="0" Margin="10" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
 
-			<Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource ToolbarBackground}" Margin="10" CornerRadius="3">
-				<Grid>
-					<Grid.RowDefinitions>
-						<RowDefinition Height="30"/>
-						<RowDefinition/>
-					</Grid.RowDefinitions>
+				<Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource ToolbarBackground}" Margin="10" CornerRadius="3">
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="30"/>
+							<RowDefinition/>
+						</Grid.RowDefinitions>
 
-					<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-						<Button Content="Character" Style="{DynamicResource LeftTabButton}" Command="{Binding CharacterTabActivePressedCommand}" IsDefault="{Binding CharacterControlVisiblity, Converter={StaticResource visibilityToBoolConverter}}"></Button>
-						<Button Content="Character stash" Style="{DynamicResource TabButton}" Command="{Binding CharacterStashTabActivePressedCommand}" IsDefault="{Binding CharacterStashControlVisiblity, Converter={StaticResource visibilityToBoolConverter}}"></Button>
-						<Button Content="Blessings" Style="{DynamicResource TabButton}" Command="{Binding BlessingsTabActivePressedCommand}" IsDefault="{Binding BlessingsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
-						<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
-					</StackPanel>
+						<StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+							<Button Content="Character" Style="{DynamicResource LeftTabButton}" Command="{Binding CharacterTabActivePressedCommand}" IsDefault="{Binding CharacterControlVisiblity, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+							<Button Content="Character stash" Style="{DynamicResource TabButton}" Command="{Binding CharacterStashTabActivePressedCommand}" IsDefault="{Binding CharacterStashControlVisiblity, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+							<Button Content="Blessings" Style="{DynamicResource TabButton}" Command="{Binding BlessingsTabActivePressedCommand}" IsDefault="{Binding BlessingsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+							<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
+						</StackPanel>
 
-					<views:CharacterView Grid.Row="1" Visibility="{Binding CharacterControlVisiblity, Mode=TwoWay}"></views:CharacterView>
-					<views:CharacterStashView Grid.Row="1" Visibility="{Binding CharacterStashControlVisiblity, Mode=TwoWay}"></views:CharacterStashView>
-					<views:BlessingView Grid.Row="1" Visibility="{Binding BlessingsControlVisibility, Mode=TwoWay}"></views:BlessingView>
-					<views:IdolView Grid.Row="1" Visibility="{Binding IdolsControlVisibility, Mode=TwoWay}"></views:IdolView>
-				</Grid>
-			</Border>
+						<views:CharacterView Grid.Row="1" Visibility="{Binding CharacterControlVisiblity, Mode=TwoWay}"></views:CharacterView>
+						<views:CharacterStashView Grid.Row="1" Visibility="{Binding CharacterStashControlVisiblity, Mode=TwoWay}"></views:CharacterStashView>
+						<views:BlessingView Grid.Row="1" Visibility="{Binding BlessingsControlVisibility, Mode=TwoWay}"></views:BlessingView>
+						<views:IdolView Grid.Row="1" Visibility="{Binding IdolsControlVisibility, Mode=TwoWay}"></views:IdolView>
+					</Grid>
+				</Border>
+			</Grid>
 		</Grid>
-	</Grid>
+	</Border>
 </Window>
