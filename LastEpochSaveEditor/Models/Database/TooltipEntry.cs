@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace LastEpochSaveEditor.Models.Database
+﻿namespace LastEpochSaveEditor.Models.Database
 {
 	internal class TooltipEntry
     {

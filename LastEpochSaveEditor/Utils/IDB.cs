@@ -1,9 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Database;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace LastEpochSaveEditor.Utils
+﻿namespace LastEpochSaveEditor.Utils
 {
 	internal interface IDB
 	{

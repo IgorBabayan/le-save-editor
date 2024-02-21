@@ -1,15 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using LastEpochSaveEditor.Messages;
-using LastEpochSaveEditor.Models;
-using LastEpochSaveEditor.Utils;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-
-namespace LastEpochSaveEditor.ViewModels
+﻿namespace LastEpochSaveEditor.ViewModels
 {
 	internal partial class MainViewModel : ObservableObject
 	{

@@ -1,8 +1,4 @@
-﻿using SixLabors.ImageSharp;
-using System.IO;
-using System.Threading.Tasks;
-
-namespace LastEpochSaveEditor.Utils
+﻿namespace LastEpochSaveEditor.Utils
 {
 	internal class WebPConverter
 	{
@@ -21,7 +17,7 @@ namespace LastEpochSaveEditor.Utils
 			{
 				using (var pngFileStream = new FileStream(fullPath, FileMode.Create))
 				{
-					using (var image = Image.Load(webpFileStream))
+					using (var image = SixLabors.ImageSharp.Image.Load(webpFileStream))
 						await image.SaveAsPngAsync(pngFileStream);
 				}
 			}

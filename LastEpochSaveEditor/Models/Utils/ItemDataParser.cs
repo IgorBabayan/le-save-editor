@@ -1,7 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Characters;
-using System.Collections.Generic;
-
-namespace LastEpochSaveEditor.Models.Utils
+﻿namespace LastEpochSaveEditor.Models.Utils
 {
 	internal static class ItemDataParser
 	{

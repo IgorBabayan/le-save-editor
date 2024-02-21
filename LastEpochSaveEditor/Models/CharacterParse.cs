@@ -1,11 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Characters;
-using LastEpochSaveEditor.Models.Utils;
-using System;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-
-namespace LastEpochSaveEditor.Models
+﻿namespace LastEpochSaveEditor.Models
 {
 	public partial class Character
 	{

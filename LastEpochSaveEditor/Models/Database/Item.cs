@@ -1,8 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Characters;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace LastEpochSaveEditor.Models.Database
+﻿namespace LastEpochSaveEditor.Models.Database
 {
 	internal class Item
 	{

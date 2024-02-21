@@ -1,16 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
-using LastEpochSaveEditor.Models.Characters;
-using LastEpochSaveEditor.Popups;
-using LastEpochSaveEditor.Utils;
-using LastEpochSaveEditor.ViewModels;
-using LastEpochSaveEditor.Views;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Serilog;
-using Serilog.Events;
-using System.Windows;
-
-namespace LastEpochSaveEditor
+﻿namespace LastEpochSaveEditor
 {
 	public partial class App : Application
 	{

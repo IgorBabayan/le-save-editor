@@ -1,12 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using LastEpochSaveEditor.Messages;
-using LastEpochSaveEditor.Models;
-using LastEpochSaveEditor.Models.Characters;
-using System.Windows.Media.Imaging;
-
-namespace LastEpochSaveEditor.ViewModels
+﻿namespace LastEpochSaveEditor.ViewModels
 {
 	internal partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 	{

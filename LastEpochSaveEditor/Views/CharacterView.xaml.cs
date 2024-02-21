@@ -1,7 +1,4 @@
-﻿using LastEpochSaveEditor.ViewModels;
-using System.Windows.Controls;
-
-namespace LastEpochSaveEditor.Views
+﻿namespace LastEpochSaveEditor.Views
 {
 	public partial class CharacterView : UserControl
 	{

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LastEpochSaveEditor.Utils.Exceptions
+﻿namespace LastEpochSaveEditor.Utils.Exceptions
 {
 	internal class CategoryNotFoundException : Exception
     {

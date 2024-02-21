@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-
-namespace LastEpochSaveEditor.Models.Characters
+﻿namespace LastEpochSaveEditor.Models.Characters
 {
-    public class ClassInfo
+	public class ClassInfo
     {
 		private static Dictionary<int, List<ClassInfo>> _classes = new Dictionary<int, List<ClassInfo>>
 		{

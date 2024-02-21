@@ -36,7 +36,6 @@
 						<Image Source="{Binding HelmIcon}" Stretch="Uniform" Width="69" Height="69" Cursor="Hand"></Image>
 					</Grid>
 				</Border>
-				
 			</Button>
 
 			<!-- Amulet -->

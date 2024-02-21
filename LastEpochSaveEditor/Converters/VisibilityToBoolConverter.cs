@@ -1,9 +1,4 @@
-﻿using System.Windows.Data;
-using System;
-using System.Windows;
-using System.Globalization;
-
-namespace LastEpochSaveEditor.Converters
+﻿namespace LastEpochSaveEditor.Converters
 {
 	[ValueConversion(typeof(Visibility), typeof(bool))]
 	internal class VisibilityToBoolConverter : IValueConverter

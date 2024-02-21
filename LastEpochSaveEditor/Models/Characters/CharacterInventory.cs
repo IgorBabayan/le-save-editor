@@ -1,14 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Database;
-using LastEpochSaveEditor.Models.Utils;
-using LastEpochSaveEditor.Utils;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Windows.Media.Imaging;
-
-namespace LastEpochSaveEditor.Models.Characters
+﻿namespace LastEpochSaveEditor.Models.Characters
 {
 	public interface ICharacterInventory : IInventory
 	{

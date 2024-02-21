@@ -1,10 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Characters;
-using System;
-using System.Globalization;
-using System.Windows.Data;
-using System.Windows.Media;
-
-namespace LastEpochSaveEditor.Converters
+﻿namespace LastEpochSaveEditor.Converters
 {
 	[ValueConversion(typeof(QualityType), typeof(Brush))]
 	internal class QualityToColorConverter : IValueConverter
@@ -39,9 +33,6 @@ namespace LastEpochSaveEditor.Converters
 			throw new ArgumentException("Unexpected quality type", nameof(value));
 		}
 
-		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-		{
-			throw new NotImplementedException();
-		}
+		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
 	}
 }

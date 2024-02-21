@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Windows.Media.Imaging;
-
-namespace LastEpochSaveEditor.Models.Characters
+﻿namespace LastEpochSaveEditor.Models.Characters
 {
 	public class ItemDataInfo
 	{

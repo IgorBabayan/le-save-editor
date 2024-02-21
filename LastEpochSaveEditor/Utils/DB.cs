@@ -1,15 +1,4 @@
-﻿using LastEpochSaveEditor.Models.Database;
-using LastEpochSaveEditor.Utils.Exceptions;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace LastEpochSaveEditor.Utils
+﻿namespace LastEpochSaveEditor.Utils
 {
 	internal sealed class DB : IDB
 	{

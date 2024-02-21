@@ -1,7 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Messaging.Messages;
-using LastEpochSaveEditor.Models;
-
-namespace LastEpochSaveEditor.Messages
+﻿namespace LastEpochSaveEditor.Messages
 {
 	internal class SelectedCharacterChangedMessage : ValueChangedMessage<CharacterInfo>
 	{
