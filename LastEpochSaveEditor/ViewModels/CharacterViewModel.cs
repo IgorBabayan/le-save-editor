@@ -89,7 +89,7 @@
 		}
 
 		[RelayCommand]
-		private void OneHandPressed()
+		private void WeaponPressed()
 		{
 			throw new System.NotImplementedException();
 		}

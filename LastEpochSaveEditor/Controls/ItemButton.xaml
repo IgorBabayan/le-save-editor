@@ -5,19 +5,22 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
              xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+			 Width="{Binding IconWidth}"
+			 Height="{Binding IconHeight}"
+             mc:Ignorable="d">
 	<UserControl.Resources>
 		<converters:QualityToColorConverter x:Key="qualityToColorConverter"></converters:QualityToColorConverter>
 	</UserControl.Resources>
-	<Button Style="{DynamicResource ImageButton}" Command="{Binding HelmPressedCommand}" VerticalAlignment="Center"
-		Background="{Binding HelmQuality, Converter={StaticResource qualityToColorConverter}}" HorizontalAlignment="Center">
-		<Border BorderThickness="1" BorderBrush="{Binding HelmQuality, Converter={StaticResource qualityToColorConverter}}">
+	<Button DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ItemButton}}}"
+			Style="{DynamicResource ImageButton}" Command="{Binding Command}"
+			Background="{Binding Quality, Converter={StaticResource qualityToColorConverter}}">
+		<Border BorderThickness="1" BorderBrush="{Binding Quality, Converter={StaticResource qualityToColorConverter}}">
 			<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 				<Grid.Background>
-					<ImageBrush ImageSource="/Images/Misc/Item background.png" Stretch="Fill" Opacity="0.9" />
+					<ImageBrush ImageSource="/Images/Misc/Item background.png" Stretch="UniformToFill" Opacity="0.9" />
 				</Grid.Background>
-				<Image Source="{Binding HelmIcon}" Stretch="Uniform" Width="69" Height="69" Cursor="Hand"></Image>
+				<Image Source="{Binding Icon}" Stretch="Uniform" Margin="{Binding IconMargin}"
+					   Width="{Binding IconWidth}" Height="{Binding IconHeight}" Cursor="Hand"></Image>
 			</Grid>
 		</Border>
 	</Button>

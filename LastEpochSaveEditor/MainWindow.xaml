@@ -4,8 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
-		xmlns:views="clr-namespace:LastEpochSaveEditor.Views"
-		mc:Ignorable="d" Background="{DynamicResource BackgroundColor}" ResizeMode="NoResize"
+		xmlns:views="clr-namespace:LastEpochSaveEditor.Views" ResizeMode="NoResize"
+		mc:Ignorable="d" Background="{DynamicResource BackgroundColor}"
         Height="470" Width="800" WindowStartupLocation="CenterScreen" WindowStyle="None">
 	<Window.Resources>
 		<converters:VisibilityToBoolConverter x:Key="visibilityToBoolConverter"></converters:VisibilityToBoolConverter>
@@ -37,9 +37,6 @@
 						<Button Click="OnMinimizeClick" Width="44" Height="32">
 							<TextBlock FontFamily="{DynamicResource FontAwesomeRegular}" Text="&#xf2d1;" ToolTip="Minimize"></TextBlock>
 						</Button>
-						<Button Click="OnMaximizedClick" Width="44" Height="32" x:Name="minimizeButton" ToolTip="Maximize">
-							<TextBlock FontFamily="{DynamicResource FontAwesomeRegular}" Text="&#xf2d0;"></TextBlock>
-						</Button>
 						<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
 							<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
 						</Button>
@@ -63,12 +60,10 @@
 						<Button Content="Idols" Style="{DynamicResource RightTabButton}" Command="{Binding IdolsTabActivePressedCommand}" IsDefault="{Binding IdolsControlVisibility, Converter={StaticResource visibilityToBoolConverter}}"></Button>
 					</StackPanel>
 
-					<Grid Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-						<views:CharacterView Visibility="{Binding CharacterControlVisiblity, Mode=TwoWay}"></views:CharacterView>
-						<views:CharacterStashView Visibility="{Binding CharacterStashControlVisiblity, Mode=TwoWay}"></views:CharacterStashView>
-						<views:BlessingView Visibility="{Binding BlessingsControlVisibility, Mode=TwoWay}"></views:BlessingView>
-						<views:IdolView Visibility="{Binding IdolsControlVisibility, Mode=TwoWay}"></views:IdolView>
-					</Grid>
+					<views:CharacterView Grid.Row="1" Visibility="{Binding CharacterControlVisiblity, Mode=TwoWay}"></views:CharacterView>
+					<views:CharacterStashView Grid.Row="1" Visibility="{Binding CharacterStashControlVisiblity, Mode=TwoWay}"></views:CharacterStashView>
+					<views:BlessingView Grid.Row="1" Visibility="{Binding BlessingsControlVisibility, Mode=TwoWay}"></views:BlessingView>
+					<views:IdolView Grid.Row="1" Visibility="{Binding IdolsControlVisibility, Mode=TwoWay}"></views:IdolView>
 				</Grid>
 			</Border>
 		</Grid>
