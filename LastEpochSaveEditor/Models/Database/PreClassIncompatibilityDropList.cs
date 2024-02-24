@@ -1,8 +1,7 @@
-﻿namespace LastEpochSaveEditor.Models.Database
+﻿namespace LastEpochSaveEditor.Models.Database;
+
+internal class PreClassIncompatibilityDropList
 {
-	internal class PreClassIncompatibilityDropList
-	{
-		[JsonProperty("list")]
-		public List<int> List { get; set; }
-	}
+	[JsonProperty("list")]
+	public List<int> List { get; set; }
 }

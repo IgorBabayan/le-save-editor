@@ -1,11 +1,10 @@
-﻿namespace LastEpochSaveEditor.Models.Database
-{
-	internal class SpecificRerollChance
-	{
-		[JsonProperty("equipmentType")]
-		public int EquipmentType { get; set; }
+﻿namespace LastEpochSaveEditor.Models.Database;
 
-		[JsonProperty("rerollChance")]
-		public double RerollChance { get; set; }
-	}
+internal class SpecificRerollChance
+{
+	[JsonProperty("equipmentType")]
+	public int EquipmentType { get; set; }
+
+	[JsonProperty("rerollChance")]
+	public double RerollChance { get; set; }
 }

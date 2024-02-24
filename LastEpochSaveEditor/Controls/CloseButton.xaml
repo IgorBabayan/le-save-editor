@@ -1,0 +1,23 @@
+﻿<Button x:Class="LastEpochSaveEditor.Controls.CloseButton"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Style="{StaticResource CloseButtonStyle}"
+        x:Name="MainButton">
+    <Popup Width="70" HorizontalOffset="-12" PlacementTarget="{Binding ElementName=MainButton}"
+           IsOpen="{Binding ElementName=MainButton, Path=IsMouseOver, Mode=OneWay}"
+           Style="{StaticResource ClosePopupStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+						
+            <Path Grid.Row="0" Style="{StaticResource ArrowPathDown}" />
+						
+            <Border Grid.Row="1" Style="{StaticResource PopupBorder}">
+                <TextBlock Text="{Binding PopupTooltip}" DataContext="{Binding ElementName=MainButton}"
+                           Style="{StaticResource PopupText}" />
+            </Border>
+        </Grid>
+    </Popup>
+</Button>

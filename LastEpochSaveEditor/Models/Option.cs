@@ -1,22 +1,19 @@
-﻿using Newtonsoft.Json;
+﻿namespace LastEpochSaveEditor.Models;
 
-namespace LastEpochSaveEditor.Models
+public class Option
 {
-	public class Option
-	{
-		[JsonProperty("zoneIndex")]
-		public int ZoneIndex { get; set; }
+	[JsonProperty("zoneIndex")]
+	public int ZoneIndex { get; set; }
 
-		[JsonProperty("modIndex")]
-		public int ModIndex { get; set; }
+	[JsonProperty("modIndex")]
+	public int ModIndex { get; set; }
 
-		[JsonProperty("duration")]
-		public int Duration { get; set; }
+	[JsonProperty("duration")]
+	public int Duration { get; set; }
 
-		[JsonProperty("effectModifier")]
-		public double EffectModifier { get; set; }
+	[JsonProperty("effectModifier")]
+	public double EffectModifier { get; set; }
 
-		[JsonProperty("questEcho")]
-		public bool QuestEcho { get; set; }
-	}
+	[JsonProperty("questEcho")]
+	public bool QuestEcho { get; set; }
 }

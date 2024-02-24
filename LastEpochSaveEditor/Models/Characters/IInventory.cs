@@ -1,7 +1,6 @@
-﻿namespace LastEpochSaveEditor.Models.Characters
+﻿namespace LastEpochSaveEditor.Models.Characters;
+
+public interface IInventory
 {
-	public interface IInventory
-	{
-		void Parse(IDictionary<int, List<int>> data);
-	}
+	void Parse(IDictionary<int, List<int>> data);
 }

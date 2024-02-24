@@ -1,17 +1,16 @@
-﻿namespace LastEpochSaveEditor.Models.Database
+﻿namespace LastEpochSaveEditor.Models.Database;
+
+internal class Database
 {
-	internal class Database
-	{
-		[JsonProperty("itemTypes")]
-		public List<ItemType> ItemTypes { get; set; }
+	[JsonProperty("itemTypes")]
+	public List<ItemType> ItemTypes { get; set; }
 
-		[JsonProperty("affixes")]
-		public List<Affix> Affixes { get; set; }
+	[JsonProperty("affixes")]
+	public List<Affix> Affixes { get; set; }
 
-		[JsonProperty("itemCategories")]
-		public List<ItemCategory> ItemCategories { get; set; }
+	[JsonProperty("itemCategories")]
+	public List<ItemCategory> ItemCategories { get; set; }
 
-		[JsonProperty("uniques")]
-		public List<Unique> Uniques { get; set; }
-	}
+	[JsonProperty("uniques")]
+	public List<Unique> Uniques { get; set; }
 }

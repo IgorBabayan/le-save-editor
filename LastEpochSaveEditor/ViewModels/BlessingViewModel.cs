@@ -1,6 +1,5 @@
-﻿namespace LastEpochSaveEditor.ViewModels
+﻿namespace LastEpochSaveEditor.ViewModels;
+
+public partial class BlessingViewModel : ObservableObject
 {
-	public partial class BlessingViewModel : ObservableObject
-	{
-    }
 }

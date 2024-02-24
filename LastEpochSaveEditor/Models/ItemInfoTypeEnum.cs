@@ -1,18 +1,17 @@
-﻿namespace LastEpochSaveEditor.Models
+﻿namespace LastEpochSaveEditor.Models;
+
+internal enum ItemInfoTypeEnum
 {
-	internal enum ItemInfoTypeEnum
-    {
-        Helm,
-        Amulet,
-        Weapon,
-        Body,
-        OffHand,
-        LeftRing,
-        Belt,
-        RightRing,
-        Gloves,
-        Boots,
-        Relic,
-        All
-    }
+    Helm,
+    Amulet,
+    Weapon,
+    Body,
+    OffHand,
+    LeftRing,
+    Belt,
+    RightRing,
+    Gloves,
+    Boots,
+    Relic,
+    All
 }

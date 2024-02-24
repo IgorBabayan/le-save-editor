@@ -1,11 +1,10 @@
-﻿namespace LastEpochSaveEditor.Views
+﻿namespace LastEpochSaveEditor.Views;
+
+public partial class CharacterView
 {
-	public partial class CharacterView : UserControl
+	public CharacterView()
 	{
-		public CharacterView()
-		{
-			InitializeComponent();
-			DataContext = App.GetService<CharacterViewModel>();
-		}
+		InitializeComponent();
+		DataContext = App.GetService<CharacterViewModel>();
 	}
 }

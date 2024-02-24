@@ -1,8 +1,6 @@
-﻿namespace LastEpochSaveEditor.Models.Characters
+﻿namespace LastEpochSaveEditor.Models.Characters;
+
+public record AffixInfo(int Tier, int Id, int Value)
 {
-	public record class AffixInfo(int Tier, int Id, int Value)
-	{
-        public string Name { get; set; }
-    }
-	
+	public string Name { get; set; }
 }

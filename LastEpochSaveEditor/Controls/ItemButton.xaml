@@ -6,8 +6,6 @@
 			 xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
 			 xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
              xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
-			 Width="{Binding IconWidth}"
-			 Height="{Binding IconHeight}"
              mc:Ignorable="d">
 	<UserControl.Resources>
 		<converters:QualityToColorConverter x:Key="qualityToColorConverter"></converters:QualityToColorConverter>

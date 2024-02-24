@@ -1,11 +1,10 @@
-﻿namespace LastEpochSaveEditor.Models.Database
-{
-	internal class Category
-	{
-		[JsonProperty("name")]
-		public string Name { get; set; }
+﻿namespace LastEpochSaveEditor.Models.Database;
 
-		[JsonProperty("entries")]
-		public List<int> Entries { get; set; }
-	}
+internal class Category
+{
+	[JsonProperty("name")]
+	public string Name { get; set; }
+
+	[JsonProperty("entries")]
+	public List<int> Entries { get; set; }
 }

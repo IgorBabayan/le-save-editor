@@ -2,6 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Style TargetType="ListViewItem" x:Key="CharacterCard">
 		<Setter Property="Background" Value="Transparent"></Setter>
+		<Setter Property="Cursor" Value="Hand"></Setter>
+		<Setter Property="Foreground" Value="White"></Setter>
 
 		<Setter Property="Template">
 			<Setter.Value>
@@ -14,14 +16,14 @@
 							</Grid.ColumnDefinitions>
 
 							<StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
-								<TextBlock Text="{Binding CharacterName}" FontWeight="ExtraBold" Foreground="{DynamicResource ForegroundColor}"></TextBlock>
+								<TextBlock Text="{Binding CharacterName}" FontWeight="ExtraBold" Foreground="{DynamicResource CharacterForegroundColor}"></TextBlock>
 								<StackPanel Orientation="Horizontal">
 									<TextBlock Text="lv. " Foreground="{DynamicResource TertiaryColor}"></TextBlock>
-									<TextBlock Text="{Binding Level}" Foreground="{DynamicResource TertiaryColor}"></TextBlock>
+									<TextBlock Text="{Binding Level}"></TextBlock>
 									<TextBlock Text=" "></TextBlock>
-									<TextBlock DataContext="{Binding ClassInfo}" Text="{Binding Name}" Foreground="{DynamicResource QuinaryColor}"></TextBlock>
+									<TextBlock DataContext="{Binding ClassInfo}" Text="{Binding Name}"></TextBlock>
 									<TextBlock Text=" "></TextBlock>
-									<TextBlock Text="{Binding Challenge}" Foreground="{DynamicResource TertiaryColor}"></TextBlock>
+									<TextBlock Text="{Binding Challenge}"></TextBlock>
 								</StackPanel>
 							</StackPanel>
 							

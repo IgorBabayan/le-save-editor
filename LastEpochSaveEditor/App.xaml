@@ -1,17 +1,16 @@
 ﻿<Application x:Class="LastEpochSaveEditor.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:LastEpochSaveEditor">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
-				<ResourceDictionary Source="./Styles/Fonts.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/Theme.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="./Styles/FontAwesome.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="./Styles/Popup.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/Button.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/TextBlock.xaml"></ResourceDictionary>
-				<ResourceDictionary Source="./Styles/ListView.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/ListViewItem.xaml"></ResourceDictionary>
-				<ResourceDictionary Source="./Styles/Tooltip.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="./Styles/Scrollbar.xaml"></ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</Application.Resources>

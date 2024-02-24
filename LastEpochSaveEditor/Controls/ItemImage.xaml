@@ -3,9 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
 			 xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 	<UserControl.Resources>
 		<converters:QualityToColorConverter x:Key="qualityToColorConverter"></converters:QualityToColorConverter>
@@ -13,7 +12,7 @@
 	<Border BorderThickness="1" BorderBrush="{Binding Quality, Converter={StaticResource qualityToColorConverter}}">
 		<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 			<Grid.Background>
-				<ImageBrush ImageSource="/Images/Misc/ItemBackground.png" Stretch="UniformToFill" Opacity="0.9" />
+				<ImageBrush Stretch="UniformToFill" Opacity="0.9" ImageSource="/Images/Misc/ItemBackground.png" />
 			</Grid.Background>
 			<Image Source="{Binding Icon}" Stretch="Uniform" Margin="{Binding IconMargin}"
 			   Width="{Binding IconWidth}" Height="{Binding IconHeight}" Cursor="Hand"></Image>

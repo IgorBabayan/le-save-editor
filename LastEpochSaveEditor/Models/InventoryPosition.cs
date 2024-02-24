@@ -1,13 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿namespace LastEpochSaveEditor.Models;
 
-namespace LastEpochSaveEditor.Models
+public class InventoryPosition
 {
-	public class InventoryPosition
-	{
-		[JsonProperty("x")]
-		public int X { get; set; }
+	[JsonProperty("x")]
+	public int X { get; set; }
 
-		[JsonProperty("y")]
-		public int Y { get; set; }
-	}
+	[JsonProperty("y")]
+	public int Y { get; set; }
 }

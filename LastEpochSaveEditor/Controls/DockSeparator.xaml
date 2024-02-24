@@ -1,0 +1,8 @@
+﻿<Image x:Class="LastEpochSaveEditor.Controls.DockSeparator"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       Height="50">
+    <Image.Source>
+        <DrawingImage Drawing="{DynamicResource SeparatorDrawingGroup}" />
+    </Image.Source>
+</Image>

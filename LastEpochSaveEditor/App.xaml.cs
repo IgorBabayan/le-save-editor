@@ -1,94 +1,97 @@
-﻿namespace LastEpochSaveEditor
+﻿namespace LastEpochSaveEditor;
+
+public partial class App : Application
 {
-	public partial class App : Application
-	{
-		private readonly static IHost? _host;
+    private readonly static IHost? _host;
 
-        static App()
+    static App()
+    {
+        _host = Host.CreateDefaultBuilder()
+            .UseSerilog((_, builder) =>
+            {
+                builder
+                    .WriteTo.Debug(restrictedToMinimumLevel: LogEventLevel.Debug)
+                    .WriteTo.File("Logs/log.txt", restrictedToMinimumLevel: LogEventLevel.Error,
+                        rollingInterval: RollingInterval.Day);
+            })
+            .ConfigureServices((_, services) =>
+            {
+                RegisterMisc(services);
+                RegisterWindows(services);
+                RegisterControls(services);
+                RegisterViewModels(services);
+                RegisterMessenger(services);
+            }).Build();
+    }
+
+    public static TService GetService<TService>()
+        where TService : class => _host!.Services.GetRequiredService<TService>();
+
+    private static void RegisterMisc(IServiceCollection services)
+    {
+        services.AddSingleton<IDB, DB>();
+        services.AddSingleton<INavigationService, Utils.NavigationService>();
+        services.AddTransient<ICharacterInventory, CharacterInventory>();
+
+        services.AddTransient<Func<Type, ObservableObject>>(services => viewModelType =>
+            (ObservableObject)services.GetRequiredService(viewModelType));
+    }
+
+    private static void RegisterWindows(IServiceCollection services)
+    {
+        services.AddSingleton<MainWindow>(provider => new MainWindow
         {
-			_host = Host.CreateDefaultBuilder()
-				.UseSerilog((_, builder) =>
-				{
-					builder
-						.WriteTo.Debug(restrictedToMinimumLevel: LogEventLevel.Debug)
-						.WriteTo.File("Logs/log.txt", restrictedToMinimumLevel: LogEventLevel.Error, rollingInterval: RollingInterval.Day);
-				})
-				.ConfigureServices((_, services) =>
-				{
-					RegisterMisc(services);
-					RegisterWindows(services);
-					RegisterControls(services);
-					RegisterViewModels(services);
-					RegisterMessenger(services);
-				}).Build();
-		}
+            DataContext = provider.GetRequiredService<MainViewModel>()
+        });
+    }
 
-        public App() { }
+    private static void RegisterControls(IServiceCollection services)
+    {
+        services.AddSingleton<CharacterView>();
+        services.AddSingleton<CharacterStashView>();
+        services.AddSingleton<BlessingView>();
+        services.AddSingleton<IdolView>();
+        services.AddSingleton<DownloadWindow>();
+        services.AddTransient<ItemWindow>();
+    }
 
-		public static TService GetService<TService>()
-			where TService : class => _host!.Services.GetRequiredService<TService>();
+    private static void RegisterViewModels(IServiceCollection services)
+    {
+        services.AddSingleton<MainViewModel>();
+        services.AddSingleton<DownloadViewModel>();
+        services.AddSingleton<CharacterViewModel>();
+        services.AddSingleton<CharacterStashViewModel>();
+        services.AddSingleton<BlessingViewModel>();
+        services.AddSingleton<IdolViewModel>();
+        services.AddSingleton<ItemViewModel>();
+    }
 
-		private static void RegisterMisc(IServiceCollection services)
-		{
-			services.AddSingleton<IDB, DB>();
-			services.AddTransient<ICharacterInventory, CharacterInventory>();
-		}
+    private static void RegisterMessenger(IServiceCollection services)
+    {
+        services.AddSingleton<WeakReferenceMessenger>();
+        services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider =>
+            provider.GetRequiredService<WeakReferenceMessenger>());
+    }
 
-		private static void RegisterWindows(IServiceCollection services)
-		{
-			services.AddSingleton<MainWindow>(provider => new MainWindow
-			{
-				DataContext = provider.GetRequiredService<MainViewModel>()
-			});
-		}
+    protected override async void OnStartup(StartupEventArgs e)
+    {
+        await _host!.StartAsync();
 
-		private static void RegisterControls(IServiceCollection services)
-		{
-			services.AddSingleton<CharacterView>();
-			services.AddSingleton<CharacterStashView>();
-			services.AddSingleton<BlessingView>();
-			services.AddSingleton<IdolView>();
-			services.AddTransient<DownloadWindow>();
-			services.AddTransient<ItemWindow>();
-		}
+        var db = _host.Services.GetRequiredService<IDB>();
+        await db.Load();
 
-		private static void RegisterViewModels(IServiceCollection services)
-		{
-			services.AddSingleton<MainViewModel>();
-			services.AddSingleton<DownloadViewModel>();
-			services.AddSingleton<CharacterViewModel>();
-			services.AddSingleton<CharacterStashViewModel>();
-			services.AddSingleton<BlessingViewModel>();
-			services.AddSingleton<IdolViewModel>();
-			services.AddSingleton<ItemViewModel>();
-		}
+        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+        mainWindow.Show();
 
-		private static void RegisterMessenger(IServiceCollection services)
-		{
-			services.AddSingleton<WeakReferenceMessenger>();
-			services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider => provider.GetRequiredService<WeakReferenceMessenger>());
-		}
+        base.OnStartup(e);
+    }
 
-		protected override async void OnStartup(StartupEventArgs e)
-		{
-			await _host!.StartAsync();
+    protected override async void OnExit(ExitEventArgs e)
+    {
+        var viewModel = _host!.Services.GetRequiredService<CharacterViewModel>();
+        WeakReferenceMessenger.Default.UnregisterAll(viewModel);
 
-			var db = _host.Services.GetRequiredService<IDB>();
-			await db.Load();
-
-			var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-			mainWindow.Show();
-
-			base.OnStartup(e);
-		}
-
-		protected override async void OnExit(ExitEventArgs e)
-		{
-			var viewModel = _host!.Services.GetRequiredService<CharacterViewModel>();
-			WeakReferenceMessenger.Default.UnregisterAll(viewModel);
-			
-			await _host!.StopAsync();
-			base.OnExit(e);
-		}
-	}
+        await _host!.StopAsync();
+        base.OnExit(e);
+    }
 }

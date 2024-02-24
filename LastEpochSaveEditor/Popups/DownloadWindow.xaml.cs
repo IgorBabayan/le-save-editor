@@ -1,17 +1,10 @@
-﻿namespace LastEpochSaveEditor.Popups
-{
-	public partial class DownloadWindow : UserControl
-	{
-		public DownloadWindow()
-		{
-			InitializeComponent();
-			DataContext = App.GetService<DownloadViewModel>();
-		}
+﻿namespace LastEpochSaveEditor.Popups;
 
-		private void OnCloseClick(object sender, System.Windows.RoutedEventArgs e)
-		{
-			var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
-			grid.Children.Remove(this);
-		}
+public partial class DownloadWindow
+{
+	public DownloadWindow()
+	{
+		InitializeComponent();
+		DataContext = App.GetService<DownloadViewModel>();
 	}
 }

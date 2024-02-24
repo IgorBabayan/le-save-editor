@@ -10,7 +10,7 @@
     <Grid>
 		<Rectangle Fill="{DynamicResource PopupColor}" Opacity=".5"></Rectangle>
 
-		<Border CornerRadius="10" Background="{DynamicResource BackgroundColor}" HorizontalAlignment="Center" VerticalAlignment="Center" Height="Auto">
+		<Border CornerRadius="10" Background="{DynamicResource BackgroundColor}" Margin="10">
 			<Grid>
 				<Grid.RowDefinitions>
 					<RowDefinition Height="30" />
@@ -18,12 +18,12 @@
 				</Grid.RowDefinitions>
 
 				<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
-					<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close" IsEnabled="{Binding CanDownload}">
+					<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
 						<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
 					</Button>
 				</StackPanel>
 
-				<Grid Grid.Row="1" Margin="10" Width="750" Height="400">
+				<Grid Grid.Row="1" Margin="10">
 					<Grid.RowDefinitions>
 						<RowDefinition />
 						<RowDefinition />
@@ -38,9 +38,13 @@
 					</Grid.ColumnDefinitions>
 
 
-					<controls:ItemImage Grid.Row="0" DataContext="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-										Source="{Binding Icon}" IconWidth="{Binding Width}" IconHeight="{Binding Height}" Quality="{Binding Quality}" />
-					<!--<Image Grid.Row="0" Source="{Binding SelectedItem.Icon}" Stretch="Uniform"></Image>-->
+					<WrapPanel>
+						<controls:ItemButton Quality="{Binding Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Command="{Binding TestCommand}"
+											 IconWidth="{Binding Width}" IconHeight="{Binding Height}" DataContext="{Binding SelectedItem}"
+											 Icon="{Binding Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+						<!--<controls:ItemImage Grid.Row="0" DataContext="{Binding SelectedItem}"
+								Source="{Binding Icon}" IconWidth="{Binding Width}" IconHeight="{Binding Height}" Quality="{Binding Quality}" />-->
+					</WrapPanel>
 				</Grid>
 			</Grid>
 		</Border>

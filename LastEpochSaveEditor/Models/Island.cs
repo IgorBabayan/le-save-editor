@@ -1,11 +1,7 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿namespace LastEpochSaveEditor.Models;
 
-namespace LastEpochSaveEditor.Models
+public class Island
 {
-	public class Island
-	{
-		[JsonProperty("data")]
-		public List<int> Data { get; set; }
-	}
+	[JsonProperty("data")]
+	public List<int> Data { get; set; }
 }

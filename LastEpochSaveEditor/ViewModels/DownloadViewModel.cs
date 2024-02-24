@@ -1,208 +1,216 @@
-﻿namespace LastEpochSaveEditor.ViewModels
+﻿namespace LastEpochSaveEditor.ViewModels;
+
+internal partial class DownloadViewModel : ObservableObject
 {
-	internal partial class DownloadViewModel : ObservableObject
+	private readonly ILogger<DownloadViewModel> _logger;
+	private readonly IDB _db;
+
+	#region Properties
+
+	[ObservableProperty]
+	private int _downloadProgress;
+
+	[ObservableProperty]
+	private int _convertProgress;
+
+	[ObservableProperty]
+	private int _removeProgress;
+
+	[ObservableProperty]
+	private string _downloadProgressText;
+
+	[ObservableProperty]
+	private string _convertProgressText;
+
+	[ObservableProperty]
+	private string _removeProgressText;
+
+	[ObservableProperty]
+	private int _count;
+
+	[ObservableProperty]
+	private bool _canDownload;
+
+	#endregion
+
+	#region Command
+
+	[RelayCommand]
+	private void Download()
 	{
-		private readonly ILogger<DownloadViewModel> _logger;
-		private readonly IDB _db;
+		Count = _db.Count();
+		CanDownload = false;
+	
+		PrepareFolders();
+		DownloadImages();
+	}
 
-		#region Properties
+	[RelayCommand]
+	private void Close()
+	{
+		var downloadWindow = App.GetService<DownloadWindow>();
+		var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
+		grid.Children.Remove(downloadWindow);
+	}
 
-		[ObservableProperty]
-		private int _downloadProgress;
+	#endregion
 
-		[ObservableProperty]
-		private int _convertProgress;
+	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDB db)
+	{
+		_logger = logger;
+		_db = db;
 
-		[ObservableProperty]
-		private int _removeProgress;
+		Count = int.MaxValue;
+		CanDownload = true;
+	}
 
-		[ObservableProperty]
-		private string _downloadProgressText;
+	private void PrepareFolders()
+	{
+		if (Directory.Exists(Consts.IMAGE_FOLDER_NAME))
+			Directory.Delete(Consts.IMAGE_FOLDER_NAME, true);
+		Directory.CreateDirectory(Consts.IMAGE_FOLDER_NAME);
 
-		[ObservableProperty]
-		private string _convertProgressText;
-
-		[ObservableProperty]
-		private string _removeProgressText;
-
-		[ObservableProperty]
-		private int _count;
-
-		[ObservableProperty]
-		private bool _canDownload;
-
-		#endregion
-
-		#region Command
-
-		[RelayCommand]
-		private void Dowload()
+		string rootPath;
+		string path;
+		string folderPath;
+		foreach (var item in _db.GetFolderStructure())
 		{
-			Count = _db.Count();
-			CanDownload = false;
-			PrepareFolders();
-			DownloadImages();
+			rootPath = Path.Combine(Consts.IMAGE_FOLDER_NAME, item.Key);
+			if (!Directory.Exists(rootPath))
+				Directory.CreateDirectory(rootPath);
+
+			foreach (var type in item.Value)
+			{
+				var name = type.Base.BaseTypeName;
+				path = Path.Combine(rootPath, name);
+				if (!Directory.Exists(path))
+					Directory.CreateDirectory(path);
+
+				folderPath = Path.Combine(path, Consts.BASIC_FOLDER_NAME);
+				Directory.CreateDirectory(folderPath);
+
+				folderPath = Path.Combine(path, Consts.UNIQUE_FOLDER_NAME);
+				Directory.CreateDirectory(folderPath);
+
+				folderPath = Path.Combine(path, Consts.SET_FOLDER_NAME);
+				Directory.CreateDirectory(folderPath);
+			}
 		}
+	}
 
-		#endregion
+	private void DownloadImages()
+	{
+		DownloadProgress = 0;
+		ConvertProgress = 0;
+		RemoveProgress = 0;
 
-		public DownloadViewModel(ILogger<DownloadViewModel> logger, IDB db)
+		var files = GetFilesForDownload();
+		var worker = new BackgroundWorker();
+		worker.WorkerReportsProgress = true;
+		worker.DoWork += async (s, e) =>
 		{
-			_logger = logger;
-			_db = db;
+			foreach (var file in files)
+			{
+				await DownloadFile(file);
+				await ProcessFile(file);
+				await DeleteFile(file);
+			}
 
-			Count = int.MaxValue;
 			CanDownload = true;
-		}
+		};
 
-		private void PrepareFolders()
+		worker.RunWorkerAsync();
+	}
+
+	private IEnumerable<FolderStructure> GetFilesForDownload()
+	{
+		string rootPath;
+		string path;
+		string folderPath;
+		string fileName;
+		var result = new List<FolderStructure>(Count);
+		foreach (var item in _db.GetFolderStructure())
 		{
-			if (Directory.Exists(Consts.IMAGE_FOLDER_NAME))
-				Directory.Delete(Consts.IMAGE_FOLDER_NAME, true);
-			Directory.CreateDirectory(Consts.IMAGE_FOLDER_NAME);
-
-			string rootPath;
-			string path;
-			string folderPath;
-			foreach (var item in _db.GetFolderStructure())
+			rootPath = Path.Combine(Consts.IMAGE_FOLDER_NAME, item.Key);
+			foreach (var type in item.Value)
 			{
-				rootPath = Path.Combine(Consts.IMAGE_FOLDER_NAME, item.Key);
-				if (!Directory.Exists(rootPath))
-					Directory.CreateDirectory(rootPath);
+				var name = type.Base.BaseTypeName;
+				path = Path.Combine(rootPath, name);
 
-				foreach (var type in item.Value)
+				folderPath = Path.Combine(path, Consts.BASIC_FOLDER_NAME);
+				foreach (var baseItem in type.Base.SubItems)
 				{
-					var name = type.Base.BaseTypeName;
-					path = Path.Combine(rootPath, name);
-					if (!Directory.Exists(path))
-						Directory.CreateDirectory(path);
+					fileName = baseItem.Name.ToLowerInvariant().Replace(" ", "_");
+					result.Add(new(name.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
+				}
 
-					folderPath = Path.Combine(path, Consts.BASIC_FOLDER_NAME);
-					Directory.CreateDirectory(folderPath);
+				folderPath = Path.Combine(path, Consts.UNIQUE_FOLDER_NAME);
+				foreach (var unique in type.Uniques)
+				{
+					fileName = unique.Name.ToLowerInvariant().Replace(" ", "_");
+					result.Add(new(Consts.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
+				}
 
-					folderPath = Path.Combine(path, Consts.UNIQUE_FOLDER_NAME);
-					Directory.CreateDirectory(folderPath);
-
-					folderPath = Path.Combine(path, Consts.SET_FOLDER_NAME);
-					Directory.CreateDirectory(folderPath);
+				folderPath = Path.Combine(path, Consts.SET_FOLDER_NAME);
+				foreach (var set in type.Sets)
+				{
+					fileName = set.Name.ToLowerInvariant().Replace(" ", "_");
+					result.Add(new(Consts.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
 				}
 			}
 		}
-
-		private void DownloadImages()
-		{
-			DownloadProgress = 0;
-			ConvertProgress = 0;
-			RemoveProgress = 0;
-
-			var files = GetFilesForDownload();
-			var worker = new BackgroundWorker();
-			worker.WorkerReportsProgress = true;
-			worker.DoWork += async (s, e) =>
-			{
-				foreach (var file in files)
-				{
-					await DownloadFile(file);
-					await ProcessFile(file);
-					await DeleteFile(file);
-				}
-
-				CanDownload = true;
-			};
-
-			worker.RunWorkerAsync();
-		}
-
-		private IEnumerable<FolderStructure> GetFilesForDownload()
-		{
-			string rootPath;
-			string path;
-			string folderPath;
-			string fileName;
-			var result = new List<FolderStructure>(Count);
-			foreach (var item in _db.GetFolderStructure())
-			{
-				rootPath = Path.Combine(Consts.IMAGE_FOLDER_NAME, item.Key);
-				foreach (var type in item.Value)
-				{
-					var name = type.Base.BaseTypeName;
-					path = Path.Combine(rootPath, name);
-
-					folderPath = Path.Combine(path, Consts.BASIC_FOLDER_NAME);
-					foreach (var baseItem in type.Base.SubItems)
-					{
-						fileName = baseItem.Name.ToLowerInvariant().Replace(" ", "_");
-						result.Add(new(name.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
-					}
-
-					folderPath = Path.Combine(path, Consts.UNIQUE_FOLDER_NAME);
-					foreach (var unique in type.Uniques)
-					{
-						fileName = unique.Name.ToLowerInvariant().Replace(" ", "_");
-						result.Add(new(Consts.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
-					}
-
-					folderPath = Path.Combine(path, Consts.SET_FOLDER_NAME);
-					foreach (var set in type.Sets)
-					{
-						fileName = set.Name.ToLowerInvariant().Replace(" ", "_");
-						result.Add(new(Consts.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
-					}
-				}
-			}
 			
-			return result;
-		}
+		return result;
+	}
 
-		private async Task DownloadFile(FolderStructure file)
+	private async Task DownloadFile(FolderStructure file)
+	{
+		try
+		{
+			DownloadProgressText = Path.GetFileName(file.Path);
+			_logger.LogInformation($"Download: {DownloadProgressText}");
+
+			await FileDownloader.DownloadFile(file.Type, file.Path);
+			DownloadProgress++;
+		}
+		catch (Exception exception)
+		{
+			_logger.LogError($"Failed to download: {DownloadProgressText}", exception);
+		}
+	}
+
+	private async Task ProcessFile(FolderStructure file)
+	{
+		try
+		{
+			ConvertProgressText = Path.GetFileName(file.Path);
+			_logger.LogInformation($"Convert: {ConvertProgressText}");
+
+			await WebPConverter.Convert(file.Path);
+			ConvertProgress++;
+		}
+		catch (Exception exception)
+		{
+			_logger.LogError($"Failed to convert: {ConvertProgressText}", exception);
+		}
+	}
+
+	private async Task DeleteFile(FolderStructure file)
+	{
+		await Task.Run(() =>
 		{
 			try
 			{
-				DownloadProgressText = Path.GetFileName(file.Path);
-				_logger.LogInformation($"Download: {DownloadProgressText}");
+				RemoveProgressText = Path.GetFileName(file.Path);
+				_logger.LogInformation($"Remove: {RemoveProgressText}");
 
-				await FileDownloader.DownloadFile(file.Type, file.Path);
-				DownloadProgress++;
+				File.Delete(file.Path);
+				RemoveProgress++;
 			}
 			catch (Exception exception)
 			{
-				_logger.LogError($"Failed to download: {DownloadProgressText}", exception);
+				_logger.LogError($"Failed to remove: {RemoveProgressText}", exception);
 			}
-		}
-
-		private async Task ProcessFile(FolderStructure file)
-		{
-			try
-			{
-				ConvertProgressText = Path.GetFileName(file.Path);
-				_logger.LogInformation($"Convert: {ConvertProgressText}");
-
-				await WebPConverter.Convert(file.Path);
-				ConvertProgress++;
-			}
-			catch (Exception exception)
-			{
-				_logger.LogError($"Failed to convert: {ConvertProgressText}", exception);
-			}
-		}
-
-		private async Task DeleteFile(FolderStructure file)
-		{
-			await Task.Run(() =>
-			{
-				try
-				{
-					RemoveProgressText = Path.GetFileName(file.Path);
-					_logger.LogInformation($"Remove: {RemoveProgressText}");
-
-					File.Delete(file.Path);
-					RemoveProgress++;
-				}
-				catch (Exception exception)
-				{
-					_logger.LogError($"Failed to remove: {RemoveProgressText}", exception);
-				}
-			});
-		}
+		});
 	}
 }
