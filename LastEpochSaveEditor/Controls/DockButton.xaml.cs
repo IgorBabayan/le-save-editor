@@ -21,4 +21,13 @@ public partial class DockButton
         get => (string)GetValue(PopupTooltipProperty);
         set => SetValue(PopupTooltipProperty, value);
     }
+
+    public static readonly DependencyProperty PopupOffsetProperty = DependencyProperty.Register(
+	    nameof(PopupOffset), typeof(int), typeof(DockButton), new PropertyMetadata(default(int)));
+
+    public int PopupOffset
+    {
+	    get => (int)GetValue(PopupOffsetProperty);
+	    set => SetValue(PopupOffsetProperty, value);
+    }
 }

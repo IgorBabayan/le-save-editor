@@ -87,36 +87,37 @@
 					</Grid.ColumnDefinitions>
 					
 					<controls:DockButton Grid.Column="1" Icon="{DynamicResource PersonSolidDrawingGroup}"
-					                     PopupTooltip="Character stash"
+					                     PopupTooltip="Character stash" PopupOffset="-40"
 					                     Command="{Binding CharacterPressedCommand}"></controls:DockButton>
 					
 					<controls:DockButton Grid.Column="2" Icon="{DynamicResource CharacterInventorySolidDrawingGroup}"
-					                     PopupTooltip="Character inventory"
+					                     PopupTooltip="Character inventory" PopupOffset="-58"
 					                     Command="{Binding StashPressedCommand}"></controls:DockButton>
 					
 					<controls:DockButton Grid.Column="3" Icon="{DynamicResource BlessingsSolidDrawingGroup}"
-					                     PopupTooltip="Blessings"
+					                     PopupTooltip="Blessings" PopupOffset="-20"
 					                     Command="{Binding BlessingsPressedCommand}"></controls:DockButton>
 					
 					<controls:DockButton Grid.Column="4" Icon="{DynamicResource IdolsSolidDrawingGroup}"
-					                     PopupTooltip="Idols"
+					                     PopupTooltip="Idols" PopupOffset="-5"
 					                     Command="{Binding IdolsPressedCommand}"></controls:DockButton>
 					
 					<controls:DockSeparator Grid.Column="5"></controls:DockSeparator>
 					
 					<controls:DockButton Grid.Column="6" Icon="{DynamicResource DownloadImagesSolidDrawingGroup}"
-					                     PopupTooltip="Download images"
+					                     PopupTooltip="Download images" PopupOffset="-50"
 					                     Command="{Binding DownloadCommand}"></controls:DockButton>
 
 					<controls:DockButton Grid.Column="7" Icon="{DynamicResource DownloadDataSolidDrawingGroup}"
-					                     PopupTooltip="Download database"
+					                     PopupTooltip="Download database" PopupOffset="-58"
 					                     Command="{Binding ReloadDatabaseCommand}"></controls:DockButton>
 				</Grid>
 			</Border>
 			
 			<!--#endregion-->
 
-			<controls:CloseButton Grid.Row="0" Click="OnCloseClick" PopupTooltip="Close" Margin="0,40,35,0" />
+			<controls:CloseButton Grid.Row="0" Click="OnCloseClick" PopupTooltip="Close" Margin="0,40,35,0"
+			                      PopupOffset="-18" />
 		</Grid>
 	</Grid>
 </Window>

@@ -27,7 +27,7 @@
 					           Margin="10,0,0,0" FontFamily="Oswald"
 					           Style="{StaticResource ProgramDescriptionTextBlock}"></TextBlock>
 					
-					<controls:CloseButton Grid.Column="1" HorizontalAlignment="Right" PopupTooltip="Close"
+					<controls:CloseButton Grid.Column="1" HorizontalAlignment="Right" PopupTooltip="Close" PopupOffset="-20"
 					                      Command="{Binding CloseCommand}" IsEnabled="{Binding CanDownload}"
 					                      Margin="10"/>
 				</Grid>

@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Style x:Key="ClosePopupStyle" TargetType="Popup">
 		<Setter Property="AllowsTransparency" Value="True" />
-		<Setter Property="VerticalOffset" Value="15" />
+		<Setter Property="VerticalOffset" Value="5" />
 		<Setter Property="HorizontalAlignment" Value="Center" />
 		<Setter Property="Height" Value="35" />
 		<Setter Property="Placement" Value="Bottom" />
@@ -10,7 +10,7 @@
 
 	<Style x:Key="PopupStyle" TargetType="Popup">
 		<Setter Property="AllowsTransparency" Value="True" />
-		<Setter Property="VerticalOffset" Value="-30" />
+		<Setter Property="VerticalOffset" Value="-20" />
 		<Setter Property="HorizontalAlignment" Value="Center" />
 		<Setter Property="Height" Value="35" />
 		<Setter Property="Placement" Value="Top" />
