@@ -22,12 +22,21 @@ public partial class DockButton
         set => SetValue(PopupTooltipProperty, value);
     }
 
-    public static readonly DependencyProperty PopupOffsetProperty = DependencyProperty.Register(
-	    nameof(PopupOffset), typeof(int), typeof(DockButton), new PropertyMetadata(default(int)));
+    public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
+	    nameof(IsActive), typeof(bool), typeof(DockButton), new PropertyMetadata(default(bool)));
 
-    public int PopupOffset
+    public bool IsActive
     {
-	    get => (int)GetValue(PopupOffsetProperty);
-	    set => SetValue(PopupOffsetProperty, value);
+	    get => (bool)GetValue(IsActiveProperty);
+	    set => SetValue(IsActiveProperty, value);
+    }
+
+    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
+	    nameof(Command), typeof(ICommand), typeof(DockButton), new PropertyMetadata(default(ICommand)));
+
+    public ICommand Command
+    {
+	    get => (ICommand)GetValue(CommandProperty);
+	    set => SetValue(CommandProperty, value);
     }
 }

@@ -2,22 +2,6 @@
 
 internal static class SaveFileLoader
 {
-	public static IEnumerable<CharacterInfo> LoadDebug()
-	{
-		const string FILE = "C:\\Users\\ihorb\\AppData\\LocalLow\\Eleventh Hour Games\\Last Epoch\\Saves\\1CHARACTERSLOT_BETA_2";
-		var result = new List<CharacterInfo>(1);
-		var content = File.ReadAllText(FILE).Remove(0, Consts.EPOCH.Length);
-		var character = JsonConvert.DeserializeObject<Character>(content)!;
-		character.ParseSavedData();
-		result.Add(new CharacterInfo
-		{
-			Path = FILE,
-			Character = character
-		});
-
-		return result;
-	}
-
 	public static IEnumerable<CharacterInfo> Load(string specialCharacterSlot = null)
 	{
 		var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

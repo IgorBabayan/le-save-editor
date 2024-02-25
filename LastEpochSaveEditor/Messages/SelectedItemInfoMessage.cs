@@ -10,3 +10,9 @@ internal class SelectedItemInfoMessage : ValueChangedMessage<Character>
 	public SelectedItemInfoMessage(Character value, ItemInfoTypeEnum infoType)
 		: base(value) => InfoType = infoType;
 }
+
+internal class CurrentViewChangedMessage : ValueChangedMessage<ObservableObject>
+{
+	public CurrentViewChangedMessage(ObservableObject value)
+		: base(value) { }
+}

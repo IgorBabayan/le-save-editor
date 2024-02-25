@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
         Style="{StaticResource CloseButtonStyle}"
         x:Name="MainButton">
-	<Popup Width="70" HorizontalOffset="{Binding PopupOffset}"
+	<Popup Width="70"
 	       DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:CloseButton}}}"
 	       PlacementTarget="{Binding ElementName=MainButton}"
            IsOpen="{Binding ElementName=MainButton, Path=IsMouseOver, Mode=OneWay}"

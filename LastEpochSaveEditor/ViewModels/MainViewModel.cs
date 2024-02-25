@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-internal partial class MainViewModel : ObservableObject
+internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewChangedMessage>
 {
 	private readonly IMessenger _messenger;
 	private readonly IDB _db;
@@ -14,19 +14,32 @@ internal partial class MainViewModel : ObservableObject
 	private CharacterInfo _selectedCharacter;
 
 	[ObservableProperty]
+	private bool _isCharacterActive;
+
+	[ObservableProperty]
+	private bool _isStashActive;
+
+	[ObservableProperty]
+	private bool _isBlessingsActive;
+
+	[ObservableProperty]
+	private bool _isIdolsActive;
+
+	[ObservableProperty]
 	private INavigationService _navigationService;
 
 	#endregion
 
 	public MainViewModel(IMessenger messenger, IDB db, INavigationService navigationService)
 	{
-		_messenger = messenger;
 		_db = db;
+
+		_messenger = messenger;
+		_messenger.RegisterAll(this);
 
 		NavigationService = navigationService;
 		NavigationService.NavigateTo<CharacterViewModel>();
 
-		//Characters = SaveFileLoader.Load("1CHARACTERSLOT_BETA_2");
 		Characters = SaveFileLoader.Load();
 		SelectedCharacter = Characters.FirstOrDefault();
 	}
@@ -62,4 +75,13 @@ internal partial class MainViewModel : ObservableObject
 	partial void OnSelectedCharacterChanged(CharacterInfo value) => _messenger.Send(new SelectedCharacterChangedMessage(value));
 
 	#endregion
+
+	void IRecipient<CurrentViewChangedMessage>.Receive(CurrentViewChangedMessage message)
+	{
+		var view = message.Value;
+		IsCharacterActive = view.GetType() == typeof(CharacterViewModel);
+		IsStashActive = view.GetType() == typeof(CharacterStashViewModel);
+		IsBlessingsActive = view.GetType() == typeof(BlessingViewModel);
+		IsIdolsActive = view.GetType() == typeof(IdolViewModel);
+	}
 }

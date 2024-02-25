@@ -1,23 +1,37 @@
-﻿<Button x:Class="LastEpochSaveEditor.Controls.DockButton"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Style="{StaticResource DockButtonStyle}"
-        xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
-        x:Name="MainDockButton">
-	<Button.Background>
-		<DrawingBrush Drawing="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}" Stretch="Uniform" />
-	</Button.Background>
+﻿<UserControl x:Class="LastEpochSaveEditor.Controls.DockButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
+             x:Name="MainDockButton">
+	<UserControl.Resources>
+		<BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"></BooleanToVisibilityConverter>
+	</UserControl.Resources>
+	<StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center">
+		<Button Style="{StaticResource DockButtonStyle}"
+		        DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
+		        Command="{Binding Command}">
+			<Button.Background>
+				<DrawingBrush Drawing="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}" Stretch="Uniform" />
+			</Button.Background>
 
-	<Popup HorizontalOffset="{Binding PopupOffset}" DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
-           PlacementTarget="{Binding ElementName=MainDockButton}"
-           IsOpen="{Binding ElementName=MainDockButton, Path=IsMouseOver, Mode=OneWay}"
-           Style="{StaticResource PopupStyle}">
-		<Grid>
-			<Border Style="{StaticResource PopupBorder}">
-				<TextBlock Text="{Binding PopupTooltip}" Style="{StaticResource PopupText}" Margin="10,0,10,0" />
-			</Border>
+			<Popup Grid.Row="1" Style="{StaticResource PopupStyle}"
+			       DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
+			       PlacementTarget="{Binding ElementName=MainDockButton}"
+			       IsOpen="{Binding ElementName=MainDockButton, Path=IsMouseOver, Mode=OneWay}">
+				<Grid>
+					<Border Style="{StaticResource PopupBorder}">
+						<TextBlock Text="{Binding PopupTooltip}" Style="{StaticResource PopupText}" Margin="10,0,10,0" />
+					</Border>
 
-			<Path Style="{StaticResource ArrowPath}" />
-		</Grid>
-	</Popup>
-</Button>
+					<Path Style="{StaticResource ArrowPath}" />
+				</Grid>
+			</Popup>
+		</Button>
+
+		<Canvas HorizontalAlignment="Center" Margin="0,5,0,0">
+			<Ellipse Fill="Red" Width="5" Height="5"
+			         DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
+			         Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}"></Ellipse>
+		</Canvas>
+	</StackPanel>
+</UserControl>
