@@ -33,7 +33,7 @@
 			<Grid.RowDefinitions>
 				<RowDefinition Height="140" />
 				<RowDefinition Height="*" />
-				<RowDefinition Height="170" />
+				<RowDefinition Height="85" />
 			</Grid.RowDefinitions>
 			
 			<!--#region Header -->
@@ -59,11 +59,12 @@
 				
 				
 				<ListView Grid.Column="0" ItemsSource="{Binding Characters}" Background="Transparent"
-				          BorderThickness="0"
+				          BorderThickness="0" Margin="0,0,0,15"
 						  SelectedItem="{Binding SelectedCharacter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
 				          ItemContainerStyle="{StaticResource CharacterCard}"></ListView>
 
-				<ContentControl Grid.Column="1" Content="{Binding NavigationService.CurrentView}" />
+				<ContentControl Grid.Column="1" Margin="0,0,0,15"
+				                Content="{Binding NavigationService.CurrentView}" />
 			</Grid>
 
 			<!--#endregion-->
@@ -71,7 +72,7 @@
 			<!--#region Dock -->
 
 			<Border Grid.Row="2" Background="{DynamicResource DockBackgroundColor}"
-					CornerRadius="10,10,0,0" Margin="0,85,0,0"
+					CornerRadius="10,10,0,0"
 					HorizontalAlignment="Center">
 				<Grid>
 					<Grid.ColumnDefinitions>
