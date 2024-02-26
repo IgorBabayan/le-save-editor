@@ -7,8 +7,8 @@
 	<Popup Width="70"
 	       DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:CloseButton}}}"
 	       PlacementTarget="{Binding ElementName=MainButton}"
-           IsOpen="{Binding ElementName=MainButton, Path=IsMouseOver, Mode=OneWay}"
-           Style="{StaticResource ClosePopupStyle}">
+	       IsOpen="{Binding ElementName=MainButton, Path=IsMouseOver, Mode=OneWay}"
+	       Style="{StaticResource ClosePopupStyle}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

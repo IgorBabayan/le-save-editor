@@ -53,18 +53,20 @@ public class CharacterInventory : ICharacterInventory
 		ParseRelic(data);
 	}
 
-	private static BitmapImage CreateImage(string path)
+	private static BitmapImage CreateImage(string path, string defaultPath)
 	{
-		var icon = new BitmapImage();
-		icon.CacheOption = BitmapCacheOption.OnLoad;
-		icon.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-		icon.DecodePixelWidth = 200;
-		if (!string.IsNullOrWhiteSpace(path))
+		var icon = new BitmapImage
 		{
-			icon.BeginInit();
+			CacheOption = BitmapCacheOption.OnLoad,
+			CreateOptions = BitmapCreateOptions.IgnoreImageCache,
+			DecodePixelWidth = 200
+		};
+		icon.BeginInit();
+		if (!string.IsNullOrWhiteSpace(path))
 			icon.UriSource = new(path);
-			icon.EndInit();
-		}
+		else
+			icon.UriSource = new(defaultPath, UriKind.RelativeOrAbsolute);
+		icon.EndInit();
 
 		return icon;
 	}
@@ -73,19 +75,18 @@ public class CharacterInventory : ICharacterInventory
 	{
 		switch (quality)
 		{
-
 			case QualityType.Basic:
 			case QualityType.Magic:
 			case QualityType.Rare:
 			case QualityType.Exalted:
-				return Consts.BASIC_FOLDER_NAME;
+				return Const.BASIC_FOLDER_NAME;
 
 			case QualityType.Unique:
 			case QualityType.Legendary:
-				return Consts.UNIQUE_FOLDER_NAME;
+				return Const.UNIQUE_FOLDER_NAME;
 
 			default:
-				return Consts.SET_FOLDER_NAME;
+				return Const.SET_FOLDER_NAME;
 		}
 	}
 
@@ -120,7 +121,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseHelm(IDictionary<int, List<int>> data)
 	{
 		Helm = Parse(data, 2, "Helm");
-		Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Consts.HELMETS));
+		Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Const.HELMETS), Const.HELM_ICON);
 		Helm.Width = 69;
 		Helm.Height = 69;
 	}
@@ -128,7 +129,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseBody(IDictionary<int, List<int>> data)
 	{
 		Body = Parse(data, 3, "Body");
-		Body.Icon = CreateImage(GetIcon(_db.GetBodies(), Body, Consts.BODY_ARMOR));
+		Body.Icon = CreateImage(GetIcon(_db.GetBodies(), Body, Const.BODY_ARMOR), Const.BODY_ICON);
 		Body.Width = 93;
 		Body.Height = 139;
 	}
@@ -137,11 +138,11 @@ public class CharacterInventory : ICharacterInventory
 	{
 		Weapon = Parse(data, 4, "Weapon");
 
-		var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Consts.ONE_HAND_WEAPONS);
+		var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Const.ONE_HAND_WEAPONS);
 		if (string.IsNullOrWhiteSpace(icon))
-			icon = GetIcon(_db.Get2HandWeapons(), Weapon, Consts.TWO_HAND_WEAPONS);
+			icon = GetIcon(_db.Get2HandWeapons(), Weapon, Const.TWO_HAND_WEAPONS);
 
-		Weapon.Icon = CreateImage(icon);
+		Weapon.Icon = CreateImage(icon, Const.WEAPON_ICON);
 		Weapon.Width = 69;
 		Weapon.Height = 139;
 	}
@@ -149,7 +150,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseOffHand(IDictionary<int, List<int>> data)
 	{
 		OffHand = Parse(data, 5, "Off-hand");
-		OffHand.Icon = CreateImage(GetIcon(_db.GetOffHands(), OffHand, Consts.OFF_HAND));
+		OffHand.Icon = CreateImage(GetIcon(_db.GetOffHands(), OffHand, Const.OFF_HAND), Const.OFF_HAND_ICON);
 		OffHand.Width = 69;
 		OffHand.Height = 139;
 	}
@@ -157,7 +158,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseGloves(IDictionary<int, List<int>> data)
 	{
 		Gloves = Parse(data, 6, "Gloves");
-		Gloves.Icon = CreateImage(GetIcon(_db.GetGloves(), Gloves, Consts.GLOVES));
+		Gloves.Icon = CreateImage(GetIcon(_db.GetGloves(), Gloves, Const.GLOVES), Const.GLOVES_ICON);
 		Gloves.Width = 69;
 		Gloves.Height = 69;
 	}
@@ -165,7 +166,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseBelt(IDictionary<int, List<int>> data)
 	{
 		Belt = Parse(data, 7, "Belt");
-		Belt.Icon = CreateImage(GetIcon(_db.GetBelts(), Belt, Consts.BELTS));
+		Belt.Icon = CreateImage(GetIcon(_db.GetBelts(), Belt, Const.BELTS), Const.BELTS_ICON);
 		Belt.Width = 93;
 		Belt.Height = 39;
 	}
@@ -173,7 +174,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseBoots(IDictionary<int, List<int>> data)
 	{
 		Boots = Parse(data, 8, "Boots");
-		Boots.Icon = CreateImage(GetIcon(_db.GetBoots(), Boots, Consts.BOOTS));
+		Boots.Icon = CreateImage(GetIcon(_db.GetBoots(), Boots, Const.BOOTS), Const.BOOTS_ICON);
 		Boots.Width = 69;
 		Boots.Height = 69;
 	}
@@ -181,7 +182,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseLeftRing(IDictionary<int, List<int>> data)
 	{
 		LeftRing = Parse(data, 9, "Left ring");
-		LeftRing.Icon = CreateImage(GetIcon(_db.GetRings(), LeftRing, Consts.RING));
+		LeftRing.Icon = CreateImage(GetIcon(_db.GetRings(), LeftRing, Const.RING), Const.RING_ICON);
 		LeftRing.Width = 39;
 		LeftRing.Height = 39;
 	}
@@ -189,7 +190,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseRightRing(IDictionary<int, List<int>> data)
 	{
 		RightRing = Parse(data, 10, "Right ring");
-		RightRing.Icon = CreateImage(GetIcon(_db.GetRings(), RightRing, Consts.RING));
+		RightRing.Icon = CreateImage(GetIcon(_db.GetRings(), RightRing, Const.RING), Const.RING_ICON);
 		RightRing.Width = 39;
 		RightRing.Height = 39;
 	}
@@ -197,7 +198,7 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseAmulet(IDictionary<int, List<int>> data)
 	{
 		Amulet = Parse(data, 11, "Amulet");
-		Amulet.Icon = CreateImage(GetIcon(_db.GetAmulets(), Amulet, Consts.AMULET));
+		Amulet.Icon = CreateImage(GetIcon(_db.GetAmulets(), Amulet, Const.AMULET), Const.AMULET_ICON);
 		Amulet.Width = 43;
 		Amulet.Height = 43;
 	}
@@ -205,21 +206,24 @@ public class CharacterInventory : ICharacterInventory
 	private void ParseRelic(IDictionary<int, List<int>> data)
 	{
 		Relic = Parse(data, 12, "Relic");
-		Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Consts.RELIC));
+		Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Const.RELIC), Const.RELIC_ICON);
 		Relic.Width = 69;
 		Relic.Height = 69;
 	}
 
 	private ItemDataInfo Parse(IDictionary<int, List<int>> data, int index, string name)
 	{
+		if (!data.Any())
+			return ItemDataInfo.Empty.Copy();
+
 		var hasError = false;
 		var result = ItemDataInfo.Empty;
 		try
 		{
 			_logger.LogInformation($"Begin parse '{name}' data.");
 
-			if (data.ContainsKey(index))
-				result = ItemDataParser.ParseData(data[index]);
+			if (data.TryGetValue(index, out var value))
+				result = ItemDataParser.ParseData(value);
 		}
 		catch (Exception exception)
 		{

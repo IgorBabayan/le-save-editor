@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="LastEpochSaveEditor.Controls.DockButton"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 HorizontalAlignment="Center" VerticalAlignment="Center"
              xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
              x:Name="MainDockButton">
 	<UserControl.Resources>

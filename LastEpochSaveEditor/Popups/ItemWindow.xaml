@@ -39,9 +39,9 @@
 
 
 					<WrapPanel>
-						<controls:ItemButton Quality="{Binding Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Command="{Binding TestCommand}"
+						<!--<controls:ItemButton Quality="{Binding Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Command="{Binding TestCommand}"
 											 IconWidth="{Binding Width}" IconHeight="{Binding Height}" DataContext="{Binding SelectedItem}"
-											 Icon="{Binding Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>
+											 Icon="{Binding Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>-->
 						<!--<controls:ItemImage Grid.Row="0" DataContext="{Binding SelectedItem}"
 								Source="{Binding Icon}" IconWidth="{Binding Width}" IconHeight="{Binding Height}" Quality="{Binding Quality}" />-->
 					</WrapPanel>

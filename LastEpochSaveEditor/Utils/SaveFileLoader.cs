@@ -5,13 +5,13 @@ internal static class SaveFileLoader
 	public static IEnumerable<CharacterInfo> Load(string specialCharacterSlot = null)
 	{
 		var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-		var path = Path.Combine(userFolder, Consts.ADD_DATA, Consts.LOCAL_LOW, Consts.ELEVENTH_HOUR_GAMES, Consts.LAST_EPOCH, Consts.SAVES);
+		var path = Path.Combine(userFolder, Const.ADD_DATA, Const.LOCAL_LOW, Const.ELEVENTH_HOUR_GAMES, Const.LAST_EPOCH, Const.SAVES);
 
 		if (!Directory.Exists(path))
 			throw new DirectoryNotFoundException();
 
 		var files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly)
-			.Where(x => !x.EndsWith(Consts.BAK, StringComparison.OrdinalIgnoreCase) && !x.Contains(Consts.TEMP) && x.Contains(Consts.CHARACTER_SLOT));
+			.Where(x => !x.EndsWith(Const.BAK, StringComparison.OrdinalIgnoreCase) && !x.Contains(Const.TEMP) && x.Contains(Const.CHARACTER_SLOT));
 
 		if (!string.IsNullOrEmpty(specialCharacterSlot))
 			files = files.Where(x => string.Equals(specialCharacterSlot, Path.GetFileNameWithoutExtension(x), StringComparison.OrdinalIgnoreCase));
@@ -20,7 +20,7 @@ internal static class SaveFileLoader
 		string content;
 		foreach ( var file in files)
 		{
-			content = File.ReadAllText(file).Remove(0, Consts.EPOCH.Length);
+			content = File.ReadAllText(file).Remove(0, Const.EPOCH.Length);
 			var character = JsonConvert.DeserializeObject<Character>(content)!;
 			character.ParseSavedData();
 

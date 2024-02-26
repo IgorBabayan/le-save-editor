@@ -40,8 +40,24 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 		NavigationService = navigationService;
 		NavigationService.NavigateTo<CharacterViewModel>();
 
+		
+#if DEBUG
+		const int COUNT = 100;
+		var characters = new List<CharacterInfo>(COUNT);
+		for (int index = 0; index < COUNT; index++)
+		{
+			var character = new CharacterInfo();
+			character.Character.ParseSavedData();
+
+			characters.Add(character);
+		}
+
+		Characters = characters;
+		SelectedCharacter = Characters.First();
+#else
 		Characters = SaveFileLoader.Load();
 		SelectedCharacter = Characters.FirstOrDefault();
+#endif
 	}
 
 	#region Commands

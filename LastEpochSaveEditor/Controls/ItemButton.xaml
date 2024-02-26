@@ -1,19 +1,18 @@
-﻿<UserControl x:Class="LastEpochSaveEditor.Controls.ItemButton"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-			 xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
-			 xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
-             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
-             mc:Ignorable="d">
-	<UserControl.Resources>
-		<converters:QualityToColorConverter x:Key="qualityToColorConverter"></converters:QualityToColorConverter>
-	</UserControl.Resources>
-	<Button DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ItemButton}}}"
-			Style="{DynamicResource ImageButton}" Command="{Binding Command}"
-			Background="{Binding Quality, Converter={StaticResource qualityToColorConverter}}">
-		<controls:ItemImage Quality="{Binding Quality}" Source="{Binding Icon}"
-							IconHeight="{Binding IconHeight}" IconWidth="{Binding IconWidth}"></controls:ItemImage>
-	</Button>
-</UserControl>
+﻿<Button x:Class="LastEpochSaveEditor.Controls.ItemButton"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
+        xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+        Style="{DynamicResource ImageButton}">
+	<Button.Resources>
+		<converters:QualityToColorConverter x:Key="QualityToColorConverter"></converters:QualityToColorConverter>
+	</Button.Resources>
+	<Border BorderBrush="{Binding Item.Quality, Converter={StaticResource QualityToColorConverter}}"
+			BorderThickness="1"
+	        DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}">
+		<controls:ItemImage Item="{Binding Item}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+		                    Width="{Binding Width}" Height="{Binding Height}"
+		                    Margin="1" />
+	</Border>
+	
+</Button>

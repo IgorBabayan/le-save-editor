@@ -6,7 +6,7 @@ public class SavedItem
 	public object ItemData { get; set; }
 
 	[JsonProperty("data")]
-	public List<int> Data { get; set; }
+	public List<int> Data { get; set; } = new();
 
 	[JsonProperty("inventoryPosition")]
 	public InventoryPosition InventoryPosition { get; set; }

@@ -8,9 +8,6 @@ internal class QualityToColorConverter : IValueConverter
 		var quality = (QualityType)value;
 		switch (quality)
 		{
-			case QualityType.Basic:
-				return new SolidColorBrush(Color.FromRgb(170, 170, 170));
-
 			case QualityType.Magic:
 				return new SolidColorBrush(Color.FromRgb(54, 163, 226));
 
@@ -28,9 +25,10 @@ internal class QualityToColorConverter : IValueConverter
 
 			case QualityType.Legendary:
 				return new SolidColorBrush(Color.FromRgb(235, 15, 93));
-		}
 
-		throw new ArgumentException("Unexpected quality type", nameof(value));
+			default:
+				return new SolidColorBrush(Color.FromRgb(170, 170, 170));
+		}
 	}
 
 	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();

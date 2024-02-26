@@ -9,7 +9,7 @@ internal sealed class DB : IDB
 		string response;
 		using (var client = new HttpClient())
 		{
-			using (var request = await client.GetAsync(Consts.DATA_URL))
+			using (var request = await client.GetAsync(Const.DATA_URL))
 				response = await request.Content.ReadAsStringAsync();
 		}
 
@@ -21,14 +21,14 @@ internal sealed class DB : IDB
 	public async Task Load()
 	{
 		await LoadImpl();
-		if (!File.Exists(Consts.DATA_FILE_PATH))
-			await File.WriteAllTextAsync(Consts.DATA_FILE_PATH, JsonConvert.SerializeObject(_database, Formatting.Indented));
+		if (!File.Exists(Const.DATA_FILE_PATH))
+			await File.WriteAllTextAsync(Const.DATA_FILE_PATH, JsonConvert.SerializeObject(_database, Formatting.Indented));
 	}
 
 	public async Task Reload()
 	{
-		if (File.Exists(Consts.DATA_FILE_PATH))
-			File.Delete(Consts.DATA_FILE_PATH);
+		if (File.Exists(Const.DATA_FILE_PATH))
+			File.Delete(Const.DATA_FILE_PATH);
 
 		await Load();
 	}

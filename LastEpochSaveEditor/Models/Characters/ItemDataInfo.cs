@@ -23,6 +23,20 @@ public class ItemDataInfo
 
 	public static readonly ItemDataInfo Empty;
 
+	public ItemDataInfo Copy() => new()
+	{
+		IsSeal = IsSeal,
+		UniqueOrSetId = UniqueOrSetId,
+		Patch = Patch,
+		Type = Empty.Type,
+		Id = Id,
+		LegendaryPotencial = LegendaryPotencial,
+		Instability = Instability,
+		ForgingPotencial = ForgingPotencial,
+		AffixCount = AffixCount,
+		Quality = Quality
+	};
+
 	static ItemDataInfo() => Empty = new()
 	{
 		IsSeal = false,
@@ -34,6 +48,6 @@ public class ItemDataInfo
 		Instability = -1,
 		ForgingPotencial = -1,
 		AffixCount = -1,
-		Quality = QualityType.None
+		Quality = QualityType.Basic
 	};
 }

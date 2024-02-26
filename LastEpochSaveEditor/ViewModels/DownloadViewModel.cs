@@ -66,16 +66,16 @@ internal partial class DownloadViewModel : ObservableObject
 
 	private void PrepareFolders()
 	{
-		if (Directory.Exists(Consts.IMAGE_FOLDER_NAME))
-			Directory.Delete(Consts.IMAGE_FOLDER_NAME, true);
-		Directory.CreateDirectory(Consts.IMAGE_FOLDER_NAME);
+		if (Directory.Exists(Const.IMAGE_FOLDER_NAME))
+			Directory.Delete(Const.IMAGE_FOLDER_NAME, true);
+		Directory.CreateDirectory(Const.IMAGE_FOLDER_NAME);
 
 		string rootPath;
 		string path;
 		string folderPath;
 		foreach (var item in _db.GetFolderStructure())
 		{
-			rootPath = Path.Combine(Consts.IMAGE_FOLDER_NAME, item.Key);
+			rootPath = Path.Combine(Const.IMAGE_FOLDER_NAME, item.Key);
 			if (!Directory.Exists(rootPath))
 				Directory.CreateDirectory(rootPath);
 
@@ -86,13 +86,13 @@ internal partial class DownloadViewModel : ObservableObject
 				if (!Directory.Exists(path))
 					Directory.CreateDirectory(path);
 
-				folderPath = Path.Combine(path, Consts.BASIC_FOLDER_NAME);
+				folderPath = Path.Combine(path, Const.BASIC_FOLDER_NAME);
 				Directory.CreateDirectory(folderPath);
 
-				folderPath = Path.Combine(path, Consts.UNIQUE_FOLDER_NAME);
+				folderPath = Path.Combine(path, Const.UNIQUE_FOLDER_NAME);
 				Directory.CreateDirectory(folderPath);
 
-				folderPath = Path.Combine(path, Consts.SET_FOLDER_NAME);
+				folderPath = Path.Combine(path, Const.SET_FOLDER_NAME);
 				Directory.CreateDirectory(folderPath);
 			}
 		}
@@ -131,31 +131,31 @@ internal partial class DownloadViewModel : ObservableObject
 		var result = new List<FolderStructure>(Count);
 		foreach (var item in _db.GetFolderStructure())
 		{
-			rootPath = Path.Combine(Consts.IMAGE_FOLDER_NAME, item.Key);
+			rootPath = Path.Combine(Const.IMAGE_FOLDER_NAME, item.Key);
 			foreach (var type in item.Value)
 			{
 				var name = type.Base.BaseTypeName;
 				path = Path.Combine(rootPath, name);
 
-				folderPath = Path.Combine(path, Consts.BASIC_FOLDER_NAME);
+				folderPath = Path.Combine(path, Const.BASIC_FOLDER_NAME);
 				foreach (var baseItem in type.Base.SubItems)
 				{
 					fileName = baseItem.Name.ToLowerInvariant().Replace(" ", "_");
 					result.Add(new(name.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
 				}
 
-				folderPath = Path.Combine(path, Consts.UNIQUE_FOLDER_NAME);
+				folderPath = Path.Combine(path, Const.UNIQUE_FOLDER_NAME);
 				foreach (var unique in type.Uniques)
 				{
 					fileName = unique.Name.ToLowerInvariant().Replace(" ", "_");
-					result.Add(new(Consts.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
+					result.Add(new(Const.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
 				}
 
-				folderPath = Path.Combine(path, Consts.SET_FOLDER_NAME);
+				folderPath = Path.Combine(path, Const.SET_FOLDER_NAME);
 				foreach (var set in type.Sets)
 				{
 					fileName = set.Name.ToLowerInvariant().Replace(" ", "_");
-					result.Add(new(Consts.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
+					result.Add(new(Const.UNIQUE_FOLDER_NAME.ToLowerInvariant().Replace(" ", "_"), $"{Path.Combine(folderPath, fileName)}.webp"));
 				}
 			}
 		}

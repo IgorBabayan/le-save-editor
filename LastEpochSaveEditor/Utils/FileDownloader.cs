@@ -6,7 +6,7 @@ internal static class FileDownloader
 	{
 		using (var httpClinet = new HttpClient())
 		{
-			var url = string.Format(Consts.IMAGE_URL, type, Path.GetFileName(path));
+			var url = string.Format(Const.IMAGE_URL, type, Path.GetFileName(path));
 			using (var message = await httpClinet.GetAsync(url))
 			{
 				message.EnsureSuccessStatusCode();

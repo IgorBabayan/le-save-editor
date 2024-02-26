@@ -48,7 +48,7 @@ public partial class Character
 	public int CharacterClass { get; set; }
 
 	[JsonProperty("savedItems")]
-	public List<SavedItem> SavedItems { get; set; }
+	public List<SavedItem> SavedItems { get; set; } = new();
 
 	[JsonProperty("savedCharacterTree")]
 	public SavedCharacterTree SavedCharacterTree { get; set; }

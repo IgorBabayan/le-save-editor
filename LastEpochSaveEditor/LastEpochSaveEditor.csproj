@@ -31,20 +31,17 @@
     <None Remove="Images\Classes\Spellblade.png" />
     <None Remove="Images\Classes\VoidKnight.png" />
     <None Remove="Images\Classes\Warlock.png" />
-    <None Remove="Images\Misc\ActiveLeft.png" />
-    <None Remove="Images\Misc\ActiveRight.png" />
-    <None Remove="Images\Misc\ActiveTab.png" />
-    <None Remove="Images\Misc\HoverLeft.png" />
-    <None Remove="Images\Misc\HoverRight.png" />
-    <None Remove="Images\Misc\HoverTab.png" />
-    <None Remove="Images\Misc\Idols.png" />
+    <None Remove="Images\Misc\Amulet.png" />
+    <None Remove="Images\Misc\Belt.png" />
+    <None Remove="Images\Misc\Body.png" />
+    <None Remove="Images\Misc\Boots.png" />
+    <None Remove="Images\Misc\Gloves.png" />
+    <None Remove="Images\Misc\Helm.png" />
     <None Remove="Images\Misc\ItemBackground.png" />
-    <None Remove="Images\Misc\Left.png" />
-    <None Remove="Images\Misc\PressedLeft.png" />
-    <None Remove="Images\Misc\PressedRight.png" />
-    <None Remove="Images\Misc\PressedTab.png" />
-    <None Remove="Images\Misc\Right.png" />
-    <None Remove="Images\Misc\Tab.png" />
+    <None Remove="Images\Misc\Off-Hand.png" />
+    <None Remove="Images\Misc\Relic.png" />
+    <None Remove="Images\Misc\Ring.png" />
+    <None Remove="Images\Misc\Weapon.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -85,20 +82,17 @@
     <Resource Include="Images\Classes\Spellblade.png" />
     <Resource Include="Images\Classes\VoidKnight.png" />
     <Resource Include="Images\Classes\Warlock.png" />
-    <Resource Include="Images\Misc\ActiveTab.png" />
-    <Resource Include="Images\Misc\HoverRight.png" />
-    <Resource Include="Images\Misc\HoverTab.png" />
-    <Resource Include="Images\Misc\Idols.png" />
+    <Resource Include="Images\Misc\Amulet.png" />
+    <Resource Include="Images\Misc\Belt.png" />
+    <Resource Include="Images\Misc\Body.png" />
+    <Resource Include="Images\Misc\Boots.png" />
+    <Resource Include="Images\Misc\Gloves.png" />
+    <Resource Include="Images\Misc\Helm.png" />
     <Resource Include="Images\Misc\ItemBackground.png" />
-    <Resource Include="Images\Misc\Left.png" />
-    <Resource Include="Images\Misc\ActiveLeft.png" />
-    <Resource Include="Images\Misc\HoverLeft.png" />
-    <Resource Include="Images\Misc\PressedLeft.png" />
-    <Resource Include="Images\Misc\PressedRight.png" />
-    <Resource Include="Images\Misc\PressedTab.png" />
-    <Resource Include="Images\Misc\Right.png" />
-    <Resource Include="Images\Misc\ActiveRight.png" />
-    <Resource Include="Images\Misc\Tab.png" />
+    <Resource Include="Images\Misc\Off-Hand.png" />
+    <Resource Include="Images\Misc\Relic.png" />
+    <Resource Include="Images\Misc\Ring.png" />
+    <Resource Include="Images\Misc\Weapon.png" />
   </ItemGroup>
 
   <ItemGroup>

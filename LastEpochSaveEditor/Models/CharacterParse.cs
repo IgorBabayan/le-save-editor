@@ -14,11 +14,7 @@ public partial class Character
 			if (SoloChallenge)
 				builder.Append("Solo");
 
-			if (Hardcore)
-				builder.Append("HC");
-			else
-				builder.Append("SC");
-
+			builder.Append(Hardcore ? "HC" : "SC");
 			return builder.ToString();
 		}
 	}
@@ -29,9 +25,24 @@ public partial class Character
 	public void ParseSavedData()
 	{
 		ParseCharacterInventory();
-		//ParseCharacterStash();
-		//ParseBlessings();
-		//ParseIdols();
+		ParseCharacterStash();
+		ParseBlessings();
+		ParseIdols();
+	}
+
+	private void ParseIdols()
+	{
+		
+	}
+
+	private void ParseBlessings()
+	{
+		
+	}
+
+	private void ParseCharacterStash()
+	{
+		
 	}
 
 	private void ParseCharacterInventory()
