@@ -52,7 +52,7 @@ public partial class App : Application
         services.AddSingleton<BlessingView>();
         services.AddSingleton<IdolView>();
         services.AddSingleton<DownloadWindow>();
-        services.AddTransient<ItemWindow>();
+        services.AddSingleton<ItemWindow>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)

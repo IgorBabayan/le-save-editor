@@ -1,31 +1,34 @@
 ﻿<UserControl x:Class="LastEpochSaveEditor.Popups.ItemWindow"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
              xmlns:local="clr-namespace:LastEpochSaveEditor.Popups"
-             mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
+             xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters">
+	<UserControl.Resources>
+		<converters:QualityToColorConverter x:Key="QualityToColorConverter"></converters:QualityToColorConverter>
+	</UserControl.Resources>
+	<Grid>
 		<Rectangle Fill="{DynamicResource PopupColor}" Opacity=".5"></Rectangle>
 
-		<Border CornerRadius="10" Background="{DynamicResource BackgroundColor}" Margin="10">
+		<Border CornerRadius="10" VerticalAlignment="Center" HorizontalAlignment="Center"
+		        Background="{DynamicResource WindowBackgroundColor}" Margin="10">
 			<Grid>
 				<Grid.RowDefinitions>
-					<RowDefinition Height="30" />
 					<RowDefinition Height="Auto" />
+					<RowDefinition />
 				</Grid.RowDefinitions>
 
-				<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
-					<Button Click="OnCloseClick" Width="44" Height="32" Style="{DynamicResource CloseButton}" ToolTip="Close">
-						<TextBlock FontFamily="{DynamicResource FontAwesomeSolid}" Text="&#xf00d;"></TextBlock>
-					</Button>
-				</StackPanel>
+				<DockPanel Grid.Row="0">
+					<TextBlock Text="I T E M   P R E V I E W" VerticalAlignment="Center"
+					           FontFamily="Oswald" DockPanel.Dock="Left" Margin="10"
+					           Style="{StaticResource ProgramDescriptionTextBlock}" />
+
+					<controls:CloseButton DockPanel.Dock="Right" PopupTooltip="Close"
+										  Margin="10" Command="{Binding CloseCommand}" />
+				</DockPanel>
 
 				<Grid Grid.Row="1" Margin="10">
 					<Grid.RowDefinitions>
-						<RowDefinition />
 						<RowDefinition />
 						<RowDefinition />
 						<RowDefinition />
@@ -34,17 +37,132 @@
 
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition />
-						<ColumnDefinition />
+						<ColumnDefinition Width="*" />
 					</Grid.ColumnDefinitions>
 
+					<controls:ItemButton Grid.Row="0" HorizontalAlignment="Right"
+										 IsEnabled="False"
+					                     Margin="10" Item="{Binding SelectedItem}" />
 
-					<WrapPanel>
-						<!--<controls:ItemButton Quality="{Binding Quality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Command="{Binding TestCommand}"
-											 IconWidth="{Binding Width}" IconHeight="{Binding Height}" DataContext="{Binding SelectedItem}"
-											 Icon="{Binding Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"></controls:ItemButton>-->
-						<!--<controls:ItemImage Grid.Row="0" DataContext="{Binding SelectedItem}"
-								Source="{Binding Icon}" IconWidth="{Binding Width}" IconHeight="{Binding Height}" Quality="{Binding Quality}" />-->
-					</WrapPanel>
+					<!--#region Base info -->
+					
+					<Border Grid.Row="0" Grid.Column="1"
+					        Style="{StaticResource ItemStyle}">
+						<Grid Margin="10">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto" />
+								<RowDefinition />
+								<RowDefinition />
+								<RowDefinition />
+								<RowDefinition />
+							</Grid.RowDefinitions>
+
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition />
+							</Grid.ColumnDefinitions>
+
+							<TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+									   FontWeight="ExtraBold"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Text="Base info" />
+
+							<TextBlock Grid.Row="1" Grid.Column="0" Text="Type:"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Margin="0,10,0,0" />
+
+							<ComboBox Grid.Row="1" Grid.Column="1" Width="100"
+							          Margin="0,10,0,0"></ComboBox>
+
+							<TextBlock Grid.Row="2" Grid.Column="0" Text="Base:"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Margin="0,10,0,0" />
+
+							<ComboBox Grid.Row="2" Grid.Column="1" Width="100"
+							          Margin="0,10,0,0"></ComboBox>
+
+							<TextBlock Grid.Row="3" Grid.Column="0" Text="Quality:"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Margin="0,10,10,0" />
+
+							<ComboBox Grid.Row="3" Grid.Column="1" Width="100"
+									  ItemsSource="{Binding ItemTypes}"
+									  SelectedItem="{Binding SelectedQuality, Converter={StaticResource QualityToColorConverter}}"
+							          Margin="0,10,0,0"></ComboBox>
+
+							<TextBlock Grid.Row="4" Grid.Column="0" Text="Forgin:"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Margin="0,10,0,0" />
+
+							<TextBox Grid.Row="4" Grid.Column="1" Width="100"
+							         Margin="0,10,0,0"></TextBox>
+						</Grid>
+					</Border>
+					
+					<!--#endregion-->
+
+					<!--#region Prefixes -->
+					
+					<Border Grid.Row="1" Grid.Column="0"
+					        Style="{StaticResource ItemStyle}">
+						<Grid Margin="10">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto" />
+								<RowDefinition />
+							</Grid.RowDefinitions>
+
+							<TextBlock Grid.Row="0"
+							           FontWeight="ExtraBold"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Text="Prefixes" />
+						</Grid>
+					</Border>
+					
+					<!--#endregion-->
+
+					<!--#region Affixes -->
+
+					<Border Grid.Row="1" Grid.Column="1"
+					        Style="{StaticResource ItemStyle}">
+						<Grid Margin="10">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto" />
+								<RowDefinition />
+							</Grid.RowDefinitions>
+
+							<TextBlock Grid.Row="0"
+							           FontWeight="ExtraBold"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Text="Affixes" />
+						</Grid>
+					</Border>
+
+					<!--#endregion-->
+
+					<!--#region Seal -->
+
+					<Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+					        Style="{StaticResource ItemStyle}">
+						<Grid Margin="10">
+							<Grid.RowDefinitions>
+								<RowDefinition Height="Auto" />
+								<RowDefinition />
+							</Grid.RowDefinitions>
+
+							<TextBlock Grid.Row="0"
+							           FontWeight="ExtraBold"
+							           Foreground="{DynamicResource DescriptionTitleBackgroundColor}"
+							           Text="Seal" />
+						</Grid>
+					</Border>
+
+					<!--#endregion-->
+
+					<StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" 
+					            VerticalAlignment="Center" HorizontalAlignment="Right">
+						<Button Content="Save" Margin="0,0,10,0"></Button>
+						<Button Content="Cancel"></Button>
+					</StackPanel>
 				</Grid>
 			</Grid>
 		</Border>

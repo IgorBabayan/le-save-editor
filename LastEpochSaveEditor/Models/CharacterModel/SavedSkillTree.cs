@@ -1,9 +1,15 @@
-﻿namespace LastEpochSaveEditor.Models;
+﻿namespace LastEpochSaveEditor.Models.CharacterModel;
 
-public class SavedCharacterTree
+public class SavedSkillTree
 {
 	[JsonProperty("treeID")]
 	public string TreeID { get; set; }
+
+	[JsonProperty("slotNumber")]
+	public int SlotNumber { get; set; }
+
+	[JsonProperty("xp")]
+	public int Xp { get; set; }
 
 	[JsonProperty("version")]
 	public int Version { get; set; }
@@ -19,4 +25,7 @@ public class SavedCharacterTree
 
 	[JsonProperty("nodesTaken")]
 	public object NodesTaken { get; set; }
+
+	[JsonProperty("abilityXP")]
+	public double AbilityXP { get; set; }
 }

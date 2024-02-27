@@ -6,6 +6,7 @@
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceDictionary Source="./Styles/Theme.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/FontAwesome.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="./Styles/Border.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/Popup.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/Button.xaml"></ResourceDictionary>
 				<ResourceDictionary Source="./Styles/TextBlock.xaml"></ResourceDictionary>

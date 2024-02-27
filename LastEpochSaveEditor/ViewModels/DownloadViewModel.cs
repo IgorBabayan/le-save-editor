@@ -48,9 +48,9 @@ internal partial class DownloadViewModel : ObservableObject
 	[RelayCommand]
 	private void Close()
 	{
-		var downloadWindow = App.GetService<DownloadWindow>();
+		var window = App.GetService<DownloadWindow>();
 		var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
-		grid.Children.Remove(downloadWindow);
+		grid.Children.Remove(window);
 	}
 
 	#endregion

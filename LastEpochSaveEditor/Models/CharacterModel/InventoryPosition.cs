@@ -1,4 +1,4 @@
-﻿namespace LastEpochSaveEditor.Models;
+﻿namespace LastEpochSaveEditor.Models.CharacterModel;
 
 public class InventoryPosition
 {

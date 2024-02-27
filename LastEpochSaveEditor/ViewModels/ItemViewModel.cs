@@ -9,12 +9,72 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 	[ObservableProperty]
 	private ItemDataInfo _selectedItem;
 
+	[ObservableProperty]
+	private IEnumerable<ItemTypeCategory> _itemTypes;
+
+	[ObservableProperty]
+	private string _selectedItemCategory;
+
+	[ObservableProperty] 
+	private IEnumerable<QualityType> _qualities;
+
+	[ObservableProperty]
+	private QualityType _selectedQuality;
+
 	#endregion
 
 	public ItemViewModel(IMessenger messenger)
 	{
 		_messenger = messenger; ;
 		_messenger.RegisterAll(this);
+
+		PopulateCategory();
+	}
+
+	[RelayCommand]
+	private void Close()
+	{
+		var window = App.GetService<ItemWindow>();
+		var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
+		grid.Children.Remove(window);
+	}
+
+	private void PopulateCategory()
+	{
+		ItemTypes = new List<ItemTypeCategory>
+		{
+			new()
+			{
+				Name = "Accessories",
+				SubCategories = new []{ "Amulet", "Relic", "Ring" }
+			},
+			new()
+			{
+				Name = "Armours",
+				SubCategories = new []{ "Belts", "Body Armor", "Boots", "Gloves", "Helmets" }
+			},
+			new()
+			{
+				Name = "Idols",
+				SubCategories = new []{ "Adorned Idol", "Grand Idol", "Humble Idol", "Large Idol", "Ornate Idol", "Small Idol", "Small Lagonian Idol",
+					"Stout Idol" }
+			},
+			new()
+			{
+				Name = "Off Hands",
+				SubCategories = new []{ "Catalyst", "Quiver", "Shield" }
+			},
+			new()
+			{
+				Name = "One hand weapons",
+				SubCategories = new []{ "1H Axes", "1H Dagger", "1H Maces", "1H Scepter", "1H Swords", "Wands" }
+			},
+			new()
+			{
+				Name = "Two hand weapons",
+				SubCategories = new[]{ "2H Axes", "2H Maces", "2H Polearm", "2H Staff", "2H Swords", "Bows" }
+			}
+		};
 	}
 
 	void IRecipient<SelectedItemInfoMessage>.Receive(SelectedItemInfoMessage message) => ReceiveItemInfo(message);
@@ -68,7 +128,7 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 				break;
 
 			case ItemInfoTypeEnum.All:
-				//SelectedItem = selectedItem.Value.CharacterInventory.Helm;
+				SelectedItem = null;
 				break;
 		}
 	}

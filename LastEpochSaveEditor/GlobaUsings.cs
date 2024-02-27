@@ -28,6 +28,7 @@ global using CommunityToolkit.Mvvm.Messaging.Messages;
 
 global using LastEpochSaveEditor.ViewModels;
 global using LastEpochSaveEditor.Models.Characters;
+global using LastEpochSaveEditor.Models.CharacterModel;
 global using LastEpochSaveEditor.Popups;
 global using LastEpochSaveEditor.Utils;
 global using LastEpochSaveEditor.Views;
