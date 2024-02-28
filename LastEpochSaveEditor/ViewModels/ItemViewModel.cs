@@ -15,7 +15,7 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 	[ObservableProperty]
 	private string _selectedItemCategory;
 
-	[ObservableProperty] 
+	[ObservableProperty]
 	private IEnumerable<QualityType> _qualities;
 
 	[ObservableProperty]
@@ -28,6 +28,8 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 		_messenger = messenger; ;
 		_messenger.RegisterAll(this);
 
+		Qualities = new[] { QualityType.Basic, QualityType.Magic, QualityType.Rare, QualityType.Exalted, QualityType.Unique, QualityType.Set,
+			QualityType.Legendary };
 		PopulateCategory();
 	}
 

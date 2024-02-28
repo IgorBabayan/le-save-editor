@@ -8,6 +8,7 @@ global using System.ComponentModel;
 global using System.Net.Http;
 global using System.Text;
 global using System.Windows.Input;
+global using System.Collections;
 
 global using SixLabors.ImageSharp;
 
