@@ -58,4 +58,10 @@
 			</Setter.Value>
 		</Setter>
 	</Style>
+
+	<Style x:Key="ModernComboBoxPopup" TargetType="Popup">
+		<Setter Property="AllowsTransparency" Value="True"></Setter>
+		<Setter Property="StaysOpen" Value="False"></Setter>
+		<Setter Property="Placement" Value="Bottom"></Setter>
+	</Style>
 </ResourceDictionary>

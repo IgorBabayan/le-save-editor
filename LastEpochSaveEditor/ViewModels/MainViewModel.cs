@@ -40,7 +40,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 		NavigationService = navigationService;
 		NavigationService.NavigateTo<CharacterViewModel>();
 
-		Characters = SaveFileLoader.Load();
+		Characters = SaveFileLoader.Load("1CHARACTERSLOT_BETA_0");
 		SelectedCharacter = Characters.FirstOrDefault();
 	}
 

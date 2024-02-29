@@ -92,7 +92,7 @@ public class CharacterInventory : ICharacterInventory
 
 	private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string? baseTypeName = null)
 	{
-		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.Id;
+		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.BaseId;
 		var name = item.FindName(itemInfo.Quality, id);
 
 		if (string.IsNullOrEmpty(name))

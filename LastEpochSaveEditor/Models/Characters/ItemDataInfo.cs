@@ -6,7 +6,7 @@ public class ItemDataInfo
 	public int UniqueOrSetId { get; set; }
 	public int Patch { get; set; }
 	public int Type { get; set; }
-	public int Id { get; set; }
+	public int BaseId { get; set; }
 	public QualityType Quality { get; set; }
 	public int LegendaryPotencial { get; set; }
 	public int Instability { get; set; }
@@ -29,7 +29,7 @@ public class ItemDataInfo
 		UniqueOrSetId = UniqueOrSetId,
 		Patch = Patch,
 		Type = Empty.Type,
-		Id = Id,
+		BaseId = BaseId,
 		LegendaryPotencial = LegendaryPotencial,
 		Instability = Instability,
 		ForgingPotencial = ForgingPotencial,
@@ -43,7 +43,7 @@ public class ItemDataInfo
 		UniqueOrSetId = -1,
 		Patch = -1,
 		Type = -1,
-		Id = -1,
+		BaseId = -1,
 		LegendaryPotencial = -1,
 		Instability = -1,
 		ForgingPotencial = -1,

@@ -1,20 +1,23 @@
 ﻿<UserControl x:Class="LastEpochSaveEditor.Controls.ModernComboBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
-             Height="22" Width="22">
+             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls">
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition />
 			<RowDefinition Height="*" />
 		</Grid.RowDefinitions>
 
-		<ToggleButton Grid.Row="0" x:Name="MainButton">
-			<ContentPresenter />
-		</ToggleButton>
+		<StackPanel Grid.Row="0" Orientation="Horizontal">
+			<ToggleButton x:Name="MainButton" Margin="0,0,5,0" Width="15">
+				<ContentPresenter Content="{Binding ButtonContent, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}" />
+			</ToggleButton>
 
-		<Popup Grid.Row="2" AllowsTransparency="True"
-			   Placement="Bottom" HorizontalOffset="-30"
+			<TextBlock Text="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}" 
+					   Foreground="White" />
+		</StackPanel>
+
+		<Popup Grid.Row="2" Style="{StaticResource ModernComboBoxPopup}"
 			   IsOpen="{Binding ElementName=MainButton, Path=IsChecked, Mode=OneWay}"
 			   PlacementTarget="{Binding ElementName=MainButton}">
 			<Grid>
@@ -23,17 +26,15 @@
 					<RowDefinition />
 				</Grid.RowDefinitions>
 
-				<Path Grid.Row="0" Style="{StaticResource ArrowPathDown}" />
+				<Path Grid.Row="0" Style="{StaticResource ArrowPathDown}"
+					  Fill="{DynamicResource ActiveColor}"
+					  Stroke="{DynamicResource ActiveColor}"
+					  HorizontalAlignment="Left" />
 
-				<Border Grid.Row="1" CornerRadius="4" Background="White">
-					<ItemsControl x:Name="ItemsControl" ItemsSource="{Binding ItemsSource}"
-								  DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}">
-						<ItemsControl.ItemTemplate>
-							<DataTemplate>
-								<Button Margin="10" Content="My button" />
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ItemsControl>
+				<Border Grid.Row="1" CornerRadius="0,4,4,4" BorderThickness="0"
+						Background="{DynamicResource ActiveColor}">
+					<ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}"
+								  ItemTemplate="{Binding ItemsContent, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}" />
 				</Border>
 			</Grid>
 		</Popup>

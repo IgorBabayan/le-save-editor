@@ -23,6 +23,16 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 
 	#endregion
 
+	#region Commands
+
+	[RelayCommand]
+	private void SetQuality(QualityType quality)
+	{
+
+	}
+
+	#endregion
+
 	public ItemViewModel(IMessenger messenger)
 	{
 		_messenger = messenger; ;

@@ -14,7 +14,7 @@ internal static class ItemDataParser
 		{
 			result.Patch = data[0];
 			result.Type = data[1];
-			result.Id = data[2];
+			result.BaseId = data[2];
 		}
 
 		if (data.Count > 3)
