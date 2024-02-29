@@ -4,7 +4,7 @@ public partial class ModernComboBox : UserControl
 {
 	public ModernComboBox() => InitializeComponent();
 
-    public IEnumerable ItemsSource
+	public IEnumerable ItemsSource
 	{
 		get => (IEnumerable)GetValue(ItemsSourceProperty);
 		set => SetValue(ItemsSourceProperty, value);
@@ -48,4 +48,13 @@ public partial class ModernComboBox : UserControl
 
 	public static readonly DependencyProperty ItemsContentProperty =
 		DependencyProperty.Register(nameof(ItemsContent), typeof(object), typeof(ModernComboBox), new PropertyMetadata(default(object)));
+
+	public bool IsChecked
+	{
+		get => (bool)GetValue(IsCheckedProperty);
+		set => SetValue(IsCheckedProperty, value);
+	}
+
+	public static readonly DependencyProperty IsCheckedProperty =
+		DependencyProperty.Register(nameof(IsChecked), typeof(bool), typeof(ModernComboBox), new PropertyMetadata(default(bool)));
 }

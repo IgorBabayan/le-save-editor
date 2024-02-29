@@ -30,7 +30,7 @@ public partial class App : Application
     private static void RegisterMisc(IServiceCollection services)
     {
         services.AddSingleton<IDB, DB>();
-        services.AddSingleton<INavigationService, Utils.NavigationService>();
+        services.AddSingleton<INavigationService, NavigationService>();
         services.AddTransient<ICharacterInventory, CharacterInventory>();
 
         services.AddTransient<Func<Type, ObservableObject>>(services => viewModelType =>
@@ -78,7 +78,7 @@ public partial class App : Application
         await _host!.StartAsync();
 
         var db = _host.Services.GetRequiredService<IDB>();
-        await db.Load();
+        await db.Reload();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
@@ -88,8 +88,13 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        var viewModel = _host!.Services.GetRequiredService<CharacterViewModel>();
-        WeakReferenceMessenger.Default.UnregisterAll(viewModel);
+        var mainViewModel = _host!.Services.GetRequiredService<MainViewModel>();
+        var characterViewModel = _host!.Services.GetRequiredService<CharacterViewModel>();
+        var itemViewModel = _host!.Services.GetRequiredService<ItemViewModel>();
+
+        WeakReferenceMessenger.Default.UnregisterAll(mainViewModel);
+        WeakReferenceMessenger.Default.UnregisterAll(characterViewModel);
+        WeakReferenceMessenger.Default.UnregisterAll(itemViewModel);
 
         await _host!.StopAsync();
         base.OnExit(e);

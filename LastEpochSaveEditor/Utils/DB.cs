@@ -14,8 +14,10 @@ internal sealed class DB : IDB
 		}
 
 		_database = JsonConvert.DeserializeObject<Database>(response)!;
+#if !DEBUG
 		foreach (var itemType in _database!.ItemTypes)
 			itemType.SubItems = itemType.SubItems.Where(x => x.CannotDrop == false).ToList();
+#endif
 	}
 
 	public async Task Load()

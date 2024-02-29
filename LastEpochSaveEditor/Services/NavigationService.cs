@@ -1,4 +1,4 @@
-﻿namespace LastEpochSaveEditor.Utils;
+﻿namespace LastEpochSaveEditor.Services;
 
 internal interface INavigationService
 {

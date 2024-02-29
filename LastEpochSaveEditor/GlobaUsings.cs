@@ -9,6 +9,7 @@ global using System.Net.Http;
 global using System.Text;
 global using System.Windows.Input;
 global using System.Collections;
+global using System.Windows;
 
 global using SixLabors.ImageSharp;
 
@@ -16,7 +17,6 @@ global using Newtonsoft.Json;
 
 global using Serilog;
 global using Serilog.Events;
-global using System.Windows;
 
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Hosting;
@@ -38,5 +38,6 @@ global using LastEpochSaveEditor.Models;
 global using LastEpochSaveEditor.Models.Database;
 global using LastEpochSaveEditor.Utils.Exceptions;
 global using LastEpochSaveEditor.Models.Utils;
+global using LastEpochSaveEditor.Services;
 
 global using Color = System.Windows.Media.Color;

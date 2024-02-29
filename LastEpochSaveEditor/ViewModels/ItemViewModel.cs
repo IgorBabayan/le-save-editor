@@ -21,6 +21,9 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 	[ObservableProperty]
 	private QualityType _selectedQuality;
 
+	[ObservableProperty]
+	private bool _isChecked;
+
 	#endregion
 
 	#region Commands
@@ -28,7 +31,8 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 	[RelayCommand]
 	private void SetQuality(QualityType quality)
 	{
-
+		SelectedQuality = quality;
+		IsChecked = false;
 	}
 
 	#endregion
@@ -140,8 +144,10 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 				break;
 
 			case ItemInfoTypeEnum.All:
-				SelectedItem = null;
+				SelectedItem = ItemDataInfo.Empty;
 				break;
 		}
+
+		SelectedQuality = SelectedItem.Quality;
 	}
 }

@@ -62,7 +62,7 @@ public class CharacterInventory : ICharacterInventory
 			DecodePixelWidth = 200
 		};
 		icon.BeginInit();
-		if (!string.IsNullOrWhiteSpace(path))
+		if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
 			icon.UriSource = new(path);
 		else
 			icon.UriSource = new(defaultPath, UriKind.RelativeOrAbsolute);
