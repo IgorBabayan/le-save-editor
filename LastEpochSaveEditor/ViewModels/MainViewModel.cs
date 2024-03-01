@@ -3,7 +3,7 @@
 internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewChangedMessage>
 {
 	private readonly IMessenger _messenger;
-	private readonly IDB _db;
+	private readonly IDatabaseSerive _db;
 
 	#region Properties
 
@@ -30,7 +30,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 
 	#endregion
 
-	public MainViewModel(IMessenger messenger, IDB db, INavigationService navigationService)
+	public MainViewModel(IMessenger messenger, IDatabaseSerive db, INavigationService navigationService)
 	{
 		_db = db;
 

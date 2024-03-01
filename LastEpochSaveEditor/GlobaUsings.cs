@@ -36,8 +36,10 @@ global using LastEpochSaveEditor.Views;
 global using LastEpochSaveEditor.Messages;
 global using LastEpochSaveEditor.Models;
 global using LastEpochSaveEditor.Models.Database;
-global using LastEpochSaveEditor.Utils.Exceptions;
+global using LastEpochSaveEditor.Data;
 global using LastEpochSaveEditor.Models.Utils;
 global using LastEpochSaveEditor.Services;
+global using LastEpochSaveEditor.Extensions;
+global using LastEpochSaveEditor.Services.Factories;
 
 global using Color = System.Windows.Media.Color;

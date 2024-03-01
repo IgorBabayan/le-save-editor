@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class GridSize
+public class GridSize
 {
 	[JsonProperty("x")]
 	public int X { get; set; }

@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class ItemType
+public class ItemType
 {
 	[JsonProperty("BaseTypeName")]
 	public string BaseTypeName { get; set; }
@@ -12,7 +12,7 @@ internal class ItemType
 	public string LootFilterNameOverride { get; set; }
 
 	[JsonProperty("baseTypeID")]
-	public int BaseTypeID { get; set; }
+	public ItemInfoTypeEnum BaseTypeID { get; set; }
 
 	[JsonProperty("maximumAffixes")]
 	public int MaximumAffixes { get; set; }

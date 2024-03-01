@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class SubItem
+public class SubItem
 {
 	[JsonProperty("name")]
 	public string Name { get; set; }

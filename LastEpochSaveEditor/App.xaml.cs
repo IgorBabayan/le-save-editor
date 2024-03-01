@@ -16,69 +16,23 @@ public partial class App : Application
             })
             .ConfigureServices((_, services) =>
             {
-                RegisterMisc(services);
-                RegisterWindows(services);
-                RegisterControls(services);
-                RegisterViewModels(services);
-                RegisterMessenger(services);
+                services.RegisterMisc();
+				services.RegisterWindows();
+				services.RegisterControls();
+                services.RegisterViewModels();
+                services.RegisterMessenger();
             }).Build();
     }
 
     public static TService GetService<TService>()
         where TService : class => _host!.Services.GetRequiredService<TService>();
 
-    private static void RegisterMisc(IServiceCollection services)
-    {
-        services.AddSingleton<IDB, DB>();
-        services.AddSingleton<INavigationService, NavigationService>();
-        services.AddTransient<ICharacterInventory, CharacterInventory>();
-
-        services.AddTransient<Func<Type, ObservableObject>>(services => viewModelType =>
-            (ObservableObject)services.GetRequiredService(viewModelType));
-    }
-
-    private static void RegisterWindows(IServiceCollection services)
-    {
-        services.AddSingleton<MainWindow>(provider => new MainWindow
-        {
-            DataContext = provider.GetRequiredService<MainViewModel>()
-        });
-    }
-
-    private static void RegisterControls(IServiceCollection services)
-    {
-        services.AddSingleton<CharacterView>();
-        services.AddSingleton<CharacterStashView>();
-        services.AddSingleton<BlessingView>();
-        services.AddSingleton<IdolView>();
-        services.AddSingleton<DownloadWindow>();
-        services.AddSingleton<ItemWindow>();
-    }
-
-    private static void RegisterViewModels(IServiceCollection services)
-    {
-        services.AddSingleton<MainViewModel>();
-        services.AddSingleton<DownloadViewModel>();
-        services.AddSingleton<CharacterViewModel>();
-        services.AddSingleton<CharacterStashViewModel>();
-        services.AddSingleton<BlessingViewModel>();
-        services.AddSingleton<IdolViewModel>();
-        services.AddSingleton<ItemViewModel>();
-    }
-
-    private static void RegisterMessenger(IServiceCollection services)
-    {
-        services.AddSingleton<WeakReferenceMessenger>();
-        services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider =>
-            provider.GetRequiredService<WeakReferenceMessenger>());
-    }
-
     protected override async void OnStartup(StartupEventArgs e)
     {
         await _host!.StartAsync();
 
-        var db = _host.Services.GetRequiredService<IDB>();
-        await db.Reload();
+        var db = _host.Services.GetRequiredService<IDatabaseSerive>();
+        await db.Load();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();

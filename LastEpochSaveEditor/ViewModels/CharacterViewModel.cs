@@ -49,78 +49,78 @@ internal partial class CharacterViewModel : ObservableObject, IRecipient<Selecte
 	[RelayCommand]
 	private void HelmPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Helm));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Helm));*/
 	}
 
 	[RelayCommand]
 	private void AmuletPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Amulet));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Amulet));*/
 	}
 
 	[RelayCommand]
 	private void WeaponPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Weapon));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Weapon));*/
 	}
 
 	[RelayCommand]
 	private void BodyPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Body));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Body));*/
 	}
 
 	[RelayCommand]
 	private void OffHandPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.OffHand));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.OffHand));*/
 	}
 
 	[RelayCommand]
 	private void LeftRingPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.LeftRing));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.LeftRing));*/
 	}
 
 	[RelayCommand]
 	private void BeltPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Belt));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Belt));*/
 	}
 
 	[RelayCommand]
 	private void RightRingPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.RightRing));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.RightRing));*/
 	}
 
 	[RelayCommand]
 	private void GlovesPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Gloves));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Gloves));*/
 	}
 
 	[RelayCommand]
 	private void BootsPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Boots));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Boots));*/
 	}
 
 	[RelayCommand]
 	private void RelicPressed()
 	{
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Relic));
+		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
+		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Relic));*/
 	}
 
 	#endregion

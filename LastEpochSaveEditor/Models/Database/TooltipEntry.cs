@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class TooltipEntry
+public class TooltipEntry
 {
 	[JsonProperty("modDisplay")]
 	public int ModDisplay { get; set; }

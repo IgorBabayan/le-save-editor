@@ -5,7 +5,7 @@ public class ItemDataInfo
 	public bool IsSeal { get; set; }
 	public int UniqueOrSetId { get; set; }
 	public int Patch { get; set; }
-	public int Type { get; set; }
+	public ItemInfoTypeEnum Type { get; set; }
 	public int BaseId { get; set; }
 	public QualityType Quality { get; set; }
 	public int LegendaryPotencial { get; set; }
@@ -42,7 +42,7 @@ public class ItemDataInfo
 		IsSeal = false,
 		UniqueOrSetId = -1,
 		Patch = -1,
-		Type = -1,
+		Type = ItemInfoTypeEnum.Helmet,
 		BaseId = -1,
 		LegendaryPotencial = -1,
 		Instability = -1,

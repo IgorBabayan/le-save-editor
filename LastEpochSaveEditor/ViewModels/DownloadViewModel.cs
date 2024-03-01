@@ -3,7 +3,7 @@
 internal partial class DownloadViewModel : ObservableObject
 {
 	private readonly ILogger<DownloadViewModel> _logger;
-	private readonly IDB _db;
+	private readonly IDatabaseSerive _db;
 
 	#region Properties
 
@@ -38,7 +38,8 @@ internal partial class DownloadViewModel : ObservableObject
 	[RelayCommand]
 	private void Download()
 	{
-		Count = _db.Count();
+		throw new NotImplementedException();
+		//Count = _db.Count();
 		CanDownload = false;
 	
 		PrepareFolders();
@@ -55,7 +56,7 @@ internal partial class DownloadViewModel : ObservableObject
 
 	#endregion
 
-	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDB db)
+	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDatabaseSerive db)
 	{
 		_logger = logger;
 		_db = db;
@@ -66,7 +67,8 @@ internal partial class DownloadViewModel : ObservableObject
 
 	private void PrepareFolders()
 	{
-		if (Directory.Exists(Const.IMAGE_FOLDER_NAME))
+		throw new NotImplementedException();
+		/*if (Directory.Exists(Const.IMAGE_FOLDER_NAME))
 			Directory.Delete(Const.IMAGE_FOLDER_NAME, true);
 		Directory.CreateDirectory(Const.IMAGE_FOLDER_NAME);
 
@@ -95,7 +97,7 @@ internal partial class DownloadViewModel : ObservableObject
 				folderPath = Path.Combine(path, Const.SET_FOLDER_NAME);
 				Directory.CreateDirectory(folderPath);
 			}
-		}
+		}*/
 	}
 
 	private void DownloadImages()
@@ -124,7 +126,8 @@ internal partial class DownloadViewModel : ObservableObject
 
 	private IEnumerable<FolderStructure> GetFilesForDownload()
 	{
-		string rootPath;
+		throw new NotImplementedException ();
+		/*string rootPath;
 		string path;
 		string folderPath;
 		string fileName;
@@ -160,7 +163,7 @@ internal partial class DownloadViewModel : ObservableObject
 			}
 		}
 			
-		return result;
+		return result;*/
 	}
 
 	private async Task DownloadFile(FolderStructure file)
@@ -170,7 +173,7 @@ internal partial class DownloadViewModel : ObservableObject
 			DownloadProgressText = Path.GetFileName(file.Path);
 			_logger.LogInformation($"Download: {DownloadProgressText}");
 
-			await FileDownloader.DownloadFile(file.Type, file.Path);
+			await FileDownloader.DownloadImage(file.Type, file.Path);
 			DownloadProgress++;
 		}
 		catch (Exception exception)

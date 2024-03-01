@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class PreClassIncompatibilityDropList
+public class PreClassIncompatibilityDropList
 {
 	[JsonProperty("list")]
 	public List<int> List { get; set; }

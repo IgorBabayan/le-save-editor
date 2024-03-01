@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class Implicit
+public class Implicit
 {
 	[JsonProperty("property")]
 	public int Property { get; set; }

@@ -97,7 +97,7 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 
 	private void ReceiveItemInfo(SelectedItemInfoMessage selectedItem)
 	{
-		switch (selectedItem.InfoType)
+		/*switch (selectedItem.InfoType)
 		{
 			case ItemInfoTypeEnum.Helm:
 				SelectedItem = selectedItem.Value.CharacterInventory.Helm;
@@ -148,6 +148,6 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 				break;
 		}
 
-		SelectedQuality = SelectedItem.Quality;
+		SelectedQuality = SelectedItem.Quality;*/
 	}
 }

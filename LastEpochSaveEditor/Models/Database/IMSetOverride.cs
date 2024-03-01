@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class IMSetOverride
+public class IMSetOverride
 {
 	[JsonProperty("classID")]
 	public int ClassID { get; set; }

@@ -1,5 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Characters;
 
+[Flags]
 public enum QualityType
 {
 	Basic = 0,
@@ -8,5 +9,6 @@ public enum QualityType
 	Exalted = 4,
 	Unique = 7,
 	Set = 8,
-	Legendary = 9
+	Legendary = 9,
+	NotUniqueOrSet = Basic | Magic | Rare | Exalted
 }

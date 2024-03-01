@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class Mod
+public class Mod
 {
 	[JsonProperty("value")]
 	public double Value { get; set; }

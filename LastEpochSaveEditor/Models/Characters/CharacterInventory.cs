@@ -2,58 +2,86 @@
 
 public interface ICharacterInventory : IInventory
 {
-	ItemDataInfo Helm { get; set; }
-	ItemDataInfo Body { get; set; }
-	ItemDataInfo Weapon { get; set; }
-	ItemDataInfo OffHand { get; set; }
-	ItemDataInfo Gloves { get; set; }
-	ItemDataInfo Belt { get; set; }
-	ItemDataInfo Boots { get; set; }
-	ItemDataInfo LeftRing { get; set; }
-	ItemDataInfo RightRing { get; set; }
-	ItemDataInfo Amulet { get; set; }
-	ItemDataInfo Relic { get; set; }
+	ItemDataInfo Helm { get; }
+	ItemDataInfo Body { get; }
+	ItemDataInfo Weapon { get; }
+	ItemDataInfo OffHand { get; }
+	ItemDataInfo Gloves { get; }
+	ItemDataInfo Belt { get; }
+	ItemDataInfo Boots { get; }
+	ItemDataInfo LeftRing { get; }
+	ItemDataInfo RightRing { get; }
+	ItemDataInfo Amulet { get; }
+	ItemDataInfo Relic { get; }
 }
 
 public class CharacterInventory : ICharacterInventory
 {
 	private readonly ILogger<CharacterInventory> _logger;
-	private readonly IDB _db;
+	private readonly IDatabaseSerive _db;
 
-	public ItemDataInfo Helm { get; set; }
-	public ItemDataInfo Body { get; set; }
-	public ItemDataInfo Weapon { get; set; }
-	public ItemDataInfo OffHand { get; set; }
-	public ItemDataInfo Gloves { get; set; }
-	public ItemDataInfo Belt { get; set; }
-	public ItemDataInfo Boots { get; set; }
-	public ItemDataInfo LeftRing { get; set; }
-	public ItemDataInfo RightRing { get; set; }
-	public ItemDataInfo Amulet { get; set; }
-	public ItemDataInfo Relic { get; set; }
+	public ItemDataInfo Helm => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Helmet) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Body => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Body) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Weapon => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Weapons) ?? ItemDataInfo.Empty;
+	public ItemDataInfo OffHand => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.OffHands) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Gloves => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Gloves) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Belt => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Belt) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Boots => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Boots) ?? ItemDataInfo.Empty;
+	public ItemDataInfo LeftRing => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Ring) ?? ItemDataInfo.Empty;
+	public ItemDataInfo RightRing => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Ring) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Amulet => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Amulet) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Relic => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Relic) ?? ItemDataInfo.Empty;
+	
+	private IEnumerable<ItemDataInfo>? _items;
+	private readonly IItemInfoFactory _factory;
 
-	public CharacterInventory(ILogger<CharacterInventory> logger)
+	public CharacterInventory(ILogger<CharacterInventory> logger, IDatabaseSerive db, IItemInfoFactory factory)
 	{
 		_logger = logger;
-		_db = App.GetService<IDB>();
+		_db = db;
+		_factory = factory;
 	}
 
 	public void Parse(IDictionary<int, List<int>> data)
 	{
-		ParseHelm(data);
-		ParseBody(data);
-		ParseWeapon(data);
-		ParseOffHand(data);
-		ParseGloves(data);
-		ParseBelt(data);
-		ParseBoots(data);
-		ParseLeftRing(data);
-		ParseRightRing(data);
-		ParseAmulet(data);
-		ParseRelic(data);
+		_items = new List<ItemDataInfo>(data.Count)
+		{
+			Parse(data, 2, "Helm"),
+			//Parse(data, 3, "Body"),
+			/*Parse(data, 4, "Weapon"),
+			Parse(data, 5, "Off-hand"),*/
+			/*Parse(data, 6, "Gloves"),
+			Parse(data, 7, "Belt"),
+			Parse(data, 8, "Boots"),
+			Parse(data, 9, "Left ring"),
+			Parse(data, 10, "Right ring"),
+			Parse(data, 11, "Amulet"),
+			Parse(data, 12, "Relic")*/
+		};
 	}
 
-	private static BitmapImage CreateImage(string path, string defaultPath)
+	private BitmapImage CreateImage(ItemDataInfo itemInfo)
+	{
+		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.BaseId;
+		var item = _factory.Create(itemInfo.Type);
+		var imagePath = item.GetIcon(_db, itemInfo.Quality, id);
+		var icon = new BitmapImage
+		{
+			CacheOption = BitmapCacheOption.OnLoad,
+			CreateOptions = BitmapCreateOptions.IgnoreImageCache,
+			DecodePixelWidth = 200
+		};
+		icon.BeginInit();
+		if (File.Exists(imagePath))
+			icon.UriSource = new(imagePath);
+		else
+			icon.UriSource = new(item.BaseIcon, UriKind.RelativeOrAbsolute);
+		icon.EndInit();
+
+		return icon;
+	}
+
+	/*private static BitmapImage CreateImage(string path, string defaultPath)
 	{
 		var icon = new BitmapImage
 		{
@@ -69,28 +97,9 @@ public class CharacterInventory : ICharacterInventory
 		icon.EndInit();
 
 		return icon;
-	}
+	}*/
 
-	private static string GetQualityFolderName(QualityType quality)
-	{
-		switch (quality)
-		{
-			case QualityType.Basic:
-			case QualityType.Magic:
-			case QualityType.Rare:
-			case QualityType.Exalted:
-				return Const.BASIC_FOLDER_NAME;
-
-			case QualityType.Unique:
-			case QualityType.Legendary:
-				return Const.UNIQUE_FOLDER_NAME;
-
-			default:
-				return Const.SET_FOLDER_NAME;
-		}
-	}
-
-	private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string? baseTypeName = null)
+	/*private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string? baseTypeName = null)
 	{
 		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.BaseId;
 		var name = item.FindName(itemInfo.Quality, id);
@@ -105,8 +114,9 @@ public class CharacterInventory : ICharacterInventory
 		return Path.GetFullPath($"{basePath}{baseTypeName}/{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
 	}
 
-	private static string GetIcon(IEnumerable<Item> items, ItemDataInfo itemInfo, string basePath)
+	private static string GetIcon(ItemDataInfo itemInfo)
 	{
+
 		var path = string.Empty;
 		foreach (var item in items)
 		{
@@ -116,9 +126,9 @@ public class CharacterInventory : ICharacterInventory
 		}
 
 		return path;
-	}
+	}*/
 
-	private void ParseHelm(IDictionary<int, List<int>> data)
+	/*private void ParseHelm(IDictionary<int, List<int>> data)
 	{
 		Helm = Parse(data, 2, "Helm");
 		Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Const.HELMETS), Const.HELM_ICON);
@@ -209,7 +219,7 @@ public class CharacterInventory : ICharacterInventory
 		Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Const.RELIC), Const.RELIC_ICON);
 		Relic.Width = 69;
 		Relic.Height = 69;
-	}
+	}*/
 
 	private ItemDataInfo Parse(IDictionary<int, List<int>> data, int index, string name)
 	{
@@ -223,7 +233,10 @@ public class CharacterInventory : ICharacterInventory
 			_logger.LogInformation($"Begin parse '{name}' data.");
 
 			if (data.TryGetValue(index, out var value))
+			{
 				result = ItemDataParser.ParseData(value);
+				result.Icon = CreateImage(result);
+			}
 		}
 		catch (Exception exception)
 		{

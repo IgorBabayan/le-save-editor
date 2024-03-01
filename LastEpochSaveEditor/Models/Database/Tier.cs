@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class Tier
+public class Tier
 {
 	[JsonProperty("minRoll")]
 	public double MinRoll { get; set; }

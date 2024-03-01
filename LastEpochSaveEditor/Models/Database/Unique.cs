@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class Unique
+public class Unique
 {
 	[JsonProperty("name")]
 	public string Name { get; set; }
@@ -48,7 +48,7 @@ internal class Unique
 	public int SubTypeForIM { get; set; }
 
 	[JsonProperty("baseType")]
-	public int BaseType { get; set; }
+	public ItemInfoTypeEnum BaseType { get; set; }
 
 	[JsonProperty("subTypes")]
 	public List<int> SubTypes { get; set; }

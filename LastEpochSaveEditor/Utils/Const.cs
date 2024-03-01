@@ -18,17 +18,17 @@ internal static class Const
 	public const string SET_FOLDER_NAME = "Sets";
 	public const string UNIQUE_FOLDER_NAME = "Uniques";
 
-	public const string HELMETS = "Images/Armours/Helmets/";
-	public const string BODY_ARMOR = "Images/Armours/Body Armor/";
-	public const string ONE_HAND_WEAPONS = "Images/One hand weapons/";
-	public const string TWO_HAND_WEAPONS = "Images/Two hand weapons/";
-	public const string GLOVES = "Images/Armours/Gloves/";
-	public const string BELTS = "Images/Armours/Belts/";
-	public const string BOOTS = "Images/Armours/Boots/";
-	public const string RING = "Images/Accessories/Ring/";
-	public const string AMULET = "Images/Accessories/Amulet/";
-	public const string RELIC = "Images/Accessories/Relic/";
-	public const string OFF_HAND = "Images/Off Hands/";
+	public const string HELMETS = "Images/Armours/Helmets";
+	public const string BODY_ARMOR = "Images/Armours/Body Armor";
+	public const string ONE_HAND_WEAPONS = "Images/One hand weapons";
+	public const string TWO_HAND_WEAPONS = "Images/Two hand weapons";
+	public const string GLOVES = "Images/Armours/Gloves";
+	public const string BELTS = "Images/Armours/Belts";
+	public const string BOOTS = "Images/Armours/Boots";
+	public const string RING = "Images/Accessories/Ring";
+	public const string AMULET = "Images/Accessories/Amulet";
+	public const string RELIC = "Images/Accessories/Relic";
+	public const string OFF_HAND = "Images/Off Hands";
 
 	public const string HELM_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Helm.png";
 	public const string BODY_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Body.png";

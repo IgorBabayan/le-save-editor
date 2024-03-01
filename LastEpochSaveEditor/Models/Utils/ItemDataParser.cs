@@ -13,7 +13,7 @@ internal static class ItemDataParser
 		if (data.Count > 2)
 		{
 			result.Patch = data[0];
-			result.Type = data[1];
+			result.Type = Enum.Parse<ItemInfoTypeEnum>(data[1].ToString(CultureInfo.InvariantCulture), true);
 			result.BaseId = data[2];
 		}
 
@@ -42,7 +42,7 @@ internal static class ItemDataParser
 
 					case 1:
 					case 2:
-						result.ForgingPotencial = data[7];
+						result.ForgingPotencial = data[result.Patch == 0 ? 7 : 8];
 						break;
 				}
 			}
@@ -63,7 +63,7 @@ internal static class ItemDataParser
 						}
 					}
 					else
-						result.AffixCount = data[8];
+						result.AffixCount = data[result.Patch == 0 ? 8 : 9];
 
 					for (var position = 0; position < result.AffixCount && data.Count > index + 2; ++position)
 					{
@@ -73,7 +73,9 @@ internal static class ItemDataParser
 				}
 				else
 				{
-					result.UniqueOrSetId = data[8] == 0 ? data[9] : data[8];
+					result.UniqueOrSetId = result.Patch == 0 && data.Count > 8
+						? data[7] * 256 + data[8]
+						: data[8] * 256 + data[9];
 					if (data.Count > 16)
 					{
 						for (var index = data[8] == 0 ? 10 : 9; index < 17; ++index)

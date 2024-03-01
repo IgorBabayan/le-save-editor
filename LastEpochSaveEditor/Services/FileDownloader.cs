@@ -2,7 +2,7 @@
 
 internal static class FileDownloader
 {
-    internal static async Task DownloadFile(string type, string path)
+    internal static async Task DownloadImage(string type, string path)
     {
         using (var httpClinet = new HttpClient())
         {
@@ -13,11 +13,21 @@ internal static class FileDownloader
                 using (var contentStream = await message.Content.ReadAsStreamAsync())
                 {
                     using (var stream = new FileStream(path, FileMode.Create))
-                    {
                         await contentStream.CopyToAsync(stream);
-                    }
                 }
             }
         }
     }
+
+    internal static async Task<string> DownloadDatabase()
+    {
+		string response;
+		using (var client = new HttpClient())
+		{
+			using (var request = await client.GetAsync(Const.DATA_URL))
+				response = await request.Content.ReadAsStringAsync();
+		}
+
+        return response;
+	}
 }

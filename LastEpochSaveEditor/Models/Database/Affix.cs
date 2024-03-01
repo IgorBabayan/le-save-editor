@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Database;
 
-internal class Affix
+public class Affix
 {
 	[JsonProperty("affixName")]
 	public string AffixName { get; set; }
