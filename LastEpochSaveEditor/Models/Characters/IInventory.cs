@@ -2,5 +2,5 @@
 
 public interface IInventory
 {
-	void Parse(IDictionary<int, List<int>> data);
+	Task Parse(IDictionary<int, List<int>> data);
 }

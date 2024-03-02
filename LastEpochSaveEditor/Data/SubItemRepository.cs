@@ -7,7 +7,7 @@ public class SubItemRepository : Repository<SubItem>
 	public override SubItem Get(ItemInfoTypeEnum itemType, int id)
 	{
 		var result = Get(itemType);
-		return result.FirstOrDefault(x => x.SubTypeID == id) ?? throw new ArgumentException(nameof(itemType));
+		return result.FirstOrDefault(x => x.SubTypeID == id) ?? throw new ArgumentException(null, nameof(itemType));
 	}
 
 	public override IEnumerable<SubItem> Get(ItemInfoTypeEnum itemType)

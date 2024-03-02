@@ -49,4 +49,15 @@
 			</GeometryDrawing>
 		</DrawingGroup>
 	</DrawingGroup>
+	
+	<DrawingGroup x:Key="SpinnerDrawingGroup">
+		<DrawingGroup.ClipGeometry>
+			<RectangleGeometry Rect="0.0,0.0,512.0,512.0"/>
+		</DrawingGroup.ClipGeometry>
+		<GeometryDrawing Brush="{DynamicResource DefaultButtonBackgroundColor}">
+			<GeometryDrawing.Geometry>
+				<PathGeometry Figures="M 304 48 a 48 48 0 1 0 -96 0 a 48 48 0 1 0 96 0 z m 0 416 a 48 48 0 1 0 -96 0 a 48 48 0 1 0 96 0 z M 48 304 a 48 48 0 1 0 0 -96 a 48 48 0 1 0 0 96 z m 464 -48 a 48 48 0 1 0 -96 0 a 48 48 0 1 0 96 0 z M 142.9 437 A 48 48 0 1 0 75 369.1 A 48 48 0 1 0 142.9 437 z m 0 -294.2 A 48 48 0 1 0 75 75 a 48 48 0 1 0 67.9 67.9 z M 369.1 437 A 48 48 0 1 0 437 369.1 A 48 48 0 1 0 369.1 437 z" FillRule="Nonzero"/>
+			</GeometryDrawing.Geometry>
+		</GeometryDrawing>
+	</DrawingGroup>
 </ResourceDictionary>

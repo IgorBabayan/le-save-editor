@@ -31,8 +31,8 @@ public partial class App : Application
     {
         await _host!.StartAsync();
 
-        var db = _host.Services.GetRequiredService<IDatabaseSerive>();
-        await db.Load();
+        var databaseFactory = GetService<IDatabaseFactory>();
+        await databaseFactory.Create();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();

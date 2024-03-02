@@ -84,32 +84,41 @@
 						<ColumnDefinition Width="10" />
 						<ColumnDefinition Width="70" />
 						<ColumnDefinition Width="70" />
+						<ColumnDefinition Width="70" />
 						<ColumnDefinition Width="20" />
 					</Grid.ColumnDefinitions>
 
 					<controls:DockButton Grid.Column="1" Icon="{DynamicResource PersonSolidDrawingGroup}"
 					                     PopupTooltip="Character stash" IsActive="{Binding IsCharacterActive}"
+					                     IsEnabled="{Binding IsCharactersLoaded}"
 					                     Command="{Binding CharacterPressedCommand}"></controls:DockButton>
 
 					<controls:DockButton Grid.Column="2" Icon="{DynamicResource CharacterInventorySolidDrawingGroup}"
 					                     PopupTooltip="Character inventory" IsActive="{Binding IsStashActive}"
+					                     IsEnabled="{Binding IsCharactersLoaded}"
 					                     Command="{Binding StashPressedCommand}"></controls:DockButton>
 
 					<controls:DockButton Grid.Column="3" Icon="{DynamicResource BlessingsSolidDrawingGroup}"
 					                     PopupTooltip="Blessings" IsActive="{Binding IsBlessingsActive}"
+					                     IsEnabled="{Binding IsCharactersLoaded}"
 					                     Command="{Binding BlessingsPressedCommand}"></controls:DockButton>
 					
 					<controls:DockButton Grid.Column="4" Icon="{DynamicResource IdolsSolidDrawingGroup}"
 					                     PopupTooltip="Idols" IsActive="{Binding IsIdolsActive}"
+					                     IsEnabled="{Binding IsCharactersLoaded}"
 					                     Command="{Binding IdolsPressedCommand}"></controls:DockButton>
 					
 					<controls:DockSeparator Grid.Column="5"></controls:DockSeparator>
 					
-					<controls:DockButton Grid.Column="6" Icon="{DynamicResource DownloadImagesSolidDrawingGroup}"
+					<controls:DockButton Grid.Column="6" Icon="{DynamicResource SpinnerDrawingGroup}"
+					                     PopupTooltip="Load characters"
+					                     Command="{Binding LoadCommand}"></controls:DockButton>
+					
+					<controls:DockButton Grid.Column="7" Icon="{DynamicResource DownloadImagesSolidDrawingGroup}"
 					                     PopupTooltip="Download images"
 					                     Command="{Binding DownloadCommand}"></controls:DockButton>
 
-					<controls:DockButton Grid.Column="7" Icon="{DynamicResource DownloadDataSolidDrawingGroup}"
+					<controls:DockButton Grid.Column="8" Icon="{DynamicResource DownloadDataSolidDrawingGroup}"
 					                     PopupTooltip="Download database"
 					                     Command="{Binding ReloadDatabaseCommand}"></controls:DockButton>
 				</Grid>

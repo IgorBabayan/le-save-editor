@@ -4,7 +4,6 @@ internal static class ServiceExtensions
 {
 	public static void RegisterRepositories(this IServiceCollection services)
 	{
-		services.AddSingleton<Database>();
 		services.AddSingleton<IRepository<SubItem>, SubItemRepository>();
 		services.AddSingleton<IRepository<Unique>, UniqueRepository>();
 		services.AddSingleton<IRepository<Unique>, SetRepository>();
@@ -13,21 +12,21 @@ internal static class ServiceExtensions
 		services.AddSingleton<IUniqueRepositoryFactory, UniqueRepositoryFactory>();
 		services.AddSingleton<ISetRepositoryFactory, SetRepositoryFactory>();
 
-		services.AddSingleton(services =>
+		services.AddSingleton(provider =>
 		{
-			var factory = services.GetRequiredService<ISubItemRepositoryFactory>();
+			var factory = provider.GetRequiredService<ISubItemRepositoryFactory>();
 			return factory.Create();
 		});
 
-		services.AddSingleton(services =>
+		services.AddSingleton(provider =>
 		{
-			var factory = services.GetRequiredService<IUniqueRepositoryFactory>();
+			var factory = provider.GetRequiredService<IUniqueRepositoryFactory>();
 			return factory.Create();
 		});
 
-		services.AddSingleton(services =>
+		services.AddSingleton(provider =>
 		{
-			var factory = services.GetRequiredService<ISetRepositoryFactory>();
+			var factory = provider.GetRequiredService<ISetRepositoryFactory>();
 			return factory.Create();
 		});
 	}
@@ -42,8 +41,9 @@ internal static class ServiceExtensions
 
 	public static void RegisterMisc(this IServiceCollection services)
 	{
+		services.AddSingleton<IDatabaseFactory, DatabaseFactory>();
 		services.RegisterRepositories();
-		services.AddSingleton<IDatabaseSerive, DatabaseSerive>();
+		services.AddSingleton<IDatabaseService, DatabaseService>();
 		services.AddSingleton<INavigationService, NavigationService>();
 		services.RegisterParseFactories();
 		services.AddTransient<ICharacterInventory, CharacterInventory>();
@@ -55,6 +55,7 @@ internal static class ServiceExtensions
 	public static void RegisterControls(this IServiceCollection services)
 	{
 		services.AddSingleton<CharacterView>();
+		// services.AddSingleton<CharacterView>(provider => new CharacterView(){ DataContext = provider.GetRequiredService<CharacterViewModel>() });
 		services.AddSingleton<CharacterStashView>();
 		services.AddSingleton<BlessingView>();
 		services.AddSingleton<IdolView>();

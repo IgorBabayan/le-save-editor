@@ -42,7 +42,7 @@ internal static class Const
 	public const string OFF_HAND_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Off-Hand.png";
 
 	public const string DATA_URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
-	public const string DATA_FILE_PATH = "data.json";
+	public const string DATA_FILE_PATH = "database.json";
 
 	public const string IMAGE_URL = "https://assets-ng.maxroll.gg/last-epoch/webp/{0}/{1}";
 }

@@ -12,4 +12,13 @@ public partial class ItemButton
 	    get => (ItemDataInfo)GetValue(ItemProperty);
 	    set => SetValue(ItemProperty, value);
     }
+
+    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
+	    nameof(Command), typeof(ICommand), typeof(ItemButton), new PropertyMetadata(default(ICommand)));
+
+    public ICommand Command
+    {
+	    get => (ICommand)GetValue(CommandProperty);
+	    set => SetValue(CommandProperty, value);
+    }
 }

@@ -3,7 +3,7 @@
 internal partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 {
 	private readonly IMessenger _messenger;
-	private readonly UserControl _itemInfoWindow;
+	private readonly ItemWindow _itemInfoWindow;
 
 	private Character _selectedCharacter;
 

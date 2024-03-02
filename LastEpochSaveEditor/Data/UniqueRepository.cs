@@ -7,8 +7,8 @@ public class UniqueRepository : Repository<Unique>
 	public override Unique Get(ItemInfoTypeEnum itemType, int id)
 	{
 		var result = Get(itemType);
-		return result.FirstOrDefault(x => x.SubTypes.Contains(id) && !x.IsSetItem)
-			?? throw new ArgumentException(nameof(itemType));
+		return result.FirstOrDefault(x => x.UniqueID == id && !x.IsSetItem)
+			?? throw new ArgumentException(null, nameof(itemType));
 	}
 
 	public override IEnumerable<Unique> Get(ItemInfoTypeEnum itemType)

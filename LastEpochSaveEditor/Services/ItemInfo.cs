@@ -7,7 +7,7 @@ public interface IItemInfo<TEnum>
 	int Width { get; }
 	int Height { get; }
 	TEnum Type { get; }
-	string GetIcon(IDatabaseSerive db, QualityType quality, int id);
+	Task<string> GetIcon(IDatabaseService db, QualityType quality, int id);
 }
 
 public class HelmItemInfo : IItemInfo<ItemInfoTypeEnum>
@@ -16,13 +16,11 @@ public class HelmItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.HELM_ICON;
 	public int Width => 69;
 	public int Height => 69;
-	public string GetIcon(IDatabaseSerive db, QualityType quality, int id)
+	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id)
 	{
-		var pathBuilder = new StringBuilder(Const.HELMETS);
-		pathBuilder.Append($"/{quality.GetQualityFolderName()}/");
-		var items = db.Get(quality, ItemInfoTypeEnum.Helmet, id);
-		
-		return pathBuilder.ToString();
+		var item = await db.Get(quality, ItemInfoTypeEnum.Helmet, id);
+		var path = $"{Const.HELMETS}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
+		return Path.GetFullPath(path);
 	}
 }
 
@@ -32,11 +30,10 @@ public class BeltItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.BELTS_ICON;
 	public int Width => 93;
 	public int Height => 39;
-	public string GetIcon(IDatabaseSerive db, QualityType quality, int id)
+	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id)
 	{
-		var pathBuilder = new StringBuilder(Const.BELTS_ICON);
-		pathBuilder.Append($"/{quality.GetQualityFolderName()}/");
-
-		return pathBuilder.ToString();
+		var item = await db.Get(quality, ItemInfoTypeEnum.Belt, id);
+		var path = $"{Const.BELTS}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
+		return Path.GetFullPath(path);
 	}
 }

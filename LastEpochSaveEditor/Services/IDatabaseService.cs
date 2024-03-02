@@ -1,12 +1,9 @@
 ﻿namespace LastEpochSaveEditor.Services;
 
-public interface IDatabaseSerive
+public interface IDatabaseService
 {
-    Task Load();
-    Task Reload();
-    object Get(QualityType quality, ItemInfoTypeEnum type, int id);
-    IEnumerable<object> Get(QualityType quality, ItemInfoTypeEnum type);
-
+    Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id);
+    Task<IEnumerable<object>> Get(QualityType quality, ItemInfoTypeEnum type);
 
 	/*IEnumerable<Item> Get1HandWeapons() => new[] { GetOneHandAxes(), GetOneHandDaggers(), GetOneHandMaces(), GetOneHandScepters(),
         GetOneHandSwords(), GetWands() };
@@ -52,69 +49,63 @@ public interface IDatabaseSerive
     };*/
 }
 
-public class DatabaseService : IDatabaseSerive
+public class DatabaseService : IDatabaseService
 {
-    private Database? _database;
-    private readonly IRepository<SubItem> _subItemRepository;
-    private readonly IRepository<Unique> _uniqueRepository;
-    private readonly IRepository<Unique> _setRepository;
+    private readonly ISubItemRepositoryFactory _subItemRepositoryFactory;
+    private readonly IUniqueRepositoryFactory _uniqueRepositoryFactory;
+    private readonly ISetRepositoryFactory _setRepositoryFactory;
 
-    private async Task LoadImpl()
+    public async Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id)
     {
-        var response = await FileDownloader.DownloadDatabase();
+        if (quality.HasFlag(QualityType.NotUniqueOrSet))
+        {
+            var repository = await _subItemRepositoryFactory.Create();
+            return repository.Get(type, id);
+        }
 
-        _database = JsonConvert.DeserializeObject<Database>(response)!;
-        foreach (var itemType in _database!.ItemTypes)
-            itemType.SubItems = itemType.SubItems.Where(x => x.CannotDrop == false).ToList();
+        if (quality.HasFlag(QualityType.Unique) || quality.HasFlag(QualityType.Legendary))
+        {
+            var repository = await _uniqueRepositoryFactory.Create();
+            return repository.Get(type, id);
+        }
+
+        if (quality.HasFlag(QualityType.Set))
+        {
+            var repository = await _setRepositoryFactory.Create();
+            return repository.Get(type, id);
+        }
+
+        throw new ArgumentException(null, nameof(type));
     }
 
-    public async Task Load()
+    public async Task<IEnumerable<object>> Get(QualityType quality, ItemInfoTypeEnum type)
     {
-        await LoadImpl();
-        if (!File.Exists(Const.DATA_FILE_PATH))
-            await File.WriteAllTextAsync(Const.DATA_FILE_PATH, JsonConvert.SerializeObject(_database, Formatting.Indented));
-    }
+        if (quality.HasFlag(QualityType.NotUniqueOrSet))
+        {
+            var repository = await _subItemRepositoryFactory.Create();
+			return repository.Get(type);
+        }
 
-    public async Task Reload()
-    {
-        if (File.Exists(Const.DATA_FILE_PATH))
-            File.Delete(Const.DATA_FILE_PATH);
+        if (quality.HasFlag(QualityType.Unique) || quality.HasFlag(QualityType.Legendary))
+        {
+            var repository = await _uniqueRepositoryFactory.Create();
+			return repository.Get(type);
+        }
 
-        await Load();
-    }
+        if (quality.HasFlag(QualityType.Set))
+        {
+            var repository = await _setRepositoryFactory.Create();
+			return repository.Get(type);
+        }
 
-    public object Get(QualityType quality, ItemInfoTypeEnum type, int id)
-    {
-        var items = Get(quality, type);
-        if (items is IEnumerable<SubItem> subItems)
-            return subItems.FirstOrDefault(x => x.SubTypeID == id) ?? throw new ArgumentException(nameof(id));
-
-        if (items is IEnumerable<Unique> uniques)
-			return uniques.FirstOrDefault(x => x.SubTypes.Contains(id)) ?? throw new ArgumentException(nameof(id));
-		
-        throw new ArgumentException(nameof(type));
+		throw new ArgumentException(null, nameof(type));
 	}
-
-    public IEnumerable<object> Get(QualityType quality, ItemInfoTypeEnum type)
+    
+    public DatabaseService(ISubItemRepositoryFactory subItemFactory, IUniqueRepositoryFactory uniqueFactory,
+        ISetRepositoryFactory setFactory)
     {
-		if (quality.HasFlag(QualityType.NotUniqueOrSet))
-			return _subItemRepository.Get(type);
-
-		if (quality.HasFlag(QualityType.Unique) || quality.HasFlag(QualityType.Legendary))
-			return _uniqueRepository.Get(type);
-
-		if (quality.HasFlag(QualityType.Set))
-			return _setRepository.Get(type);
-
-		throw new ArgumentException(nameof(type));
-	}
-
-	public DatabaseService(ISubItemRepositoryFactory subItemFactory, IUniqueRepositoryFactory uniqueFactory, ISetRepositoryFactory setFactory,
-        Database database)
-    {
-        _subItemRepository = subItemFactory.Create();
-        _uniqueRepository = uniqueFactory.Create();
-        _setRepository = setFactory.Create();
-        _database = database;
+        _subItemRepositoryFactory = subItemFactory;
+        _uniqueRepositoryFactory = uniqueFactory;
+        _setRepositoryFactory = setFactory;
     }
 }

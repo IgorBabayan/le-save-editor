@@ -3,7 +3,8 @@
 internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewChangedMessage>
 {
 	private readonly IMessenger _messenger;
-	private readonly IDatabaseSerive _db;
+	private readonly IDatabaseService _databaseService;
+	private readonly IDatabaseFactory _databaseFactory;
 
 	#region Properties
 
@@ -27,24 +28,33 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 
 	[ObservableProperty]
 	private INavigationService _navigationService;
+	
+	[ObservableProperty]
+	private bool _isCharactersLoaded;
 
 	#endregion
 
-	public MainViewModel(IMessenger messenger, IDatabaseSerive db, INavigationService navigationService)
+	public MainViewModel(IMessenger messenger, IDatabaseService databaseService, INavigationService navigationService)
 	{
-		_db = db;
+		_databaseService = databaseService;
 
 		_messenger = messenger;
 		_messenger.RegisterAll(this);
 
 		NavigationService = navigationService;
-		NavigationService.NavigateTo<CharacterViewModel>();
-
-		Characters = SaveFileLoader.Load("1CHARACTERSLOT_BETA_0");
-		SelectedCharacter = Characters.FirstOrDefault();
+		IsCharactersLoaded = false;
 	}
 
 	#region Commands
+
+	[RelayCommand]
+	private async Task Load()
+	{
+		Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_0");
+		IsCharactersLoaded = true;
+		CharacterPressed();
+		SelectedCharacter = Characters.FirstOrDefault()!;
+	}
 
 	[RelayCommand]
 	private void CharacterPressed() => NavigationService.NavigateTo<CharacterViewModel>();
@@ -59,7 +69,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	private void IdolsPressed() => NavigationService.NavigateTo<IdolViewModel>();
 
 	[RelayCommand]
-	private async Task ReloadDatabase() => await _db.Reload();
+	private async Task ReloadDatabase() => await _databaseFactory.Create(true);
 
 	[RelayCommand]
 	private void Download()

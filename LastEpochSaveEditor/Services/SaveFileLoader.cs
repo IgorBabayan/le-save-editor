@@ -2,7 +2,7 @@
 
 internal static class SaveFileLoader
 {
-    public static IEnumerable<CharacterInfo> Load(string specialCharacterSlot = null)
+    public static async Task<IEnumerable<CharacterInfo>> Load(string specialCharacterSlot = null)
     {
         var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var path = Path.Combine(userFolder, Const.ADD_DATA, Const.LOCAL_LOW, Const.ELEVENTH_HOUR_GAMES, Const.LAST_EPOCH, Const.SAVES);
@@ -22,7 +22,7 @@ internal static class SaveFileLoader
         {
             content = File.ReadAllText(file).Remove(0, Const.EPOCH.Length);
             var character = JsonConvert.DeserializeObject<Character>(content)!;
-            character.ParseSavedData();
+            await character.ParseSavedData();
 
             result.Add(new CharacterInfo
             {

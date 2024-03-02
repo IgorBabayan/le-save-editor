@@ -3,7 +3,7 @@
 internal partial class DownloadViewModel : ObservableObject
 {
 	private readonly ILogger<DownloadViewModel> _logger;
-	private readonly IDatabaseSerive _db;
+	private readonly IDatabaseService _db;
 
 	#region Properties
 
@@ -56,7 +56,7 @@ internal partial class DownloadViewModel : ObservableObject
 
 	#endregion
 
-	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDatabaseSerive db)
+	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDatabaseService db)
 	{
 		_logger = logger;
 		_db = db;

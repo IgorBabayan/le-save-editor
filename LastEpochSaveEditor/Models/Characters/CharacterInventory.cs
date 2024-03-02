@@ -18,53 +18,54 @@ public interface ICharacterInventory : IInventory
 public class CharacterInventory : ICharacterInventory
 {
 	private readonly ILogger<CharacterInventory> _logger;
-	private readonly IDatabaseSerive _db;
+	private readonly IDatabaseService _db;
 
-	public ItemDataInfo Helm => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Helmet) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Body => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Body) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Weapon => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Weapons) ?? ItemDataInfo.Empty;
-	public ItemDataInfo OffHand => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.OffHands) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Gloves => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Gloves) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Belt => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Belt) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Boots => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Boots) ?? ItemDataInfo.Empty;
-	public ItemDataInfo LeftRing => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Ring) ?? ItemDataInfo.Empty;
-	public ItemDataInfo RightRing => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Ring) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Amulet => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Amulet) ?? ItemDataInfo.Empty;
-	public ItemDataInfo Relic => _items.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Relic) ?? ItemDataInfo.Empty;
+	public ItemDataInfo Helm => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Helmet)!;
+	public ItemDataInfo Body => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Body)!;
+	public ItemDataInfo Weapon => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Weapons)!;
+	public ItemDataInfo OffHand => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.OffHands)!;
+	public ItemDataInfo Gloves => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Gloves)!;
+	public ItemDataInfo Belt => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Belt)!;
+	public ItemDataInfo Boots => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Boots)!;
+	public ItemDataInfo LeftRing => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Ring)!;
+	public ItemDataInfo RightRing => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Ring)!;
+	public ItemDataInfo Amulet => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Amulet)!;
+	public ItemDataInfo Relic => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Relic)!;
 	
 	private IEnumerable<ItemDataInfo>? _items;
 	private readonly IItemInfoFactory _factory;
 
-	public CharacterInventory(ILogger<CharacterInventory> logger, IDatabaseSerive db, IItemInfoFactory factory)
+	public CharacterInventory(ILogger<CharacterInventory> logger, IDatabaseService db, IItemInfoFactory factory)
 	{
 		_logger = logger;
 		_db = db;
 		_factory = factory;
 	}
 
-	public void Parse(IDictionary<int, List<int>> data)
+	public async Task Parse(IDictionary<int, List<int>> data)
 	{
-		_items = new List<ItemDataInfo>(data.Count)
+		var tasks = await Task.WhenAll(new[]
 		{
 			Parse(data, 2, "Helm"),
-			//Parse(data, 3, "Body"),
-			/*Parse(data, 4, "Weapon"),
-			Parse(data, 5, "Off-hand"),*/
-			/*Parse(data, 6, "Gloves"),
-			Parse(data, 7, "Belt"),
-			Parse(data, 8, "Boots"),
+			/*Parse(data, 3, "Body"),
+			Parse(data, 4, "Weapon"),
+			Parse(data, 5, "Off-hand"),
+			Parse(data, 6, "Gloves"),*/
+			//Parse(data, 7, "Belt"),
+			/*Parse(data, 8, "Boots"),
 			Parse(data, 9, "Left ring"),
 			Parse(data, 10, "Right ring"),
 			Parse(data, 11, "Amulet"),
 			Parse(data, 12, "Relic")*/
-		};
+		});
+		_items = new List<ItemDataInfo>(tasks);
 	}
 
-	private BitmapImage CreateImage(ItemDataInfo itemInfo)
+	private async Task<BitmapImage> CreateImage(ItemDataInfo itemInfo)
 	{
 		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.BaseId;
 		var item = _factory.Create(itemInfo.Type);
-		var imagePath = item.GetIcon(_db, itemInfo.Quality, id);
+		var imagePath = await item.GetIcon(_db, itemInfo.Quality, id);
 		var icon = new BitmapImage
 		{
 			CacheOption = BitmapCacheOption.OnLoad,
@@ -72,7 +73,7 @@ public class CharacterInventory : ICharacterInventory
 			DecodePixelWidth = 200
 		};
 		icon.BeginInit();
-		if (File.Exists(imagePath))
+		if (string.IsNullOrWhiteSpace(imagePath) || File.Exists(imagePath))
 			icon.UriSource = new(imagePath);
 		else
 			icon.UriSource = new(item.BaseIcon, UriKind.RelativeOrAbsolute);
@@ -80,53 +81,6 @@ public class CharacterInventory : ICharacterInventory
 
 		return icon;
 	}
-
-	/*private static BitmapImage CreateImage(string path, string defaultPath)
-	{
-		var icon = new BitmapImage
-		{
-			CacheOption = BitmapCacheOption.OnLoad,
-			CreateOptions = BitmapCreateOptions.IgnoreImageCache,
-			DecodePixelWidth = 200
-		};
-		icon.BeginInit();
-		if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
-			icon.UriSource = new(path);
-		else
-			icon.UriSource = new(defaultPath, UriKind.RelativeOrAbsolute);
-		icon.EndInit();
-
-		return icon;
-	}*/
-
-	/*private static string GetIcon(Item item, ItemDataInfo itemInfo, string basePath, string? baseTypeName = null)
-	{
-		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.BaseId;
-		var name = item.FindName(itemInfo.Quality, id);
-
-		if (string.IsNullOrEmpty(name))
-			return string.Empty;
-
-		var quality = GetQualityFolderName(itemInfo.Quality);
-		if (string.IsNullOrEmpty(basePath))
-			return Path.GetFullPath($"{basePath}{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
-
-		return Path.GetFullPath($"{basePath}{baseTypeName}/{quality}/{name.ToLowerInvariant().Replace(" ", "_")}.png");
-	}
-
-	private static string GetIcon(ItemDataInfo itemInfo)
-	{
-
-		var path = string.Empty;
-		foreach (var item in items)
-		{
-			path = GetIcon(item, itemInfo, basePath, item.Base.BaseTypeName);
-			if (!string.IsNullOrWhiteSpace(path))
-				break;
-		}
-
-		return path;
-	}*/
 
 	/*private void ParseHelm(IDictionary<int, List<int>> data)
 	{
@@ -221,7 +175,7 @@ public class CharacterInventory : ICharacterInventory
 		Relic.Height = 69;
 	}*/
 
-	private ItemDataInfo Parse(IDictionary<int, List<int>> data, int index, string name)
+	private async Task<ItemDataInfo> Parse(IDictionary<int, List<int>> data, int index, string name)
 	{
 		if (!data.Any())
 			return ItemDataInfo.Empty.Copy();
@@ -235,7 +189,7 @@ public class CharacterInventory : ICharacterInventory
 			if (data.TryGetValue(index, out var value))
 			{
 				result = ItemDataParser.ParseData(value);
-				result.Icon = CreateImage(result);
+				result.Icon = await CreateImage(result);
 			}
 		}
 		catch (Exception exception)

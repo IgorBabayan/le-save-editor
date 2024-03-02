@@ -4,10 +4,10 @@ internal static class FileDownloader
 {
     internal static async Task DownloadImage(string type, string path)
     {
-        using (var httpClinet = new HttpClient())
+        using (var httpClient = new HttpClient())
         {
             var url = string.Format(Const.IMAGE_URL, type, Path.GetFileName(path));
-            using (var message = await httpClinet.GetAsync(url))
+            using (var message = await httpClient.GetAsync(url))
             {
                 message.EnsureSuccessStatusCode();
                 using (var contentStream = await message.Content.ReadAsStreamAsync())

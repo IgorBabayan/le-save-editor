@@ -22,9 +22,9 @@ public partial class Character
 	[JsonIgnore]
 	public ICharacterInventory CharacterInventory { get; set; }
 
-	public void ParseSavedData()
+	public async Task ParseSavedData()
 	{
-		ParseCharacterInventory();
+		await ParseCharacterInventory();
 		ParseCharacterStash();
 		ParseBlessings();
 		ParseIdols();
@@ -45,10 +45,10 @@ public partial class Character
 		
 	}
 
-	private void ParseCharacterInventory()
+	private async Task ParseCharacterInventory()
 	{
 		var data = SavedItems.Where(x => ItemDataParser.CharacterInventoryIds.Contains(x.ContainerID)).ToDictionary(x => x.ContainerID, x => x.Data);
 		CharacterInventory = App.GetService<ICharacterInventory>();
-		CharacterInventory.Parse(data);
+		await CharacterInventory.Parse(data);
 	}
 }
