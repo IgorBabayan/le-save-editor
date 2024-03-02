@@ -52,7 +52,7 @@ public interface IDatabaseSerive
     };*/
 }
 
-public class DatabaseSerive : IDatabaseSerive
+public class DatabaseService : IDatabaseSerive
 {
     private Database? _database;
     private readonly IRepository<SubItem> _subItemRepository;
@@ -109,7 +109,7 @@ public class DatabaseSerive : IDatabaseSerive
 		throw new ArgumentException(nameof(type));
 	}
 
-	public DatabaseSerive(ISubItemRepositoryFactory subItemFactory, IUniqueRepositoryFactory uniqueFactory, ISetRepositoryFactory setFactory,
+	public DatabaseService(ISubItemRepositoryFactory subItemFactory, IUniqueRepositoryFactory uniqueFactory, ISetRepositoryFactory setFactory,
         Database database)
     {
         _subItemRepository = subItemFactory.Create();
