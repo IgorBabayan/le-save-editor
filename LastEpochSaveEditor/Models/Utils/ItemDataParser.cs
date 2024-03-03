@@ -19,7 +19,9 @@ internal static class ItemDataParser
 
 		if (data.Count > 3)
 		{
-			result.Quality = (QualityType)data[3];
+			result.Quality = data[3] == 1 || data[3] == 2
+				? QualityType.Magic
+				: (QualityType)data[3];
 			hasQuality = true;
 		}
 

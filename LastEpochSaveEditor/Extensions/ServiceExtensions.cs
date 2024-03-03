@@ -34,7 +34,15 @@ internal static class ServiceExtensions
 	public static void RegisterParseFactories(this IServiceCollection services)
 	{
 		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, HelmItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, BodyItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, WeaponItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, OffHandItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, GlovesItemInfo>();
 		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, BeltItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, BootsItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, RingItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, AmuletItemInfo>();
+		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, RelicItemInfo>();
 		services.AddSingleton<Func<IEnumerable<IItemInfo<ItemInfoTypeEnum>>>>(x => () => x.GetRequiredService<IEnumerable<IItemInfo<ItemInfoTypeEnum>>>());
 		services.AddSingleton<IItemInfoFactory, ItemInfoFactory>();
 	}
@@ -54,8 +62,7 @@ internal static class ServiceExtensions
 
 	public static void RegisterControls(this IServiceCollection services)
 	{
-		services.AddSingleton<CharacterView>();
-		// services.AddSingleton<CharacterView>(provider => new CharacterView(){ DataContext = provider.GetRequiredService<CharacterViewModel>() });
+		services.AddSingleton(provider => new CharacterView(){ DataContext = provider.GetRequiredService<CharacterViewModel>() });
 		services.AddSingleton<CharacterStashView>();
 		services.AddSingleton<BlessingView>();
 		services.AddSingleton<IdolView>();

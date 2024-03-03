@@ -22,8 +22,8 @@ public class CharacterInventory : ICharacterInventory
 
 	public ItemDataInfo Helm => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Helmet)!;
 	public ItemDataInfo Body => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Body)!;
-	public ItemDataInfo Weapon => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Weapons)!;
-	public ItemDataInfo OffHand => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.OffHands)!;
+	public ItemDataInfo Weapon => _items!.FirstOrDefault(x => x.Type.IsInWeapon())!;
+	public ItemDataInfo OffHand => _items!.FirstOrDefault(x => x.Type.IsInOffHands())!;
 	public ItemDataInfo Gloves => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Gloves)!;
 	public ItemDataInfo Belt => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Belt)!;
 	public ItemDataInfo Boots => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Boots)!;
@@ -47,25 +47,25 @@ public class CharacterInventory : ICharacterInventory
 		var tasks = await Task.WhenAll(new[]
 		{
 			Parse(data, 2, "Helm"),
-			/*Parse(data, 3, "Body"),
+			Parse(data, 3, "Body"),
 			Parse(data, 4, "Weapon"),
 			Parse(data, 5, "Off-hand"),
-			Parse(data, 6, "Gloves"),*/
-			//Parse(data, 7, "Belt"),
-			/*Parse(data, 8, "Boots"),
+			Parse(data, 6, "Gloves"),
+			Parse(data, 7, "Belt"),
+			Parse(data, 8, "Boots"),
 			Parse(data, 9, "Left ring"),
 			Parse(data, 10, "Right ring"),
 			Parse(data, 11, "Amulet"),
-			Parse(data, 12, "Relic")*/
+			Parse(data, 12, "Relic")
 		});
 		_items = new List<ItemDataInfo>(tasks);
 	}
 
-	private async Task<BitmapImage> CreateImage(ItemDataInfo itemInfo)
+	private async Task<BitmapImage> CreateImage(ItemDataInfo itemInfo, IItemInfo<ItemInfoTypeEnum> item)
 	{
 		var id = itemInfo.Quality >= QualityType.Unique ? itemInfo.UniqueOrSetId : itemInfo.BaseId;
-		var item = _factory.Create(itemInfo.Type);
-		var imagePath = await item.GetIcon(_db, itemInfo.Quality, id);
+		
+		var imagePath = await item.GetIcon(_db, itemInfo.Quality, id, itemInfo.Type);
 		var icon = new BitmapImage
 		{
 			CacheOption = BitmapCacheOption.OnLoad,
@@ -82,99 +82,6 @@ public class CharacterInventory : ICharacterInventory
 		return icon;
 	}
 
-	/*private void ParseHelm(IDictionary<int, List<int>> data)
-	{
-		Helm = Parse(data, 2, "Helm");
-		Helm.Icon = CreateImage(GetIcon(_db.GetHelmets(), Helm, Const.HELMETS), Const.HELM_ICON);
-		Helm.Width = 69;
-		Helm.Height = 69;
-	}
-
-	private void ParseBody(IDictionary<int, List<int>> data)
-	{
-		Body = Parse(data, 3, "Body");
-		Body.Icon = CreateImage(GetIcon(_db.GetBodies(), Body, Const.BODY_ARMOR), Const.BODY_ICON);
-		Body.Width = 93;
-		Body.Height = 139;
-	}
-
-	private void ParseWeapon(IDictionary<int, List<int>> data)
-	{
-		Weapon = Parse(data, 4, "Weapon");
-
-		var icon = GetIcon(_db.Get1HandWeapons(), Weapon, Const.ONE_HAND_WEAPONS);
-		if (string.IsNullOrWhiteSpace(icon))
-			icon = GetIcon(_db.Get2HandWeapons(), Weapon, Const.TWO_HAND_WEAPONS);
-
-		Weapon.Icon = CreateImage(icon, Const.WEAPON_ICON);
-		Weapon.Width = 69;
-		Weapon.Height = 139;
-	}
-
-	private void ParseOffHand(IDictionary<int, List<int>> data)
-	{
-		OffHand = Parse(data, 5, "Off-hand");
-		OffHand.Icon = CreateImage(GetIcon(_db.GetOffHands(), OffHand, Const.OFF_HAND), Const.OFF_HAND_ICON);
-		OffHand.Width = 69;
-		OffHand.Height = 139;
-	}
-
-	private void ParseGloves(IDictionary<int, List<int>> data)
-	{
-		Gloves = Parse(data, 6, "Gloves");
-		Gloves.Icon = CreateImage(GetIcon(_db.GetGloves(), Gloves, Const.GLOVES), Const.GLOVES_ICON);
-		Gloves.Width = 69;
-		Gloves.Height = 69;
-	}
-
-	private void ParseBelt(IDictionary<int, List<int>> data)
-	{
-		Belt = Parse(data, 7, "Belt");
-		Belt.Icon = CreateImage(GetIcon(_db.GetBelts(), Belt, Const.BELTS), Const.BELTS_ICON);
-		Belt.Width = 93;
-		Belt.Height = 39;
-	}
-
-	private void ParseBoots(IDictionary<int, List<int>> data)
-	{
-		Boots = Parse(data, 8, "Boots");
-		Boots.Icon = CreateImage(GetIcon(_db.GetBoots(), Boots, Const.BOOTS), Const.BOOTS_ICON);
-		Boots.Width = 69;
-		Boots.Height = 69;
-	}
-
-	private void ParseLeftRing(IDictionary<int, List<int>> data)
-	{
-		LeftRing = Parse(data, 9, "Left ring");
-		LeftRing.Icon = CreateImage(GetIcon(_db.GetRings(), LeftRing, Const.RING), Const.RING_ICON);
-		LeftRing.Width = 39;
-		LeftRing.Height = 39;
-	}
-
-	private void ParseRightRing(IDictionary<int, List<int>> data)
-	{
-		RightRing = Parse(data, 10, "Right ring");
-		RightRing.Icon = CreateImage(GetIcon(_db.GetRings(), RightRing, Const.RING), Const.RING_ICON);
-		RightRing.Width = 39;
-		RightRing.Height = 39;
-	}
-
-	private void ParseAmulet(IDictionary<int, List<int>> data)
-	{
-		Amulet = Parse(data, 11, "Amulet");
-		Amulet.Icon = CreateImage(GetIcon(_db.GetAmulets(), Amulet, Const.AMULET), Const.AMULET_ICON);
-		Amulet.Width = 43;
-		Amulet.Height = 43;
-	}
-
-	private void ParseRelic(IDictionary<int, List<int>> data)
-	{
-		Relic = Parse(data, 12, "Relic");
-		Relic.Icon = CreateImage(GetIcon(_db.GetRelics(), Relic, Const.RELIC), Const.RELIC_ICON);
-		Relic.Width = 69;
-		Relic.Height = 69;
-	}*/
-
 	private async Task<ItemDataInfo> Parse(IDictionary<int, List<int>> data, int index, string name)
 	{
 		if (!data.Any())
@@ -189,7 +96,10 @@ public class CharacterInventory : ICharacterInventory
 			if (data.TryGetValue(index, out var value))
 			{
 				result = ItemDataParser.ParseData(value);
-				result.Icon = await CreateImage(result);
+				var item = _factory.Create(result.Type);
+				result.Icon = await CreateImage(result, item);
+				result.Height = item.Height;
+				result.Width = item.Width;
 			}
 		}
 		catch (Exception exception)

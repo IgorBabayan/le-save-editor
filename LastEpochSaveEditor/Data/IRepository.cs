@@ -1,5 +1,8 @@
 ﻿namespace LastEpochSaveEditor.Data;
 
+public record WeaponType<TEntity>(bool IsTwoHanded, TEntity Entity)
+	where TEntity : class;
+
 public interface IEnumerableRepository<TEntity>
 	where TEntity : class
 {
@@ -35,6 +38,9 @@ public interface IEnumerableRepository<TEntity>
 	IEnumerable<TEntity> GetOrnateIdols();
 	IEnumerable<TEntity> GetHugeIdols();
 	IEnumerable<TEntity> GetAdornedIdols();
+	IEnumerable<TEntity> GetOneHandWeapons();
+	IEnumerable<TEntity> GetTwoHandWeapons();
+	IEnumerable<TEntity> GetWeapons(ItemInfoTypeEnum type = ItemInfoTypeEnum.None);
 }
 
 public interface ISingleRepository<TEntity>
@@ -72,6 +78,7 @@ public interface ISingleRepository<TEntity>
 	TEntity GetOrnateIdol(int id);
 	TEntity GetHugeIdol(int id);
 	TEntity GetAdornedIdol(int id);
+	WeaponType<TEntity> GetWeapon(int id, ItemInfoTypeEnum type);
 }
 
 public interface IRepository<TEntity> : ISingleRepository<TEntity>, IEnumerableRepository<TEntity>

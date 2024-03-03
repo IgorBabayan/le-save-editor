@@ -10,10 +10,7 @@
 		<Border BorderBrush="{Binding Item.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
 		        BorderThickness="1">
 			<controls:ItemImage Item="{Binding Item, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" 
-								HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-			                    Width="{Binding Width, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-								Height="{Binding Height, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-			                    Margin="1" />
+								HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="1" />
 		</Border>
 	</Button>
 </UserControl>

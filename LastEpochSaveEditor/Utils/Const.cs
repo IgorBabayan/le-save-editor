@@ -31,7 +31,7 @@ internal static class Const
 	public const string OFF_HAND = "Images/Off Hands";
 
 	public const string HELM_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Helm.png";
-	public const string BODY_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Body.png";
+	public const string BODY_ARMOR_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Body.png";
 	public const string WEAPON_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Weapon.png";
 	public const string GLOVES_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Gloves.png";
 	public const string BELTS_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Belt.png";
@@ -45,4 +45,47 @@ internal static class Const
 	public const string DATA_FILE_PATH = "database.json";
 
 	public const string IMAGE_URL = "https://assets-ng.maxroll.gg/last-epoch/webp/{0}/{1}";
+
+	public const string ONE_HAND_WEAPON = "One hand weapons";
+	public const string ONE_HAND_SWORDS = "1H Swords";
+	public const string ONE_HAND_AXES = "1H Axes";
+	public const string ONE_HAND_DAGGERS = "1H Dagger";
+	public const string ONE_HAND_MACES = "1H Maces";
+	public const string ONE_HAND_SCEPTERS = "1H Scepter";
+	public const string ONE_HAND_WANDS = "Wands";
+
+	public const string TWO_HAND_WEAPON = "Two hand weapons";
+	public const string TWO_HAND_AXES = "2H Axes";
+	public const string TWO_HAND_MACES = "2H Maces";
+	public const string TWO_HAND_POLEARM = "2H Polearm";
+	public const string TWO_HAND_STAFF = "2H Staff";
+	public const string TWO_HAND_SWORDS = "2H Swords";
+	public const string TWO_HAND_BOWS = "Bows";
+
+	public const string OFF_HANDS = "Off Hands";
+	public const string CATALYST = "Catalyst";
+	public const string QUIVER = "Quiver";
+	public const string SHIELD = "Shield";
+
+	public const string ACCESSORIES = "Accessories";
+	public const string ACCESSORIES_AMULET = "Amulet";
+	public const string ACCESSORIES_RELIC = "Relic";
+	public const string ACCESSORIES_RING = "Ring";
+
+	public const string ARMOURS = "Armours";
+	public const string ARMOURS_BELTS = "Belts";
+	public const string ARMOURS_BODY = "Body Armor";
+	public const string ARMOURS_BOOTS = "Boots";
+	public const string ARMOURS_GLOVES = "Gloves";
+	public const string ARMOURS_HELMETS = "Helmets";
+
+	public const string IDOLS = "Idols";
+	public const string ADORNED_IDOL = "Adorned Idol";
+	public const string GRAND_IDOL = "Grand Idol";
+	public const string HUMBLE_IDOL = "Humble Idol";
+	public const string LARGE_IDOL = "Large Idol";
+	public const string ORNATE_IDOL = "Ornate Idol";
+	public const string SMALL_IDOL = "Small Idol";
+	public const string SMALL_LAGONIAN_IDOL = "Small Lagonian Idol";
+	public const string STOUT_IDOL = "Stout Idol";
 }

@@ -7,10 +7,9 @@
 			<ImageBrush Stretch="UniformToFill" Opacity="0.9" ImageSource="../Images/Misc/ItemBackground.png" />
 		</Grid.Background>
 
-		<Image 
+		<Image Source="{Binding Item.Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemImage}}}"
 			   Stretch="Uniform" Cursor="Hand"
 			   Width="{Binding Item.Width, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-			   Height="{Binding Item.Height, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-			Source="{Binding Item.Icon, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ItemImage}}}" />
+			   Height="{Binding Item.Height, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" />
 	</Grid>
 </UserControl>

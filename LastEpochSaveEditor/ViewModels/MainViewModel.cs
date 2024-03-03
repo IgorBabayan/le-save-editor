@@ -1,4 +1,6 @@
-﻿namespace LastEpochSaveEditor.ViewModels;
+﻿using System.Diagnostics;
+
+namespace LastEpochSaveEditor.ViewModels;
 
 internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewChangedMessage>
 {
@@ -50,7 +52,15 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	[RelayCommand]
 	private async Task Load()
 	{
-		Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_0");
+		var watcher = new Stopwatch();
+		watcher.Start();
+		Characters = await SaveFileLoader.Load();
+		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_0");
+		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_2");
+		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_3");
+		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_4");
+		watcher.Stop();
+		System.Diagnostics.Debug.WriteLine($"LastEpochSaveEditor :: loading ends in {watcher.ElapsedMilliseconds} ms");
 		IsCharactersLoaded = true;
 		CharacterPressed();
 		SelectedCharacter = Characters.FirstOrDefault()!;

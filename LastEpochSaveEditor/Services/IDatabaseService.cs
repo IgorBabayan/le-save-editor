@@ -5,6 +5,9 @@ public interface IDatabaseService
     Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id);
     Task<IEnumerable<object>> Get(QualityType quality, ItemInfoTypeEnum type);
 
+    Task<object> GetWeapon(QualityType quality, int id, ItemInfoTypeEnum type);
+    Task<IEnumerable<object>> GetWeapons(QualityType quality);
+
 	/*IEnumerable<Item> Get1HandWeapons() => new[] { GetOneHandAxes(), GetOneHandDaggers(), GetOneHandMaces(), GetOneHandScepters(),
         GetOneHandSwords(), GetWands() };
 
@@ -54,52 +57,6 @@ public class DatabaseService : IDatabaseService
     private readonly ISubItemRepositoryFactory _subItemRepositoryFactory;
     private readonly IUniqueRepositoryFactory _uniqueRepositoryFactory;
     private readonly ISetRepositoryFactory _setRepositoryFactory;
-
-    public async Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id)
-    {
-        if (quality.HasFlag(QualityType.NotUniqueOrSet))
-        {
-            var repository = await _subItemRepositoryFactory.Create();
-            return repository.Get(type, id);
-        }
-
-        if (quality.HasFlag(QualityType.Unique) || quality.HasFlag(QualityType.Legendary))
-        {
-            var repository = await _uniqueRepositoryFactory.Create();
-            return repository.Get(type, id);
-        }
-
-        if (quality.HasFlag(QualityType.Set))
-        {
-            var repository = await _setRepositoryFactory.Create();
-            return repository.Get(type, id);
-        }
-
-        throw new ArgumentException(null, nameof(type));
-    }
-
-    public async Task<IEnumerable<object>> Get(QualityType quality, ItemInfoTypeEnum type)
-    {
-        if (quality.HasFlag(QualityType.NotUniqueOrSet))
-        {
-            var repository = await _subItemRepositoryFactory.Create();
-			return repository.Get(type);
-        }
-
-        if (quality.HasFlag(QualityType.Unique) || quality.HasFlag(QualityType.Legendary))
-        {
-            var repository = await _uniqueRepositoryFactory.Create();
-			return repository.Get(type);
-        }
-
-        if (quality.HasFlag(QualityType.Set))
-        {
-            var repository = await _setRepositoryFactory.Create();
-			return repository.Get(type);
-        }
-
-		throw new ArgumentException(null, nameof(type));
-	}
     
     public DatabaseService(ISubItemRepositoryFactory subItemFactory, IUniqueRepositoryFactory uniqueFactory,
         ISetRepositoryFactory setFactory)
@@ -107,5 +64,113 @@ public class DatabaseService : IDatabaseService
         _subItemRepositoryFactory = subItemFactory;
         _uniqueRepositoryFactory = uniqueFactory;
         _setRepositoryFactory = setFactory;
-    }
+	}
+
+	public async Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id)
+	{
+		IRepository<SubItem> subItemRepository;
+		IRepository<Unique> uniqueRepository;
+		switch (quality)
+		{
+			case QualityType.Basic:
+			case QualityType.Magic:
+			case QualityType.Rare:
+			case QualityType.Exalted:
+				subItemRepository = await _subItemRepositoryFactory.Create();
+				return subItemRepository.Get(type, id);
+
+			case QualityType.Unique:
+			case QualityType.Legendary:
+				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				return uniqueRepository.Get(type, id);
+
+			case QualityType.Set:
+				uniqueRepository = await _setRepositoryFactory.Create();
+				return uniqueRepository.Get(type, id);
+
+			default:
+				throw new ArgumentException(null, nameof(type));
+		}
+	}
+
+	public async Task<IEnumerable<object>> Get(QualityType quality, ItemInfoTypeEnum type)
+	{
+		IRepository<SubItem> subItemRepository;
+		IRepository<Unique> uniqueRepository;
+		switch (quality)
+		{
+			case QualityType.Basic:
+			case QualityType.Magic:
+			case QualityType.Rare:
+			case QualityType.Exalted:
+				subItemRepository = await _subItemRepositoryFactory.Create();
+				return subItemRepository.Get(type);
+
+			case QualityType.Unique:
+			case QualityType.Legendary:
+				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				return uniqueRepository.Get(type);
+
+			case QualityType.Set:
+				uniqueRepository = await _setRepositoryFactory.Create();
+				return uniqueRepository.Get(type);
+
+			default:
+				throw new ArgumentException(null, nameof(type));
+		}
+	}
+
+	public async Task<object> GetWeapon(QualityType quality, int id, ItemInfoTypeEnum type)
+	{
+		IRepository<SubItem> subItemRepository;
+		IRepository<Unique> uniqueRepository;
+		switch (quality)
+		{
+			case QualityType.Basic:
+			case QualityType.Magic:
+			case QualityType.Rare:
+			case QualityType.Exalted:
+				subItemRepository = await _subItemRepositoryFactory.Create();
+				return subItemRepository.GetWeapon(id, type);
+
+			case QualityType.Unique:
+			case QualityType.Legendary:
+				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				return uniqueRepository.GetWeapon(id, type);
+
+			case QualityType.Set:
+				uniqueRepository = await _setRepositoryFactory.Create();
+				return uniqueRepository.GetWeapon(id, type);
+
+			default:
+				throw new ArgumentException(null, nameof(id));
+		}
+	}
+
+	public async Task<IEnumerable<object>> GetWeapons(QualityType quality)
+	{
+		IRepository<SubItem> subItemRepository;
+		IRepository<Unique> uniqueRepository;
+		switch (quality)
+		{
+			case QualityType.Basic:
+			case QualityType.Magic:
+			case QualityType.Rare:
+			case QualityType.Exalted:
+				subItemRepository = await _subItemRepositoryFactory.Create();
+				return subItemRepository.GetWeapons();
+
+			case QualityType.Unique:
+			case QualityType.Legendary:
+				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				return uniqueRepository.GetWeapons();
+
+			case QualityType.Set:
+				uniqueRepository = await _setRepositoryFactory.Create();
+				return uniqueRepository.GetWeapons();
+
+			default:
+				throw new InvalidOperationException("Could not find any weapons");
+		}
+	}
 }
