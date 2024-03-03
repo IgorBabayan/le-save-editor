@@ -47,15 +47,23 @@ internal static class ServiceExtensions
 		services.AddSingleton<IItemInfoFactory, ItemInfoFactory>();
 	}
 
-	public static void RegisterMisc(this IServiceCollection services)
+	public static void RegisterFactories(this IServiceCollection services)
 	{
 		services.AddSingleton<IDatabaseFactory, DatabaseFactory>();
 		services.RegisterRepositories();
+		services.RegisterParseFactories();
+	}
+
+	public static void RegisterMisc(this IServiceCollection services)
+	{
+		services.AddTransient<ICharacterInventory, CharacterInventory>();
+	}
+
+	public static void RegisterServices(this IServiceCollection services)
+	{
 		services.AddSingleton<IDatabaseService, DatabaseService>();
 		services.AddSingleton<INavigationService, NavigationService>();
-		services.RegisterParseFactories();
-		services.AddTransient<ICharacterInventory, CharacterInventory>();
-
+		services.AddSingleton<IDialogService, DialogService>();
 		services.AddTransient<Func<Type, ObservableObject>>(services => viewModelType =>
 			(ObservableObject)services.GetRequiredService(viewModelType));
 	}
@@ -66,7 +74,7 @@ internal static class ServiceExtensions
 		services.AddSingleton<CharacterStashView>();
 		services.AddSingleton<BlessingView>();
 		services.AddSingleton<IdolView>();
-		services.AddSingleton<DownloadWindow>();
+		services.AddSingleton<IDownloadView, DownloadWindow>();
 		services.AddSingleton<ItemWindow>();
 	}
 
@@ -81,7 +89,7 @@ internal static class ServiceExtensions
 	public static void RegisterViewModels(this IServiceCollection services)
 	{
 		services.AddSingleton<MainViewModel>();
-		services.AddSingleton<DownloadViewModel>();
+		services.AddSingleton<IDownloadViewModel, DownloadViewModel>();
 		services.AddSingleton<CharacterViewModel>();
 		services.AddSingleton<CharacterStashViewModel>();
 		services.AddSingleton<BlessingViewModel>();

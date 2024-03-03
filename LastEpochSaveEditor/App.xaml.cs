@@ -16,6 +16,8 @@ public partial class App : Application
             })
             .ConfigureServices((_, services) =>
             {
+                services.RegisterServices();
+                services.RegisterFactories();
                 services.RegisterMisc();
 				services.RegisterWindows();
 				services.RegisterControls();

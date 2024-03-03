@@ -1,6 +1,8 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-internal partial class DownloadViewModel : ObservableObject
+internal interface IDownloadViewModel { }
+
+internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 {
 	private readonly ILogger<DownloadViewModel> _logger;
 	private readonly IDatabaseService _db;

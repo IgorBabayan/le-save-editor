@@ -1,11 +1,10 @@
-﻿using System.Diagnostics;
-
-namespace LastEpochSaveEditor.ViewModels;
+﻿namespace LastEpochSaveEditor.ViewModels;
 
 internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewChangedMessage>
 {
 	private readonly IMessenger _messenger;
-	private readonly IDatabaseService _databaseService;
+	private readonly IDialogService _dialogService;
+	private readonly IDownloadViewModel _downloadViewModel;
 	private readonly IDatabaseFactory _databaseFactory;
 
 	#region Properties
@@ -36,14 +35,15 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 
 	#endregion
 
-	public MainViewModel(IMessenger messenger, IDatabaseService databaseService, INavigationService navigationService)
+	public MainViewModel(IMessenger messenger, INavigationService navigationService, IDialogService dialogService, IDownloadViewModel downloadViewModel)
 	{
-		_databaseService = databaseService;
-
 		_messenger = messenger;
 		_messenger.RegisterAll(this);
 
 		NavigationService = navigationService;
+		_dialogService = dialogService;
+		_downloadViewModel = downloadViewModel;
+		
 		IsCharactersLoaded = false;
 	}
 
@@ -52,15 +52,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	[RelayCommand]
 	private async Task Load()
 	{
-		var watcher = new Stopwatch();
-		watcher.Start();
 		Characters = await SaveFileLoader.Load();
-		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_0");
-		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_2");
-		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_3");
-		//Characters = await SaveFileLoader.Load("1CHARACTERSLOT_BETA_4");
-		watcher.Stop();
-		System.Diagnostics.Debug.WriteLine($"LastEpochSaveEditor :: loading ends in {watcher.ElapsedMilliseconds} ms");
 		IsCharactersLoaded = true;
 		CharacterPressed();
 		SelectedCharacter = Characters.FirstOrDefault()!;
@@ -82,11 +74,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	private async Task ReloadDatabase() => await _databaseFactory.Create(true);
 
 	[RelayCommand]
-	private void Download()
-	{
-		var popup = App.GetService<DownloadWindow>();
-		((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(popup);
-	}
+	private async Task Download() => await _dialogService.ShowCustomDialog<IDownloadView>(_downloadViewModel);
 
 	#endregion
 
