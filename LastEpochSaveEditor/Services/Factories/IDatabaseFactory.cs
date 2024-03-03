@@ -7,7 +7,9 @@ public interface IDatabaseFactory
 
 public class DatabaseFactory : IDatabaseFactory
 {
-    private async Task<Database> Reload()
+	private Database? _database;
+
+	private async Task<Database> Reload()
     {
         if (File.Exists(Const.DATA_FILE_PATH))
             File.Delete(Const.DATA_FILE_PATH);
@@ -23,15 +25,17 @@ public class DatabaseFactory : IDatabaseFactory
     
     public async Task<Database> Create(bool reload = false)
     {
-        Database database;
         if (reload || !File.Exists(Const.DATA_FILE_PATH))
         {
-            database = await Reload();
-            return database;
+            _database = await Reload();
+            return _database;
         }
 
-        var content = await File.ReadAllTextAsync(Const.DATA_FILE_PATH);
-        database = JsonConvert.DeserializeObject<Database>(content)!;
-        return database;
-    }
+        if (_database != null)
+            return _database;
+
+		var content = await File.ReadAllTextAsync(Const.DATA_FILE_PATH);
+		_database = JsonConvert.DeserializeObject<Database>(content)!;
+		return _database;
+	}
 }
