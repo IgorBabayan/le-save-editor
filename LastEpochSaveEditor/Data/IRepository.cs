@@ -40,7 +40,6 @@ public interface IEnumerableRepository<TEntity>
 	IEnumerable<TEntity> GetAdornedIdols();
 	IEnumerable<TEntity> GetOneHandWeapons();
 	IEnumerable<TEntity> GetTwoHandWeapons();
-	IEnumerable<TEntity> GetWeapons(ItemInfoTypeEnum type = ItemInfoTypeEnum.None);
 }
 
 public interface ISingleRepository<TEntity>
@@ -86,4 +85,29 @@ public interface IRepository<TEntity> : ISingleRepository<TEntity>, IEnumerableR
 {
 	TEntity Get(ItemInfoTypeEnum itemType, int id);
 	IEnumerable<TEntity> Get(ItemInfoTypeEnum itemType);
+	IEnumerable<TEntity> GetWeapons(ItemInfoTypeEnum type = ItemInfoTypeEnum.Weapons);
+	IEnumerable<TEntity> GetArmours() => GetBelts()
+		.Union(GetBodies())
+		.Union(GetBoots())
+		.Union(GetGloves())
+		.Union(GetHelmets());
+
+	IEnumerable<TEntity> GetAccessories() => GetAmulets()
+		.Union(GetRelics())
+		.Union(GetRings());
+
+	IEnumerable<TEntity> GetIdols() => GetAdornedIdols()
+		.Union(GetGrandIdols())
+		.Union(GetHumbleIdols())
+		.Union(GetLargeIdols())
+		.Union(GetOrnateIdols())
+		.Union(GetSmallIdols())
+		.Union(GetSmallLagonianIdols())
+	.Union(GetStoutIdols());
+
+	IEnumerable<TEntity> GetOffHands() => GetCatalysts()
+		.Union(GetQuivers())
+		.Union(GetShields());
+
+	IEnumerable<TEntity> GetAll();
 }

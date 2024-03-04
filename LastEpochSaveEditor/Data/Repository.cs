@@ -51,7 +51,7 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 		.Union(GetTwoHandSwords())
 		.Union(GetTwoHandSpears())
 		.Union(GetStaffs());
-	public IEnumerable<TEntity> GetWeapons(ItemInfoTypeEnum type = ItemInfoTypeEnum.None)
+	public IEnumerable<TEntity> GetWeapons(ItemInfoTypeEnum type = ItemInfoTypeEnum.Weapons)
 	{
 		if (type == ItemInfoTypeEnum.None || type == ItemInfoTypeEnum.Weapons)
 		{
@@ -195,6 +195,8 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 	public abstract TEntity Get(ItemInfoTypeEnum itemType, int id);
 
 	public abstract IEnumerable<TEntity> Get(ItemInfoTypeEnum itemType);
+
+	public abstract IEnumerable<TEntity> GetAll();
 
 	#endregion
 

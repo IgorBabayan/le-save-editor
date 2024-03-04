@@ -140,6 +140,7 @@
 	<Style TargetType="Button">
 		<Setter Property="BorderThickness" Value="0"></Setter>
 		<Setter Property="Background" Value="{DynamicResource ActiveColor}"></Setter>
+		<Setter Property="Foreground" Value="{DynamicResource CharacterForegroundColor}"></Setter>
 
 		<Setter Property="Template">
 			<Setter.Value>
@@ -147,7 +148,7 @@
 					<Border Background="{TemplateBinding Background}"
 							BorderBrush="Transparent" BorderThickness="0"
 							Margin="0" Padding="0">
-						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+						<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5,0,5,0" />
 					</Border>
 
 					<ControlTemplate.Triggers>

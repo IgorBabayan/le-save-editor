@@ -60,4 +60,26 @@
 			</GeometryDrawing.Geometry>
 		</GeometryDrawing>
 	</DrawingGroup>
+
+	<DrawingGroup x:Key="CircleQuestionDrawingGroup">
+		<DrawingGroup.ClipGeometry>
+			<RectangleGeometry Rect="0.0,0.0,512.0,512.0"/>
+		</DrawingGroup.ClipGeometry>
+		<GeometryDrawing Brush="{DynamicResource DefaultButtonBackgroundColor}">
+			<GeometryDrawing.Geometry>
+				<PathGeometry Figures="M 256 512 A 256 256 0 1 0 256 0 a 256 256 0 1 0 0 512 z M 169.8 165.3 c 7.9 -22.3 29.1 -37.3 52.8 -37.3 h 58.3 c 34.9 0 63.1 28.3 63.1 63.1 c 0 22.6 -12.1 43.5 -31.7 54.8 L 280 264.4 c -0.2 13 -10.9 23.6 -24 23.6 c -13.3 0 -24 -10.7 -24 -24 V 250.5 c 0 -8.6 4.6 -16.5 12.1 -20.8 l 44.3 -25.4 c 4.7 -2.7 7.6 -7.7 7.6 -13.1 c 0 -8.4 -6.8 -15.1 -15.1 -15.1 H 222.6 c -3.4 0 -6.4 2.1 -7.5 5.3 l -0.4 1.2 c -4.4 12.5 -18.2 19 -30.6 14.6 s -19 -18.2 -14.6 -30.6 l 0.4 -1.2 z M 224 352 a 32 32 0 1 1 64 0 a 32 32 0 1 1 -64 0 z" FillRule="Nonzero"/>
+			</GeometryDrawing.Geometry>
+		</GeometryDrawing>
+	</DrawingGroup>
+
+	<DrawingGroup x:Key="TriangleExclamationDrawingGroup">
+		<DrawingGroup.ClipGeometry>
+			<RectangleGeometry Rect="0.0,0.0,512.0,512.0"/>
+		</DrawingGroup.ClipGeometry>
+		<GeometryDrawing Brush="{DynamicResource DefaultButtonBackgroundColor}">
+			<GeometryDrawing.Geometry>
+				<PathGeometry Figures="M 256 32 c 14.2 0 27.3 7.5 34.5 19.8 l 216 368 c 7.3 12.4 7.3 27.7 0.2 40.1 S 486.3 480 472 480 H 40 c -14.3 0 -27.6 -7.7 -34.7 -20.1 s -7 -27.8 0.2 -40.1 l 216 -368 C 228.7 39.5 241.8 32 256 32 z m 0 128 c -13.3 0 -24 10.7 -24 24 V 296 c 0 13.3 10.7 24 24 24 s 24 -10.7 24 -24 V 184 c 0 -13.3 -10.7 -24 -24 -24 z m 32 224 a 32 32 0 1 0 -64 0 a 32 32 0 1 0 64 0 z" FillRule="Nonzero"/>
+			</GeometryDrawing.Geometry>
+		</GeometryDrawing>
+	</DrawingGroup>
 </ResourceDictionary>

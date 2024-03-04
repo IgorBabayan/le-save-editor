@@ -1,8 +1,8 @@
 ﻿namespace LastEpochSaveEditor.Popups;
 
-public partial class DownloadWindow : Window, IDownloadView
+public partial class ConfirmationWindow : Window, IConfirmationView
 {
-	public DownloadWindow() => InitializeComponent();
+	public ConfirmationWindow() => InitializeComponent();
 
 	async Task IView.CloseDialog() => await Application.Current.Dispatcher.InvokeAsync(() => Hide());
 

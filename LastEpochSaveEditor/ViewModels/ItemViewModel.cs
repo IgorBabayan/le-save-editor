@@ -50,9 +50,9 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 	[RelayCommand]
 	private void Close()
 	{
-		var window = App.GetService<ItemWindow>();
+		/*var window = App.GetService<ItemWindow>();
 		var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
-		grid.Children.Remove(window);
+		grid.Children.Remove(window);*/
 	}
 
 	private void PopulateCategory()

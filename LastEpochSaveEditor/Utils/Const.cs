@@ -88,4 +88,6 @@ internal static class Const
 	public const string SMALL_IDOL = "Small Idol";
 	public const string SMALL_LAGONIAN_IDOL = "Small Lagonian Idol";
 	public const string STOUT_IDOL = "Stout Idol";
+
+	public const string APPLICATION_TITLE = "L A S T   E P O C H   S A V E   E D I T O R";
 }

@@ -2,54 +2,13 @@
 
 public interface IDatabaseService
 {
+	Task<int> Count();
+
     Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id);
     Task<IEnumerable<object>> Get(QualityType quality, ItemInfoTypeEnum type);
 
     Task<object> GetWeapon(QualityType quality, int id, ItemInfoTypeEnum type);
     Task<IEnumerable<object>> GetWeapons(QualityType quality);
-
-	/*IEnumerable<Item> Get1HandWeapons() => new[] { GetOneHandAxes(), GetOneHandDaggers(), GetOneHandMaces(), GetOneHandScepters(),
-        GetOneHandSwords(), GetWands() };
-
-    IEnumerable<Item> Get2HandWeapons() => new[] { GetTwoHandAxes(), GetTwoHandMaces(), GetTwoHandSpears(), GetStaffs(),
-        GetTwoHandSwords(), GetBows() };
-
-    IEnumerable<Item> GetWeapons() => Get1HandWeapons().Union(Get2HandWeapons());
-
-    IEnumerable<Item> GetIdols() => new[] { GetSmallIdols(), GetSmallLagonianIdols(), GetHumbleIdols(), GetStoutIdols(), GetGrandIdols(),
-        GetLargeIdols(), GetOrnateIdols(), GetHugeIdols(), GetAdornedIdols() };
-
-    IEnumerable<Item> GetAccessories() => new[] { GetAmulets(), GetRings(), GetRelics() };
-
-    IEnumerable<Item> GetArmours() => new[] { GetHelmets(), GetBodies(), GetBelts(), GetBoots(), GetGloves() };
-
-    IEnumerable<Item> GetOffHands() => new[] { GetQuivers(), GetShields(), GetCatalysts() };
-
-    IEnumerable<Item> GetAll() => GetOffHands()
-        .Union(GetArmours())
-        .Union(GetAccessories())
-        .Union(Get1HandWeapons())
-        .Union(Get2HandWeapons())
-        .Union(GetIdols());
-
-    int Count()
-    {
-        var count = 0;
-        foreach (var item in GetAll())
-            count += item.Base.SubItems.Count + item.Uniques.Count() + item.Sets.Count();
-
-        return count;
-    }*/
-
-	/*Dictionary<string, IEnumerable<Item>> GetFolderStructure() => new()
-    {
-        ["Off Hands"] = GetOffHands(),
-        ["Armours"] = GetArmours(),
-        ["Accessories"] = GetAccessories(),
-        ["One hand weapons"] = Get1HandWeapons(),
-        ["Two hand weapons"] = Get2HandWeapons(),
-        ["Idols"] = GetIdols()
-    };*/
 }
 
 public class DatabaseService : IDatabaseService
@@ -172,5 +131,17 @@ public class DatabaseService : IDatabaseService
 			default:
 				throw new InvalidOperationException("Could not find any weapons");
 		}
+	}
+
+	public async Task<int> Count()
+	{
+		var subItemRepository = await _subItemRepositoryFactory.Create();
+		var uniqueRepository = await _uniqueRepositoryFactory.Create();
+		var setRepository = await _setRepositoryFactory.Create();
+		
+		var subItemsCount = subItemRepository.GetAll().Count();
+		var uniquesCount = uniqueRepository.GetAll().Count();
+		var setsCount = setRepository.GetAll().Count();
+		return subItemsCount + uniquesCount + setsCount;
 	}
 }

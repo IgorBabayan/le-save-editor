@@ -16,6 +16,12 @@ public class SubItemRepository : Repository<SubItem>
 		return result.SelectMany(x => x.SubItems);
 	}
 
+	public override IEnumerable<SubItem> GetAll()
+	{
+		var result = _database.ItemTypes.SelectMany(x => x.SubItems);
+		return result;
+	}
+
 	#endregion
 
 	public SubItemRepository(Database database)

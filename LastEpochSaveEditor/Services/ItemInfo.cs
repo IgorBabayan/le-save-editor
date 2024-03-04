@@ -7,7 +7,7 @@ public interface IItemInfo<TEnum>
 	int Width { get; }
 	int Height { get; }
 	TEnum Type { get; }
-	Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType);
+	Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType);
 }
 
 public class HelmItemInfo : IItemInfo<ItemInfoTypeEnum>
@@ -16,7 +16,7 @@ public class HelmItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.HELM_ICON;
 	public int Width => 69;
 	public int Height => 69;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.HELMETS}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -30,7 +30,7 @@ public class BodyItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.BODY_ARMOR_ICON;
 	public int Width => 93;
 	public int Height => 139;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.BODY_ARMOR}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -44,7 +44,7 @@ public class WeaponItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.WEAPON_ICON;
 	public int Width => 63;
 	public int Height => 139;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.GetWeapon(quality, id, itemType);
 		var path = $"{item.GetWeaponTypePath()}/{itemType.GetDescriptionName()}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -58,7 +58,7 @@ public class OffHandItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.OFF_HAND_ICON;
 	public int Width => 69;
 	public int Height => 139;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.OFF_HAND}/{itemType}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -72,7 +72,7 @@ public class GlovesItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.GLOVES_ICON;
 	public int Width => 69;
 	public int Height => 69;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.GLOVES}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -86,7 +86,7 @@ public class BeltItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.BELTS_ICON;
 	public int Width => 93;
 	public int Height => 39;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.BELTS}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -100,7 +100,7 @@ public class BootsItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.BOOTS_ICON;
 	public int Width => 69;
 	public int Height => 69;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.BOOTS}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -114,7 +114,7 @@ public class RingItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.RING_ICON;
 	public int Width => 39;
 	public int Height => 39;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.RING}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -128,7 +128,7 @@ public class AmuletItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.AMULET_ICON;
 	public int Width => 43;
 	public int Height => 43;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.AMULET}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
@@ -142,7 +142,7 @@ public class RelicItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public string BaseIcon => Const.RELIC_ICON;
 	public int Width => 69;
 	public int Height => 69;
-	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
+	public async Task<string> GetIcon(DatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
 		var path = $"{Const.RELIC}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";

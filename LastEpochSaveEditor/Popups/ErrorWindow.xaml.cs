@@ -1,8 +1,8 @@
 ﻿namespace LastEpochSaveEditor.Popups;
 
-public partial class DownloadWindow : Window, IDownloadView
+public partial class ErrorWindow : Window, IErrorView
 {
-	public DownloadWindow() => InitializeComponent();
+	public ErrorWindow() => InitializeComponent();
 
 	async Task IView.CloseDialog() => await Application.Current.Dispatcher.InvokeAsync(() => Hide());
 

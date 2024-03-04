@@ -2,48 +2,63 @@
 
 internal interface IDialogService
 {
-	Task ShowMessage(string message, string title);
-	Task<bool> ShowConfirmation(string message, string title);
-	Task ShowCustomDialog<TView>(object viewModel)
-		where TView : class, IView;
+	Task ShowMessage(string message);
+	Task<bool?> ShowConfirmation(string message);
+	Task<bool?> ShowError(string message);
+	Task ShowCustomDialog<TView, TModel>(TModel viewModel)
+		where TView : class, IView
+		where TModel : IViewModel;
 }
 
 internal class DialogService : IDialogService
 {
-	public async Task ShowMessage(string message, string title)
+	public async Task ShowMessage(string message)
 	{
-		/*var dialog = new ContentDialog
-		{
-			Title = title,
-			Content = message,
-			CloseButtonText = "OK"
-		};
+		var viewModel = App.GetService<IMessageViewModel>();
+		viewModel.SetData(Const.APPLICATION_TITLE, message);
 
-		await dialog.ShowAsync();*/
+		var window = CreateDialogWindow<IMessageView, IMessageViewModel>(viewModel);
+		await window.ShowDialog();
 	}
 
-	public async Task<bool> ShowConfirmation(string message, string title)
+	public async Task<bool?> ShowError(string message)
 	{
-		/*var dialog = new ContentDialog
-		{
-			Title = title,
-			Content = message,
-			PrimaryButtonText = "Yes",
-			CloseButtonText = "No"
-		};
+		var viewModel = App.GetService<IErrorViewModel>();
+		viewModel.SetData(Const.APPLICATION_TITLE, message);
 
-		var result = await dialog.ShowAsync();
-		return result == ContentDialogResult.Primary;*/
-
-		return default;
+		var window = CreateDialogWindow<IErrorView, IErrorViewModel>(viewModel);
+		await window.ShowDialog();
+		return viewModel.Result;
 	}
 
-	public async Task ShowCustomDialog<TView>(object viewModel)
+	public async Task<bool?> ShowConfirmation(string message)
+	{
+		var viewModel = App.GetService<IConfirmationViewModel>();
+		viewModel.SetData(Const.APPLICATION_TITLE, message);
+
+		var window = CreateDialogWindow<IConfirmationView, IConfirmationViewModel>(viewModel);
+		await window.ShowDialog();
+		return viewModel.Result;
+	}
+
+	public async Task ShowCustomDialog<TView, TModel>(TModel viewModel)
 		where TView : class, IView
+		where TModel : IViewModel
 	{
-		var view = App.GetService<TView>();
-		view.DataContext = viewModel;
+		var window = CreateDialogWindow<TView, TModel>(viewModel);
+		await window.ShowDialog();
+	}
 
-		await view.ShowDialog();
+	private TView CreateDialogWindow<TView, TModel>(TModel viewModel)
+		where TView : class, IView
+		where TModel : IViewModel
+	{
+		var window = App.GetService<TView>();
+		window.Owner = Application.Current.MainWindow;
+		window.Width = Application.Current.MainWindow.Width;
+		window.Height = Application.Current.MainWindow.Height;
+		window.DataContext = viewModel;
+
+		return window;
 	}
 }

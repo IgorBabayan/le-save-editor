@@ -1,11 +1,13 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-internal interface IDownloadViewModel { }
+internal interface IDownloadViewModel : IViewModel { }
 
 internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 {
 	private readonly ILogger<DownloadViewModel> _logger;
 	private readonly IDatabaseService _db;
+	private readonly IDownloadView _downloadView;
+	public bool? Result { get; private set; }
 
 	#region Properties
 
@@ -35,41 +37,35 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 
 	#endregion
 
-	#region Command
+	#region Commands
 
 	[RelayCommand]
-	private void Download()
+	private async Task Download()
 	{
-		throw new NotImplementedException();
-		//Count = _db.Count();
 		CanDownload = false;
 	
 		PrepareFolders();
-		DownloadImages();
+		await DownloadImages();
 	}
 
 	[RelayCommand]
-	private void Close()
-	{
-		var window = App.GetService<DownloadWindow>();
-		var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
-		grid.Children.Remove(window);
-	}
+	private async Task Close() => await _downloadView.CloseDialog();
 
 	#endregion
 
-	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDatabaseService db)
+	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDatabaseService db, IDownloadView downloadView)
 	{
 		_logger = logger;
 		_db = db;
-
+		_downloadView = downloadView;
+		
 		Count = int.MaxValue;
 		CanDownload = true;
 	}
 
 	private void PrepareFolders()
 	{
-		throw new NotImplementedException();
+		return;
 		/*if (Directory.Exists(Const.IMAGE_FOLDER_NAME))
 			Directory.Delete(Const.IMAGE_FOLDER_NAME, true);
 		Directory.CreateDirectory(Const.IMAGE_FOLDER_NAME);
@@ -102,8 +98,13 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 		}*/
 	}
 
-	private void DownloadImages()
+	private async Task DownloadImages()
 	{
+		var window = App.GetService<IDialogService>();
+		await window.ShowConfirmation("Hello world");
+
+		Count = await _db.Count();
+		return;
 		DownloadProgress = 0;
 		ConvertProgress = 0;
 		RemoveProgress = 0;

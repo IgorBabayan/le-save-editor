@@ -74,7 +74,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	private async Task ReloadDatabase() => await _databaseFactory.Create(true);
 
 	[RelayCommand]
-	private async Task Download() => await _dialogService.ShowCustomDialog<IDownloadView>(_downloadViewModel);
+	private async Task Download() => await _dialogService.ShowCustomDialog<IDownloadView, IDownloadViewModel>(_downloadViewModel);
 
 	#endregion
 

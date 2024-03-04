@@ -1,4 +1,6 @@
-﻿namespace LastEpochSaveEditor.Data;
+﻿using LastEpochSaveEditor.Models.Database;
+
+namespace LastEpochSaveEditor.Data;
 
 public class SetRepository : Repository<Unique>
 {
@@ -13,7 +15,13 @@ public class SetRepository : Repository<Unique>
 
 	public override IEnumerable<Unique> Get(ItemInfoTypeEnum itemType)
 	{
-		var result = _database.Uniques.Where(x => x.BaseType == itemType);
+		var result = _database.Uniques.Where(x => x.BaseType == itemType && x.IsSetItem);
+		return result;
+	}
+
+	public override IEnumerable<Unique> GetAll()
+	{
+		var result = _database.Uniques.Where(x => x.IsSetItem);
 		return result;
 	}
 

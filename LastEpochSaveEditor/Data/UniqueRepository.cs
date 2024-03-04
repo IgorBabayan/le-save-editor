@@ -13,7 +13,13 @@ public class UniqueRepository : Repository<Unique>
 
 	public override IEnumerable<Unique> Get(ItemInfoTypeEnum itemType)
 	{
-		var result = _database.Uniques.Where(x => x.BaseType == itemType);
+		var result = _database.Uniques.Where(x => x.BaseType == itemType && !x.IsSetItem);
+		return result;
+	}
+
+	public override IEnumerable<Unique> GetAll()
+	{
+		var result = _database.Uniques.Where(x => !x.IsSetItem);
 		return result;
 	}
 

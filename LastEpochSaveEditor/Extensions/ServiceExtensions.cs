@@ -70,12 +70,15 @@ internal static class ServiceExtensions
 
 	public static void RegisterControls(this IServiceCollection services)
 	{
-		services.AddSingleton(provider => new CharacterView(){ DataContext = provider.GetRequiredService<CharacterViewModel>() });
+		services.AddSingleton<CharacterView>();
 		services.AddSingleton<CharacterStashView>();
 		services.AddSingleton<BlessingView>();
 		services.AddSingleton<IdolView>();
-		services.AddSingleton<IDownloadView, DownloadWindow>();
 		services.AddSingleton<ItemWindow>();
+		services.AddSingleton<IDownloadView, DownloadWindow>();
+		services.AddSingleton<IErrorView, ErrorWindow>();
+		services.AddSingleton<IConfirmationView, ConfirmationWindow>();
+		services.AddSingleton<IMessageView, MessageWindow>();
 	}
 
 	public static void RegisterWindows(this IServiceCollection services)
@@ -90,6 +93,9 @@ internal static class ServiceExtensions
 	{
 		services.AddSingleton<MainViewModel>();
 		services.AddSingleton<IDownloadViewModel, DownloadViewModel>();
+		services.AddSingleton<IErrorViewModel, ErrorViewModel>();
+		services.AddSingleton<IConfirmationViewModel, ConfirmationViewModel>();
+		services.AddSingleton<IMessageViewModel, MessageViewModel>();
 		services.AddSingleton<CharacterViewModel>();
 		services.AddSingleton<CharacterStashViewModel>();
 		services.AddSingleton<BlessingViewModel>();
