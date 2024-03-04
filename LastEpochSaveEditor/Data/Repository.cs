@@ -8,7 +8,7 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 	#region IEnumerableRepository<TEntity>
 
 	public IEnumerable<TEntity> GetOneHandAxes() => Get(ItemInfoTypeEnum.OneHandAxes);
-	public IEnumerable<TEntity> GetOneHandDaggers() => Get(ItemInfoTypeEnum.OneHandDaggers);
+	public IEnumerable<TEntity> GetOneHandDaggers() => Get(ItemInfoTypeEnum.Daggers);
 	public IEnumerable<TEntity> GetOneHandMaces() => Get(ItemInfoTypeEnum.OneHandMaces);
 	public IEnumerable<TEntity> GetOneHandScepters() => Get(ItemInfoTypeEnum.OneHandScepter);
 	public IEnumerable<TEntity> GetOneHandSwords() => Get(ItemInfoTypeEnum.OneHandSwords);
@@ -74,7 +74,7 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 			case ItemInfoTypeEnum.OneHandAxes:
 				return GetOneHandAxes();
 
-			case ItemInfoTypeEnum.OneHandDaggers:
+			case ItemInfoTypeEnum.Daggers:
 				return GetOneHandDaggers();
 
 			case ItemInfoTypeEnum.OneHandMaces:
@@ -113,7 +113,7 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 	#region ISingleRepository<TEntity>
 
 	public TEntity GetOneHandAxe(int id) => Get(ItemInfoTypeEnum.OneHandAxes, id);
-	public TEntity GetOneHandDagger(int id) => Get(ItemInfoTypeEnum.OneHandDaggers, id);
+	public TEntity GetOneHandDagger(int id) => Get(ItemInfoTypeEnum.Daggers, id);
 	public TEntity GetOneHandMace(int id) => Get(ItemInfoTypeEnum.OneHandMaces, id);
 	public TEntity GetOneHandScepter(int id) => Get(ItemInfoTypeEnum.OneHandScepter, id);
 	public TEntity GetOneHandSword(int id) => Get(ItemInfoTypeEnum.OneHandSwords, id);
@@ -151,7 +151,7 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 			case ItemInfoTypeEnum.OneHandAxes:
 				return new WeaponType<TEntity>(false, GetOneHandAxe(id));
 
-			case ItemInfoTypeEnum.OneHandDaggers:
+			case ItemInfoTypeEnum.Daggers:
 				return new WeaponType<TEntity>(false, GetOneHandDagger(id));
 
 			case ItemInfoTypeEnum.OneHandMaces:
@@ -197,6 +197,8 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 	public abstract IEnumerable<TEntity> Get(ItemInfoTypeEnum itemType);
 
 	public abstract IEnumerable<TEntity> GetAll();
+
+	public abstract IDictionary<ItemInfoTypeEnum, IEnumerable<TEntity>> GetByType(ItemInfoTypeEnum type);
 
 	#endregion
 

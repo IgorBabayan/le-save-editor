@@ -15,7 +15,7 @@ internal class DialogService : IDialogService
 	public async Task ShowMessage(string message)
 	{
 		var viewModel = App.GetService<IMessageViewModel>();
-		viewModel.SetData(Const.APPLICATION_TITLE, message);
+		viewModel.SetData(APPLICATION_TITLE, message);
 
 		var window = CreateDialogWindow<IMessageView, IMessageViewModel>(viewModel);
 		await window.ShowDialog();
@@ -24,7 +24,7 @@ internal class DialogService : IDialogService
 	public async Task<bool?> ShowError(string message)
 	{
 		var viewModel = App.GetService<IErrorViewModel>();
-		viewModel.SetData(Const.APPLICATION_TITLE, message);
+		viewModel.SetData(APPLICATION_TITLE, message);
 
 		var window = CreateDialogWindow<IErrorView, IErrorViewModel>(viewModel);
 		await window.ShowDialog();
@@ -34,7 +34,7 @@ internal class DialogService : IDialogService
 	public async Task<bool?> ShowConfirmation(string message)
 	{
 		var viewModel = App.GetService<IConfirmationViewModel>();
-		viewModel.SetData(Const.APPLICATION_TITLE, message);
+		viewModel.SetData(APPLICATION_TITLE, message);
 
 		var window = CreateDialogWindow<IConfirmationView, IConfirmationViewModel>(viewModel);
 		await window.ShowDialog();

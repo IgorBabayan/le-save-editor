@@ -20,7 +20,7 @@ public class ItemInfoFactory : IItemInfoFactory
 			case ItemInfoTypeEnum.Bows:
 			case ItemInfoTypeEnum.Crossbow:
 			case ItemInfoTypeEnum.OneHandAxes:
-			case ItemInfoTypeEnum.OneHandDaggers:
+			case ItemInfoTypeEnum.Daggers:
 			case ItemInfoTypeEnum.OneHandMaces:
 			case ItemInfoTypeEnum.OneHandScepter:
 			case ItemInfoTypeEnum.OneHandSwords:

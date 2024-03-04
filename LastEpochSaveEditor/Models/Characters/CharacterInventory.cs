@@ -22,7 +22,7 @@ public class CharacterInventory : ICharacterInventory
 
 	public ItemDataInfo Helm => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Helmet)!;
 	public ItemDataInfo Body => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Body)!;
-	public ItemDataInfo Weapon => _items!.FirstOrDefault(x => x.Type.IsInWeapon())!;
+	public ItemDataInfo Weapon => _items!.FirstOrDefault(x => x.Type.IsInWeapons())!;
 	public ItemDataInfo OffHand => _items!.FirstOrDefault(x => x.Type.IsInOffHands())!;
 	public ItemDataInfo Gloves => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Gloves)!;
 	public ItemDataInfo Belt => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Belt)!;

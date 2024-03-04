@@ -11,21 +11,21 @@ public class DatabaseFactory : IDatabaseFactory
 
 	private async Task<Database> Reload()
     {
-        if (File.Exists(Const.DATA_FILE_PATH))
-            File.Delete(Const.DATA_FILE_PATH);
+        if (File.Exists(DATA_FILE_PATH))
+            File.Delete(DATA_FILE_PATH);
         
         var content = await FileDownloader.DownloadDatabase();
         var database = JsonConvert.DeserializeObject<Database>(content)!;
         foreach (var itemType in database!.ItemTypes)
             itemType.SubItems = itemType.SubItems.Where(x => x.CannotDrop == false).ToList();
             
-        await File.WriteAllTextAsync(Const.DATA_FILE_PATH, JsonConvert.SerializeObject(database, Formatting.Indented));
+        await File.WriteAllTextAsync(DATA_FILE_PATH, JsonConvert.SerializeObject(database, Formatting.Indented));
         return database;
     }
     
     public async Task<Database> Create(bool reload = false)
     {
-        if (reload || !File.Exists(Const.DATA_FILE_PATH))
+        if (reload || !File.Exists(DATA_FILE_PATH))
         {
             _database = await Reload();
             return _database;
@@ -34,8 +34,8 @@ public class DatabaseFactory : IDatabaseFactory
         if (_database != null)
             return _database;
 
-		var content = await File.ReadAllTextAsync(Const.DATA_FILE_PATH);
+		var content = await File.ReadAllTextAsync(DATA_FILE_PATH);
 		_database = JsonConvert.DeserializeObject<Database>(content)!;
-		return _database;
+        return _database;
 	}
 }

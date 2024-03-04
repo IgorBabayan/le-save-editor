@@ -46,11 +46,11 @@ internal static class ObjectExtensions
 		return self.GetType() switch
 		{
 			{ } type when type == typeof(WeaponType<SubItem>) => ((WeaponType<SubItem>)self).IsTwoHanded
-					? Const.TWO_HAND_WEAPONS
-					: Const.ONE_HAND_WEAPONS,
+					? TWO_HAND_WEAPONS
+					: ONE_HAND_WEAPONS,
 			{ } type when type == typeof(WeaponType<Unique>) => ((WeaponType<Unique>)self).IsTwoHanded
-					? Const.TWO_HAND_WEAPONS
-					: Const.ONE_HAND_WEAPONS,
+					? TWO_HAND_WEAPONS
+					: ONE_HAND_WEAPONS,
 			_ => throw new InvalidOperationException("Type not supported")
 		};
 	}

@@ -85,9 +85,24 @@ internal static class Const
 	public const string HUMBLE_IDOL = "Humble Idol";
 	public const string LARGE_IDOL = "Large Idol";
 	public const string ORNATE_IDOL = "Ornate Idol";
+	public const string HUGE_IDOL = "Huge Idol";
 	public const string SMALL_IDOL = "Small Idol";
 	public const string SMALL_LAGONIAN_IDOL = "Small Lagonian Idol";
 	public const string STOUT_IDOL = "Stout Idol";
+
+	public const string GREATER_LENS = "Greater Lens";
+	public const string ARCTUS_LENS = "Arctus Lens";
+	public const string MESEMBRIA_LENS = "Mesembria Lens";
+	public const string EOS_LENS = "Eos Lens";
+	public const string DYSIS_LENS = "Dysis Lens";
+
+	public const string BLESSING = "Blessing";
+	public const string AFFIX_SHARD = "Affix Shard";
+	public const string RUNE = "Rune";
+	public const string GLYPH = "Glyph";
+	public const string KEY = "Key";
+	public const string LOST_MEMORY = "Lost Memory";
+	public const string RESONANCE = "Resonance";
 
 	public const string APPLICATION_TITLE = "L A S T   E P O C H   S A V E   E D I T O R";
 }

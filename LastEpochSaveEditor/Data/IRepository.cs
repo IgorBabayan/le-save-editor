@@ -110,4 +110,6 @@ public interface IRepository<TEntity> : ISingleRepository<TEntity>, IEnumerableR
 		.Union(GetShields());
 
 	IEnumerable<TEntity> GetAll();
+
+	IDictionary<ItemInfoTypeEnum, IEnumerable<TEntity>> GetByType(ItemInfoTypeEnum type);
 }

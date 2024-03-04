@@ -2,116 +2,142 @@
 
 public enum ItemInfoTypeEnum
 {
-	[Description(Const.ARMOURS_HELMETS)]
+	[Description(ARMOURS_HELMETS)]
     Helmet = 0,
 
-	[Description(Const.ARMOURS_BODY)]
+	[Description(ARMOURS_BODY)]
     Body = 1,
 
-	[Description(Const.ARMOURS_BELTS)]
+	[Description(ARMOURS_BELTS)]
     Belt = 2,
 
-	[Description(Const.ARMOURS_BOOTS)]
+	[Description(ARMOURS_BOOTS)]
     Boots = 3,
 
-	[Description(Const.ARMOURS_GLOVES)]
+	[Description(ARMOURS_GLOVES)]
     Gloves = 4,
 
-	[Description(Const.ONE_HAND_AXES)]
+	[Description(ONE_HAND_AXES)]
     OneHandAxes = 5,
 
-	[Description(Const.ONE_HAND_DAGGERS)]
-    OneHandDaggers = 6,
+	[Description(ONE_HAND_DAGGERS)]
+    Daggers = 6,
 
-	[Description(Const.ONE_HAND_MACES)]
+	[Description(ONE_HAND_MACES)]
 	OneHandMaces = 7,
 
-	[Description(Const.ONE_HAND_SCEPTERS)]
+	[Description(ONE_HAND_SCEPTERS)]
 	OneHandScepter = 8,
 
-	[Description(Const.ONE_HAND_SWORDS)]
+	[Description(ONE_HAND_SWORDS)]
 	OneHandSwords = 9,
 
-	[Description(Const.ONE_HAND_WANDS)]
+	[Description(ONE_HAND_WANDS)]
 	Wands = 10,
 
-	[Description(Const.ONE_HAND_WANDS)]
+	[Description(ONE_HAND_WANDS)]
 	OneHandFist = 11,
 
-	[Description(Const.TWO_HAND_AXES)]
+	[Description(TWO_HAND_AXES)]
 	TwoHandAxes = 12,
 
-	[Description(Const.TWO_HAND_MACES)]
+	[Description(TWO_HAND_MACES)]
 	TwoHandMaces = 13,
 
-	[Description(Const.TWO_HAND_POLEARM)]
+	[Description(TWO_HAND_POLEARM)]
 	TwoHandPolearm = 14,
 
-	[Description(Const.TWO_HAND_STAFF)]
+	[Description(TWO_HAND_STAFF)]
 	Staff = 15,
 
-	[Description(Const.TWO_HAND_SWORDS)]
+	[Description(TWO_HAND_SWORDS)]
 	TwoHandSwords = 16,
 
-	[Description(Const.QUIVER)]
+	[Description(QUIVER)]
 	Quiver = 17,
 
-	[Description(Const.SHIELD)]
+	[Description(SHIELD)]
 	Shield = 18,
 
-	[Description(Const.CATALYST)]
+	[Description(CATALYST)]
 	Catalyst = 19,
 
-	[Description(Const.ACCESSORIES_AMULET)]
+	[Description(ACCESSORIES_AMULET)]
 	Amulet = 20,
 
-	[Description(Const.ACCESSORIES_RING)]
+	[Description(ACCESSORIES_RING)]
 	Ring = 21,
 
-	[Description(Const.ACCESSORIES_RELIC)]
+	[Description(ACCESSORIES_RELIC)]
     Relic = 22,
 
-	[Description(Const.TWO_HAND_BOWS)]
+	[Description(TWO_HAND_BOWS)]
 	Bows = 23,
 
-	[Description(Const.TWO_HAND_BOWS)]
+	[Description(TWO_HAND_BOWS)]
 	Crossbow = 24,
 
-	[Description(Const.SMALL_IDOL)]
+	[Description(SMALL_IDOL)]
 	SmallIdol = 25,
 
-	[Description(Const.SMALL_LAGONIAN_IDOL)]
+	[Description(SMALL_LAGONIAN_IDOL)]
 	SmallLagonianIdol = 26,
 
-	[Description(Const.HUMBLE_IDOL)]
+	[Description(HUMBLE_IDOL)]
 	HumbleIdol = 27,
 
-	[Description(Const.STOUT_IDOL)]
+	[Description(STOUT_IDOL)]
 	StoutIdol = 28,
 
-	[Description(Const.GRAND_IDOL)]
+	[Description(GRAND_IDOL)]
 	GrandIdol = 29,
 
-	[Description(Const.LARGE_IDOL)]
+	[Description(LARGE_IDOL)]
 	LargeIdol = 30,
 
-	[Description(Const.ORNATE_IDOL)]
+	[Description(ORNATE_IDOL)]
 	OrnateIdol = 31,
+
+	[Description(HUGE_IDOL)]
 	HugeIdol = 32,
 
-	[Description(Const.ADORNED_IDOL)]
+	[Description(ADORNED_IDOL)]
 	AdornedIdol = 33,
+
+	[Description(BLESSING)]
 	Blessing = 34,
+
+	[Description(GREATER_LENS)]
 	GreaterLens = 35,
+
+	[Description(ARCTUS_LENS)]
 	ArctusLens = 36,
+
+	[Description(MESEMBRIA_LENS)]
 	MesembriaLens = 37,
+
+	[Description(EOS_LENS)]
 	EosLens = 38,
+
+	[Description(DYSIS_LENS)]
 	DysisLens = 39,
+
+	[Description(AFFIX_SHARD)]
 	AffixShard = 101,
+
+	[Description(RUNE)]
 	Rune = 102,
+
+	[Description(GLYPH)]
 	Glyph = 103,
+
+	[Description(KEY)]
 	Key = 104,
+
+	[Description(LOST_MEMORY)]
 	LostMemory = 105,
+
+	[Description(RESONANCE)]
 	Resonance = 106,
 
 	/// <summary>
@@ -120,7 +146,7 @@ public enum ItemInfoTypeEnum
 	///			<see cref="OneHandAxes"/>
 	///		</item>
 	///		<item>
-	///			<see cref="OneHandDaggers"/>
+	///			<see cref="Daggers"/>
 	///		</item>
 	///		<item>
 	///			<see cref="OneHandMaces"/>
@@ -139,7 +165,7 @@ public enum ItemInfoTypeEnum
 	///		</item>
 	/// </list>
 	/// </summary>
-	[Description(Const.ONE_HAND_WEAPON)]
+	[Description(ONE_HAND_WEAPON)]
 	OneHandWeapons = 9000,
 
 	/// <summary>
@@ -161,7 +187,7 @@ public enum ItemInfoTypeEnum
 	///		</item>
 	/// </list>
 	/// </summary>
-	[Description(Const.TWO_HAND_WEAPON)]
+	[Description(TWO_HAND_WEAPON)]
 	TwoHandWeapons = 9001,
 
 	/// <summary>
@@ -195,7 +221,7 @@ public enum ItemInfoTypeEnum
 	///		</item>
 	/// </list>
 	/// </summary>
-	[Description(Const.ACCESSORIES)]
+	[Description(ACCESSORIES)]
 	Accessories = 9003,
 
 	/// <summary>
@@ -217,7 +243,7 @@ public enum ItemInfoTypeEnum
 	///		</item>
 	/// </list>
 	/// </summary>
-	[Description(Const.ARMOURS)]
+	[Description(ARMOURS)]
 	Armours = 9004,
 
 	/// <summary>
@@ -233,7 +259,7 @@ public enum ItemInfoTypeEnum
 	///		</item>
 	/// </list>
 	/// </summary>
-	[Description(Const.OFF_HANDS)]
+	[Description(OFF_HANDS)]
 	OffHands = 9005,
 
 	/// <summary>
@@ -267,7 +293,7 @@ public enum ItemInfoTypeEnum
 	///		</item>
 	/// </list>
 	/// </summary>
-	[Description(Const.IDOLS)]
+	[Description(IDOLS)]
 	Idols = 9006,
 
 	/// <summary>

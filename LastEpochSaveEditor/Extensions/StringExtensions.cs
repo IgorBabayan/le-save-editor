@@ -9,4 +9,6 @@ internal static class StringExtensions
 
 		return self.ToLowerInvariant().Replace(" ", "_");
 	}
+
+	public static string GetItemNameAsWebP(this string self) => $"{self.GetItemName()}.webp";
 }

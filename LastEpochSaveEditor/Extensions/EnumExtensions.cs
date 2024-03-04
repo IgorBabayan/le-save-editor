@@ -1,22 +1,23 @@
-﻿using Newtonsoft.Json.Linq;
-using System.ComponentModel;
-using System.Reflection;
-
-namespace LastEpochSaveEditor.Extensions;
+﻿namespace LastEpochSaveEditor.Extensions;
 
 internal static class EnumExtensions
 {
-	private static readonly IEnumerable<ItemInfoTypeEnum> _weapons;
-	private static readonly IEnumerable<ItemInfoTypeEnum> _offHands;
+	public static readonly IEnumerable<ItemInfoTypeEnum> Weapons;
+	public static readonly IEnumerable<ItemInfoTypeEnum> OffHands;
+	public static readonly IEnumerable<ItemInfoTypeEnum> Accessories;
+	public static readonly IEnumerable<ItemInfoTypeEnum> Armours;
+	public static readonly IEnumerable<ItemInfoTypeEnum> Idols;
+	public static readonly IEnumerable<ItemInfoTypeEnum> OneHands;
+	public static readonly IEnumerable<ItemInfoTypeEnum> TwoHands;
 
 	static EnumExtensions()
 	{
-		_weapons = new[]
+		Weapons = new[]
 		{
 			ItemInfoTypeEnum.Bows,
 			ItemInfoTypeEnum.Crossbow,
 			ItemInfoTypeEnum.OneHandAxes,
-			ItemInfoTypeEnum.OneHandDaggers,
+			ItemInfoTypeEnum.Daggers,
 			ItemInfoTypeEnum.OneHandMaces,
 			ItemInfoTypeEnum.OneHandScepter,
 			ItemInfoTypeEnum.OneHandSwords,
@@ -28,20 +29,64 @@ internal static class EnumExtensions
 			ItemInfoTypeEnum.TwoHandPolearm,
 			ItemInfoTypeEnum.Staff
 		};
-		_offHands = new[]
+		OffHands = new[]
 		{
 			ItemInfoTypeEnum.Quiver,
-			ItemInfoTypeEnum.Catalyst,
-			ItemInfoTypeEnum.Shield
+			ItemInfoTypeEnum.Shield,
+			ItemInfoTypeEnum.Catalyst
+		};
+		Accessories = new[]
+		{
+			ItemInfoTypeEnum.Amulet,
+			ItemInfoTypeEnum.Ring,
+			ItemInfoTypeEnum.Relic
+		};
+		Armours = new[]
+		{
+			ItemInfoTypeEnum.Helmet,
+			ItemInfoTypeEnum.Body,
+			ItemInfoTypeEnum.Belt,
+			ItemInfoTypeEnum.Boots,
+			ItemInfoTypeEnum.Gloves
+		};
+		Idols = new[]
+		{
+			ItemInfoTypeEnum.SmallIdol,
+			ItemInfoTypeEnum.SmallLagonianIdol,
+			ItemInfoTypeEnum.HumbleIdol,
+			ItemInfoTypeEnum.StoutIdol,
+			ItemInfoTypeEnum.GrandIdol,
+			ItemInfoTypeEnum.LargeIdol,
+			ItemInfoTypeEnum.OrnateIdol,
+			ItemInfoTypeEnum.HugeIdol,
+			ItemInfoTypeEnum.AdornedIdol
+		};
+		OneHands = new[]
+		{
+			ItemInfoTypeEnum.OneHandAxes,
+			ItemInfoTypeEnum.Daggers,
+			ItemInfoTypeEnum.OneHandMaces,
+			ItemInfoTypeEnum.OneHandScepter,
+			ItemInfoTypeEnum.OneHandSwords,
+			ItemInfoTypeEnum.Wands
+		};
+		TwoHands = new[]
+		{
+			ItemInfoTypeEnum.TwoHandAxes,
+			ItemInfoTypeEnum.TwoHandMaces,
+			ItemInfoTypeEnum.TwoHandPolearm,
+			ItemInfoTypeEnum.Staff,
+			ItemInfoTypeEnum.TwoHandSwords,
+			ItemInfoTypeEnum.Bows
 		};
 	}
 
-	public static bool IsInWeapon(this ItemInfoTypeEnum self)
+	public static bool IsInWeapons(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
 
-		return _weapons.Any(x => x == self);
+		return Weapons.Any(x => x == self);
 	}
 
 	public static bool IsInOffHands(this ItemInfoTypeEnum self)
@@ -49,7 +94,47 @@ internal static class EnumExtensions
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
 
-		return _offHands.Any(x => x == self);
+		return OffHands.Any(x => x == self);
+	}
+
+	public static bool IsInAccessories(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return Accessories.Any(x => x == self);
+	}
+
+	public static bool IsInArmours(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return Armours.Any(x => x == self);
+	}
+
+	public static bool IsInIdols(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return Idols.Any(x => x == self);
+	}
+
+	public static bool IsOneHands(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return OneHands.Any(x => x == self);
+	}
+
+	public static bool IsTwoHands(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return TwoHands.Any(x => x == self);
 	}
 
 	public static string GetDescriptionName(this ItemInfoTypeEnum self)

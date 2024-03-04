@@ -43,3 +43,4 @@ global using LastEpochSaveEditor.Extensions;
 global using LastEpochSaveEditor.Services.Factories;
 
 global using Color = System.Windows.Media.Color;
+global using static LastEpochSaveEditor.Utils.Const;

@@ -10,14 +10,14 @@ internal static class QualityTypeExtension
 			case QualityType.Magic:
 			case QualityType.Rare:
 			case QualityType.Exalted:
-				return Const.BASIC_FOLDER_NAME;
+				return BASIC_FOLDER_NAME;
 
 			case QualityType.Unique:
 			case QualityType.Legendary:
-				return Const.UNIQUE_FOLDER_NAME;
+				return UNIQUE_FOLDER_NAME;
 
 			default:
-				return Const.SET_FOLDER_NAME;
+				return SET_FOLDER_NAME;
 		}
 	}
 }
