@@ -18,7 +18,7 @@ public interface ICharacterInventory : IInventory
 public class CharacterInventory : ICharacterInventory
 {
 	private readonly ILogger<CharacterInventory> _logger;
-	private readonly DatabaseService _db;
+	private readonly IDatabaseService _db;
 
 	public ItemDataInfo Helm => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Helmet)!;
 	public ItemDataInfo Body => _items!.FirstOrDefault(x => x.Type == ItemInfoTypeEnum.Body)!;
@@ -35,7 +35,7 @@ public class CharacterInventory : ICharacterInventory
 	private IEnumerable<ItemDataInfo>? _items;
 	private readonly IItemInfoFactory _factory;
 
-	public CharacterInventory(ILogger<CharacterInventory> logger, DatabaseService db, IItemInfoFactory factory)
+	public CharacterInventory(ILogger<CharacterInventory> logger, IDatabaseService db, IItemInfoFactory factory)
 	{
 		_logger = logger;
 		_db = db;
