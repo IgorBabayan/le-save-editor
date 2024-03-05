@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
+        xmlns:vm="clr-namespace:LastEpochSaveEditor.ViewModels"
+        x:DataType="vm:MainViewModel"
+        x:Class="LastEpochSaveEditor.Views.MainWindow"
+        Icon="/Assets/Logo.ico"
+		Background="Transparent"
+		Height="700" Width="800" CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        TransparencyLevelHint="Transparent"
+        SystemDecorations="None"
+        UseLayoutRounding="True">
+	<Grid>
+		<Border Background="{DynamicResource WindowBackgroundColor}"
+				CornerRadius="25"
+				PointerPressed="OnPointerPressed"
+				PointerMoved="OnPointerMoved"
+				PointerReleased="OnPointerReleased" />
+
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="140" />
+				<RowDefinition Height="*" />
+				<RowDefinition Height="85" />
+			</Grid.RowDefinitions>
+			
+			<!--#region Header -->
+
+			<TextBlock Grid.Row="0" 
+			           Classes="ProgramName"
+			           Text="{CompiledBinding AppTitle}"
+			           Margin="20,50,0,0" />
+
+			<TextBlock Grid.Row="0"
+			           Classes="ProgramDescription"
+			           Text="{CompiledBinding AppDescription}"
+			           HorizontalAlignment="Right"
+			           VerticalAlignment="Bottom"
+			           Margin="0,0,450,23" />
+
+			<!--#endregion-->
+			
+			<!--#region Character info-->
+		
+			<Grid Grid.Row="1">
+			
+			</Grid>
+		
+			<!--#endregion-->
+			
+			<!--#region Dock -->
+			
+			<!--#endregion-->
+			
+			<controls:CloseButton Grid.Row="0"
+			                      PointerPressed="CloseOnPointerPressed"
+			                      PopupTooltip="Close"
+			                      Margin="0,40,35,0" />
+		</Grid>
+	</Grid>
+</Window>

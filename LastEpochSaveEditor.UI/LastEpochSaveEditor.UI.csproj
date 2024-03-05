@@ -1,0 +1,84 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <RootNamespace>LastEpochSaveEditor</RootNamespace>
+    <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Classes\Acolyte.png" />
+    <None Remove="Assets\Classes\Beastmaster.png" />
+    <None Remove="Assets\Classes\Bladedancer.png" />
+    <None Remove="Assets\Classes\Druid.png" />
+    <None Remove="Assets\Classes\Falconer.png" />
+    <None Remove="Assets\Classes\ForgeGuard.png" />
+    <None Remove="Assets\Classes\Lich.png" />
+    <None Remove="Assets\Classes\Mage.png" />
+    <None Remove="Assets\Classes\Marksman.png" />
+    <None Remove="Assets\Classes\Necromancer.png" />
+    <None Remove="Assets\Classes\Paladin.png" />
+    <None Remove="Assets\Classes\Primalist.png" />
+    <None Remove="Assets\Classes\Rogue.png" />
+    <None Remove="Assets\Classes\Runemaster.png" />
+    <None Remove="Assets\Classes\Sentinel.png" />
+    <None Remove="Assets\Classes\Shaman.png" />
+    <None Remove="Assets\Classes\Sorcerer.png" />
+    <None Remove="Assets\Classes\Spellblade.png" />
+    <None Remove="Assets\Classes\VoidKnight.png" />
+    <None Remove="Assets\Classes\Warlock.png" />
+    <None Remove="Assets\Logo.ico" />
+    <None Remove="Assets\Logo.png" />
+    <None Remove="Assets\Misc\Amulet.png" />
+    <None Remove="Assets\Misc\Belt.png" />
+    <None Remove="Assets\Misc\Body.png" />
+    <None Remove="Assets\Misc\Boots.png" />
+    <None Remove="Assets\Misc\Gloves.png" />
+    <None Remove="Assets\Misc\Helm.png" />
+    <None Remove="Assets\Misc\ItemBackground.png" />
+    <None Remove="Assets\Misc\Off-Hand.png" />
+    <None Remove="Assets\Misc\Relic.png" />
+    <None Remove="Assets\Misc\Ring.png" />
+    <None Remove="Assets\Misc\Weapon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Logo.ico" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.0.9" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.9" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.9" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.9" />
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.9" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.3" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <AvaloniaResource Update="Assets\Logo.png">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </AvaloniaResource>
+  </ItemGroup>
+</Project>

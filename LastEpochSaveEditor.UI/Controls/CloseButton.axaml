@@ -1,0 +1,59 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:LastEpochSaveEditor.Controls">
+    <Design.PreviewWith>
+        <controls:CloseButton />
+    </Design.PreviewWith>
+
+    <Style Selector="controls|CloseButton">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="30" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Cursor" Value="Hand" />
+        
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border x:Name="MainBorder"
+                        Classes="MainBorder"
+                        BorderThickness="0">
+                    <Border.Background>
+                        <DrawingBrush Drawing="{DynamicResource PowerOffSolidDrawingGroup}" />
+                    </Border.Background>
+                    
+                    <Popup Width="70"
+                           PlacementTarget="{Binding ElementName=MainBorder}"
+                           IsOpen="{Binding ElementName=MainBorder, Path=IsPointerOver, Mode=OneWay}"
+                           Classes="Close">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+						
+                            <Path Classes="ArrowDown" />
+
+                            <Border Grid.Row="1" Classes="Popup">
+                                <TextBlock Text="{TemplateBinding PopupTooltip}" 
+                                           DataContext="{Binding ElementName=MainBorder}"
+                                           Classes="Popup" />
+                            </Border>
+                        </Grid>
+                    </Popup>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+    <Style Selector="controls|CloseButton:pointerover /template/ Border.MainBorder">
+        <Setter Property="Background">
+            <DrawingBrush Drawing="{DynamicResource PowerOffSolidDrawingHoverGroup}" />
+        </Setter>
+    </Style>
+    
+    <Style Selector="controls|CloseButton:pressed /template/ Border.MainBorder">
+        <Setter Property="Background">
+            <DrawingBrush Drawing="{DynamicResource PowerOffSolidDrawingHoverGroup}" />
+        </Setter>
+    </Style>
+</Styles>
