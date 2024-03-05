@@ -8,7 +8,7 @@
 		<converters:QualityToColorConverter x:Key="QualityToColorConverter"></converters:QualityToColorConverter>
 	</UserControl.Resources>
 	<Grid>
-		<Rectangle Fill="{DynamicResource PopupColor}" Opacity=".5"></Rectangle>
+		<Border CornerRadius="25" Background="{DynamicResource PopupColor}" Opacity="0.5"></Border>
 
 		<Border CornerRadius="10" VerticalAlignment="Center" HorizontalAlignment="Center"
 		        Background="{DynamicResource WindowBackgroundColor}" Margin="10">

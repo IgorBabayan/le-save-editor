@@ -7,10 +7,12 @@ internal static class ServiceExtensions
 		services.AddSingleton<IRepository<SubItem>, SubItemRepository>();
 		services.AddSingleton<IRepository<Unique>, UniqueRepository>();
 		services.AddSingleton<IRepository<Unique>, SetRepository>();
+		services.AddSingleton<IRepository<Affix>, AffixRepository>();
 
 		services.AddSingleton<ISubItemRepositoryFactory, SubItemRepositoryFactory>();
 		services.AddSingleton<IUniqueRepositoryFactory, UniqueRepositoryFactory>();
 		services.AddSingleton<ISetRepositoryFactory, SetRepositoryFactory>();
+		services.AddSingleton<IAffixRepositoryFactory, AffixRepositoryFactory>();
 
 		services.AddSingleton(provider =>
 		{
@@ -27,6 +29,12 @@ internal static class ServiceExtensions
 		services.AddSingleton(provider =>
 		{
 			var factory = provider.GetRequiredService<ISetRepositoryFactory>();
+			return factory.Create();
+		});
+
+		services.AddSingleton(provider =>
+		{
+			var factory = provider.GetRequiredService<IAffixRepositoryFactory>();
 			return factory.Create();
 		});
 	}

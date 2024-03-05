@@ -111,5 +111,9 @@ public interface IRepository<TEntity> : ISingleRepository<TEntity>, IEnumerableR
 
 	IEnumerable<TEntity> GetAll();
 
+	IEnumerable<TEntity> GetLens();
+
+	IEnumerable<TEntity> GetMiscs();
+
 	IDictionary<ItemInfoTypeEnum, IEnumerable<TEntity>> GetByType(ItemInfoTypeEnum type);
 }

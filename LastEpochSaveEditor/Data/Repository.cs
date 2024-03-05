@@ -200,6 +200,10 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 
 	public abstract IDictionary<ItemInfoTypeEnum, IEnumerable<TEntity>> GetByType(ItemInfoTypeEnum type);
 
+	public abstract IEnumerable<TEntity> GetLens();
+
+	public abstract IEnumerable<TEntity> GetMiscs();
+
 	#endregion
 
 	protected Repository(Database database) => _database = database;

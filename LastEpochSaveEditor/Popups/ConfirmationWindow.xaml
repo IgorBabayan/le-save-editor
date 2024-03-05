@@ -6,7 +6,7 @@
 		Background="Transparent" WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize" AllowsTransparency="True" WindowStyle="None">
     <Grid>
-		<Rectangle Fill="{DynamicResource PopupColor}" Opacity=".5"></Rectangle>
+		<Border CornerRadius="25" Background="{DynamicResource PopupColor}" Opacity="0.5"></Border>
 
 		<Border CornerRadius="10" Background="{DynamicResource WindowBackgroundColor}" HorizontalAlignment="Center" VerticalAlignment="Center"
 		        Height="Auto">

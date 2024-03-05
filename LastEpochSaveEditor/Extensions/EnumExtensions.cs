@@ -9,6 +9,8 @@ internal static class EnumExtensions
 	public static readonly IEnumerable<ItemInfoTypeEnum> Idols;
 	public static readonly IEnumerable<ItemInfoTypeEnum> OneHands;
 	public static readonly IEnumerable<ItemInfoTypeEnum> TwoHands;
+	public static readonly IEnumerable<ItemInfoTypeEnum> Lens;
+	public static readonly IEnumerable<ItemInfoTypeEnum> Misc;
 
 	static EnumExtensions()
 	{
@@ -79,9 +81,42 @@ internal static class EnumExtensions
 			ItemInfoTypeEnum.TwoHandSwords,
 			ItemInfoTypeEnum.Bows
 		};
+		Lens = new[]
+		{
+			ItemInfoTypeEnum.GreaterLens,
+			ItemInfoTypeEnum.ArctusLens,
+			ItemInfoTypeEnum.MesembriaLens,
+			ItemInfoTypeEnum.EosLens,
+			ItemInfoTypeEnum.DysisLens
+		};
+		Misc = new[]
+		{
+			ItemInfoTypeEnum.Blessing,
+			ItemInfoTypeEnum.Rune,
+			ItemInfoTypeEnum.Glyph,
+			ItemInfoTypeEnum.Key,
+			ItemInfoTypeEnum.LostMemory,
+			ItemInfoTypeEnum.Resonance
+		};
 	}
 
-	public static bool IsInWeapons(this ItemInfoTypeEnum self)
+	public static bool IsMiscs(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return Misc.Any(x => x == self);
+	}
+
+	public static bool IsLens(this ItemInfoTypeEnum self)
+	{
+		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
+			return false;
+
+		return Lens.Any(x => x == self);
+	}
+
+	public static bool IsWeapons(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
@@ -89,7 +124,7 @@ internal static class EnumExtensions
 		return Weapons.Any(x => x == self);
 	}
 
-	public static bool IsInOffHands(this ItemInfoTypeEnum self)
+	public static bool IsOffHands(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
@@ -97,7 +132,7 @@ internal static class EnumExtensions
 		return OffHands.Any(x => x == self);
 	}
 
-	public static bool IsInAccessories(this ItemInfoTypeEnum self)
+	public static bool IsAccessories(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
@@ -105,7 +140,7 @@ internal static class EnumExtensions
 		return Accessories.Any(x => x == self);
 	}
 
-	public static bool IsInArmours(this ItemInfoTypeEnum self)
+	public static bool IsArmours(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
@@ -113,7 +148,7 @@ internal static class EnumExtensions
 		return Armours.Any(x => x == self);
 	}
 
-	public static bool IsInIdols(this ItemInfoTypeEnum self)
+	public static bool IsIdols(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;

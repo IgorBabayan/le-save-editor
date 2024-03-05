@@ -11,6 +11,7 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 	private readonly ISubItemRepositoryFactory _subItemRepositoryFactory;
 	private readonly IUniqueRepositoryFactory _uniqueRepositoryFactory;
 	private readonly ISetRepositoryFactory _setRepositoryFactory;
+	private readonly IAffixRepositoryFactory _affixRepositoryFactory;
 	private bool _hasError;
 
 	public bool? Result { get; private set; }
@@ -58,7 +59,8 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 	#endregion
 
 	public DownloadViewModel(ILogger<DownloadViewModel> logger, IDatabaseService db, IDownloadView downloadView, IDialogService dialogService,
-		ISubItemRepositoryFactory subItemRepositoryFactory, IUniqueRepositoryFactory uniqueRepositoryFactory, ISetRepositoryFactory setRepositoryFactory)
+		ISubItemRepositoryFactory subItemRepositoryFactory, IUniqueRepositoryFactory uniqueRepositoryFactory, ISetRepositoryFactory setRepositoryFactory,
+		IAffixRepositoryFactory affixRepositoryFactory)
 	{
 		_logger = logger;
 		_db = db;
@@ -67,6 +69,7 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 		_subItemRepositoryFactory = subItemRepositoryFactory;
 		_uniqueRepositoryFactory = uniqueRepositoryFactory;
 		_setRepositoryFactory = setRepositoryFactory;
+		_affixRepositoryFactory = affixRepositoryFactory;
 		
 		Count = int.MaxValue;
 		CanDownload = true;
@@ -79,30 +82,77 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 		Directory.CreateDirectory(IMAGE_FOLDER_NAME);
 
 
-		var result = new Dictionary<string, List<string>>(Count);
+		var result = new Dictionary<string, List<string>>();
 		var basicRepository = await _subItemRepositoryFactory.Create();
 		var uniqueRepository = await _uniqueRepositoryFactory.Create();
 		var setRepository = await _setRepositoryFactory.Create();
+		var affixRepository = await _affixRepositoryFactory.Create();
 
 		string rootPath;
 		IDictionary<ItemInfoTypeEnum, IEnumerable<SubItem>> basicItems;
 		IDictionary<ItemInfoTypeEnum, IEnumerable<Unique>> uniqueItems;
 		IDictionary<ItemInfoTypeEnum, IEnumerable<Unique>> setItems;
+		IEnumerable<Affix> affixItems;
 		foreach (var folders in FolderStructure.Folders)
         {
 			rootPath = Path.Combine(IMAGE_FOLDER_NAME, folders.Key.GetDescriptionName());
 			Directory.CreateDirectory(rootPath);
 
-			basicItems = basicRepository.GetByType(folders.Key);
-			uniqueItems = uniqueRepository.GetByType(folders.Key);
-			setItems = setRepository.GetByType(folders.Key);
-			PrepareBasicItems(BASIC_FOLDER_NAME, rootPath, result, basicItems);
-			PrepareUniqueOrSetItems(UNIQUE_FOLDER_NAME, rootPath, result, uniqueItems);
-			PrepareUniqueOrSetItems(SET_FOLDER_NAME, rootPath, result, setItems);
-		}
+			switch (folders.Key)
+			{
+				case ItemInfoTypeEnum.Lens:
+				case ItemInfoTypeEnum.Misc:
+					basicItems = basicRepository.GetByType(folders.Key);
+					PrepareMiscItems(rootPath, result, basicItems);
+					break;
+
+				case ItemInfoTypeEnum.AffixShard:
+					affixItems = affixRepository.GetAll();
+					PrepareAffixItems(rootPath, result, affixItems);
+					break;
+
+				default:
+					basicItems = basicRepository.GetByType(folders.Key);
+					uniqueItems = uniqueRepository.GetByType(folders.Key);
+					setItems = setRepository.GetByType(folders.Key);
+
+					PrepareBasicItems(BASIC_FOLDER_NAME, rootPath, result, basicItems);
+					PrepareUniqueOrSetItems(UNIQUE_FOLDER_NAME, rootPath, result, uniqueItems);
+					PrepareUniqueOrSetItems(SET_FOLDER_NAME, rootPath, result, setItems);
+					break;
+			}
+        }
 
 		return result;
     }
+
+	private void PrepareAffixItems(string rootPath, IDictionary<string, List<string>> result, IEnumerable<Affix> items)
+	{
+		string key = ItemInfoTypeEnum.AffixShard.GetDescriptionName();
+		if (result.ContainsKey(key))
+			result[key].AddRange(items.Select(x => Path.Combine(rootPath, $"{SHARD_PREFIX}{x.Group}.webp")));
+		else
+			result[key] = new List<string>(items.Select(x => Path.Combine(rootPath, $"{SHARD_PREFIX}{x.Group}.webp")));
+
+		result[key] = result[key].Distinct().ToList();
+	}
+
+	private void PrepareMiscItems(string rootPath, IDictionary<string, List<string>> result, IDictionary<ItemInfoTypeEnum, IEnumerable<SubItem>> items)
+	{
+		string folderPath;
+		string key;
+		foreach (var item in items)
+		{
+			key = item.Key.GetDescriptionName();
+			folderPath = Path.Combine(rootPath, key);
+			Directory.CreateDirectory(folderPath);
+
+			if (result.ContainsKey(key))
+				result[key].AddRange(item.Value.Select(x => Path.Combine(folderPath, x.Name.GetItemNameAsWebP())));
+			else
+				result[key] = new List<string>(item.Value.Select(x => Path.Combine(folderPath, x.Name.GetItemNameAsWebP())));
+		}
+	}
 
 	private void PrepareBasicItems(string quality, string rootPath, IDictionary<string, List<string>> result,
 		IDictionary<ItemInfoTypeEnum, IEnumerable<SubItem>> items)
@@ -150,20 +200,19 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 
 	private async Task DownloadImages()
 	{
-		Count = await _db.Count();
-
 		DownloadProgress = 0;
 		ConvertProgress = 0;
 		RemoveProgress = 0;
 
 		var files = await PrepareFilesAndFolders();
+		Count = files.Sum(x => x.Value.Count);
 		foreach (var file in files)
 		{
             foreach (var path in file.Value)
             {
 				await DownloadFile(file.Key, path);
-				//await ProcessFile(UNIQUE_FOLDER_NAME, name);
-				//await DeleteFile(UNIQUE_FOLDER_NAME, name);
+				await ConvertFile(path);
+				await DeleteFile(path);
 			}
 		}
 
@@ -182,8 +231,7 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 
 		try
 		{
-			await Task.Delay(TimeSpan.FromMilliseconds(100));
-			//await FileDownloader.DownloadImage(baseType, path);
+			await FileDownloader.DownloadImage(baseType, path);
 		}
 		catch (Exception exception)
 		{
@@ -196,40 +244,44 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 		}
 	}
 
-	private async Task ConvertFile(string baseType, string name)
+	private async Task ConvertFile(string path)
 	{
+		Application.Current.Dispatcher.Invoke(() => ConvertProgressText = Path.GetFileName(path));
+		_logger.LogInformation($"Convert: {ConvertProgressText}");
+
 		try
 		{
-			ConvertProgressText = Path.GetFileName(name);
-			_logger.LogInformation($"Convert: {ConvertProgressText}");
-
-			//await WebPConverter.Convert(name);
-			ConvertProgress++;
+			//await Task.Delay(TimeSpan.FromMilliseconds(50));
+			await WebPConverter.Convert(path);
 		}
 		catch (Exception exception)
 		{
 			_hasError = true;
 			_logger.LogError($"Failed to convert: {ConvertProgressText}", exception);
 		}
+		finally
+		{
+			Application.Current.Dispatcher.Invoke(() => ConvertProgress++);
+		}
 	}
 
-	private async Task DeleteFile(string baseType, string name)
+	private async Task DeleteFile(string path)
 	{
-		await Task.Run(() =>
+		Application.Current.Dispatcher.Invoke(() => RemoveProgressText = Path.GetFileName(path));
+		_logger.LogInformation($"Remove: {RemoveProgressText}");
+		
+		try
 		{
-			try
-			{
-				RemoveProgressText = Path.GetFileName(name);
-				_logger.LogInformation($"Remove: {RemoveProgressText}");
-
-				//File.Delete(file.Path);
-				RemoveProgress++;
-			}
-			catch (Exception exception)
-			{
-				_hasError = true;
-				_logger.LogError($"Failed to remove: {RemoveProgressText}", exception);
-			}
-		});
+			await Task.Run(() => File.Delete(path));
+		}
+		catch (Exception exception)
+		{
+			_hasError = true;
+			_logger.LogError($"Failed to remove: {RemoveProgressText}", exception);
+		}
+		finally
+		{
+			Application.Current.Dispatcher.Invoke(() => RemoveProgress++);
+		}
 	}
 }

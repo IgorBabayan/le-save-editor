@@ -9,6 +9,9 @@ internal class FolderStructure
 		[ItemInfoTypeEnum.Idols] = EnumExtensions.Idols,
 		[ItemInfoTypeEnum.OffHands] = EnumExtensions.OffHands,
 		[ItemInfoTypeEnum.OneHandWeapons] = EnumExtensions.OneHands,
-		[ItemInfoTypeEnum.TwoHandWeapons] = EnumExtensions.TwoHands
+		[ItemInfoTypeEnum.TwoHandWeapons] = EnumExtensions.TwoHands,
+		[ItemInfoTypeEnum.Lens] = EnumExtensions.Lens,
+		[ItemInfoTypeEnum.Misc] = EnumExtensions.Misc,
+		[ItemInfoTypeEnum.AffixShard] = new[] { ItemInfoTypeEnum.AffixShard }
 	};
 }

@@ -320,6 +320,30 @@ public enum ItemInfoTypeEnum
 	/// <summary>
 	/// <list type="bullet">
 	///		<item>
+	///			<see cref="Blessing"/>
+	///		</item>
+	///		<item>
+	///			<see cref="Rune"/>
+	///		</item>
+	///		<item>
+	///			<see cref="Glyph"/>
+	///		</item>
+	///		<item>
+	///			<see cref="Key"/>
+	///		</item>
+	///		<item>
+	///			<see cref="LostMemory"/>
+	///		</item>
+	///		<item>
+	///			<see cref="Resonance"/>
+	///		</item>
+	/// </list>
+	/// </summary>
+	Misc = 9008,
+
+	/// <summary>
+	/// <list type="bullet">
+	///		<item>
 	///			<see cref="Armours"/>
 	///		</item>
 	///		<item>

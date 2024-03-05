@@ -5,10 +5,10 @@
 		Background="Transparent" WindowStartupLocation="CenterOwner"
 		ResizeMode="NoResize" AllowsTransparency="True" WindowStyle="None">
 	<Grid>
-		<Rectangle Fill="{DynamicResource PopupColor}" Opacity=".5"></Rectangle>
+		<Border CornerRadius="25" Background="{DynamicResource PopupColor}" Opacity="0.5"></Border>
 
 		<Border CornerRadius="10" Background="{DynamicResource WindowBackgroundColor}" HorizontalAlignment="Center" VerticalAlignment="Center"
-				Height="Auto">
+				MaxWidth="320" MaxHeight="193">
 			<Grid>
 				<Grid.RowDefinitions>
 					<RowDefinition Height="Auto" />
@@ -42,7 +42,9 @@
 						<ProgressBar Width="300" Height="15" Value="{Binding DownloadProgress}" Minimum="0" Maximum="{Binding Count}"></ProgressBar>
 						<StackPanel Orientation="Horizontal">
 							<TextBlock Text="Download: " Foreground="White"></TextBlock>
-							<TextBlock Text="{Binding DownloadProgressText}" Foreground="White"></TextBlock>
+							<TextBlock Text="{Binding DownloadProgressText}" 
+									   Foreground="White" TextWrapping="NoWrap"
+									   TextTrimming="CharacterEllipsis"></TextBlock>
 						</StackPanel>
 					</StackPanel>
 
@@ -50,7 +52,8 @@
 						<ProgressBar Width="300" Height="15" Value="{Binding ConvertProgress}" Minimum="0" Maximum="{Binding Count}"></ProgressBar>
 						<StackPanel Orientation="Horizontal">
 							<TextBlock Text="Convert: " Foreground="White"></TextBlock>
-							<TextBlock Text="{Binding ConvertProgressText}" Foreground="White"></TextBlock>
+							<TextBlock Text="{Binding ConvertProgressText}" Foreground="White"
+									   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"></TextBlock>
 						</StackPanel>
 					</StackPanel>
 
@@ -58,7 +61,8 @@
 						<ProgressBar Width="300" Height="15" Value="{Binding RemoveProgress}" Minimum="0" Maximum="{Binding Count}"></ProgressBar>
 						<StackPanel Orientation="Horizontal">
 							<TextBlock Text="Remove: " Foreground="White"></TextBlock>
-							<TextBlock Text="{Binding RemoveProgressText}" Foreground="White"></TextBlock>
+							<TextBlock Text="{Binding RemoveProgressText}" Foreground="White"
+									   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"></TextBlock>
 						</StackPanel>
 					</StackPanel>
 

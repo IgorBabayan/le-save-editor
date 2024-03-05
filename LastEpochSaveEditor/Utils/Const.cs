@@ -98,11 +98,13 @@ internal static class Const
 
 	public const string BLESSING = "Blessing";
 	public const string AFFIX_SHARD = "Affix Shard";
-	public const string RUNE = "Rune";
-	public const string GLYPH = "Glyph";
-	public const string KEY = "Key";
+	public const string RUNE = "Crafting Modifier Item";
+	public const string GLYPH = "Crafting Support Item";
+	public const string KEY = "Key Items";
 	public const string LOST_MEMORY = "Lost Memory";
 	public const string RESONANCE = "Resonance";
 
 	public const string APPLICATION_TITLE = "L A S T   E P O C H   S A V E   E D I T O R";
+
+	public const string SHARD_PREFIX = "shard_";
 }

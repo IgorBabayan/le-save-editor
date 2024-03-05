@@ -9,6 +9,7 @@ public interface IRepositoryFactory<TEntity>
 public interface ISubItemRepositoryFactory : IRepositoryFactory<SubItem> { }
 public interface IUniqueRepositoryFactory : IRepositoryFactory<Unique> { }
 public interface ISetRepositoryFactory : IRepositoryFactory<Unique> { }
+public interface IAffixRepositoryFactory : IRepositoryFactory<Affix> { }
 
 public class SubItemRepositoryFactory : ISubItemRepositoryFactory
 {
@@ -46,5 +47,18 @@ public class SetRepositoryFactory : ISetRepositoryFactory
 	{
 		var database = await _databaseFactory.Create();
 		return new SetRepository(database);
+	}
+}
+
+public class AffixRepositoryFactory : IAffixRepositoryFactory
+{
+	private readonly IDatabaseFactory _databaseFactory;
+
+    public AffixRepositoryFactory(IDatabaseFactory databaseFactory) => _databaseFactory = databaseFactory;
+
+	public async Task<IRepository<Affix>> Create()
+	{
+		var database = await _databaseFactory.Create();
+		return new AffixRepository(database);
 	}
 }
