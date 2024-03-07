@@ -2,5 +2,9 @@
 
 public partial class CharacterView
 {
-	public CharacterView() => InitializeComponent();
+	public CharacterView()
+	{
+		InitializeComponent();
+		DataContext = App.GetService<CharacterViewModel>();
+	}
 }

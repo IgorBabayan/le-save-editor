@@ -29,21 +29,20 @@ public partial class ItemViewModel : ObservableObject
 	#region Commands
 
 	[RelayCommand]
-	private void Close() => _messenger.Send(new CloseCurrentPopupMessage(true));
-
-	[RelayCommand]
 	private void SetQuality(QualityType quality)
 	{
 		SelectedQuality = quality;
 		IsChecked = false;
 	}
 
+	[RelayCommand]
+	private void Close(object id) => _messenger.Send(new ItemWindowCloseMessage((Guid)id));
+
 	#endregion
 
 	public ItemViewModel(IMessenger messenger)
 	{
 		_messenger = messenger;
-
 		Qualities = new[] { QualityType.Basic, QualityType.Magic, QualityType.Rare, QualityType.Exalted, QualityType.Unique, QualityType.Set,
 			QualityType.Legendary };
 		PopulateCategory();

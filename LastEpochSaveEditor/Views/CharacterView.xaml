@@ -28,12 +28,10 @@
 
         <controls:ItemButton Grid.Row="0"
                              Grid.Column="1"
-                             Width="{Binding Helm.Width}"
-                             Height="{Binding Helm.Height}"
                              Margin="0,0,0,10"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
-                             Item="{Binding Helm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Helm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -41,10 +39,8 @@
 
         <controls:ItemButton Grid.Row="0"
                              Grid.Column="2"
-                             Width="{Binding Amulet.Width}"
-                             Height="{Binding Amulet.Height}"
                              HorizontalAlignment="Left"
-                             Item="{Binding Amulet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Amulet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -53,10 +49,8 @@
         <controls:ItemButton Grid.Row="1"
                              Grid.Column="0"
                              Margin="0,0,0,10"
-                             Width="{Binding Weapon.Width}"
-                             Height="{Binding Weapon.Height}"
                              HorizontalAlignment="Right"
-                             Item="{Binding Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -64,10 +58,8 @@
 
         <controls:ItemButton Grid.Row="1"
                              Grid.Column="1"
-                             Width="{Binding Body.Width}"
-                             Height="{Binding Body.Height}"
                              Margin="0,0,0,10"
-                             Item="{Binding Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -76,10 +68,8 @@
         <controls:ItemButton Grid.Row="1"
                              Grid.Column="2"
                              Margin="0,0,0,10"
-                             Width="{Binding OffHand.Width}"
-                             Height="{Binding OffHand.Height}"
                              HorizontalAlignment="Left"
-                             Item="{Binding OffHand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding OffHand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -88,10 +78,8 @@
         <controls:ItemButton Grid.Row="2"
                              Grid.Column="0"
                              Margin="0,0,0,10"
-                             Width="{Binding LeftRing.Width}"
-                             Height="{Binding LeftRing.Height}"
                              HorizontalAlignment="Right"
-                             Item="{Binding LeftRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding LeftRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -99,10 +87,8 @@
 
         <controls:ItemButton Grid.Row="2"
                              Grid.Column="1"
-                             Width="{Binding Belt.Width}"
-                             Height="{Binding Belt.Height}"
                              Margin="0,0,0,10"
-                             Item="{Binding Belt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Belt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -110,11 +96,9 @@
 
         <controls:ItemButton Grid.Row="2"
                              Grid.Column="2"
-                             Width="{Binding RightRing.Width}"
-                             Height="{Binding RightRing.Height}"
                              Margin="0,0,0,10"
                              HorizontalAlignment="Left"
-                             Item="{Binding RightRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding RightRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -122,10 +106,8 @@
 
         <controls:ItemButton Grid.Row="3"
                              Grid.Column="0"
-                             Width="{Binding Gloves.Width}"
-                             Height="{Binding Gloves.Height}"
                              HorizontalAlignment="Right"
-                             Item="{Binding Gloves, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Gloves, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -133,9 +115,7 @@
 
         <controls:ItemButton Grid.Row="3"
                              Grid.Column="1"
-                             Width="{Binding Boots.Width}"
-                             Height="{Binding Boots.Height}"
-                             Item="{Binding Boots, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Boots, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
 
@@ -143,10 +123,8 @@
 
         <controls:ItemButton Grid.Row="3"
                              Grid.Column="2"
-                             Width="{Binding Relic.Width}"
-                             Height="{Binding Relic.Height}"
                              HorizontalAlignment="Left"
-                             Item="{Binding Relic, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             ItemSource="{Binding Relic, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--#endregion-->
     </Grid>

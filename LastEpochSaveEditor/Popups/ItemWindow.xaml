@@ -35,7 +35,8 @@
                 <controls:CloseButton DockPanel.Dock="Right"
                                       PopupTooltip="Close"
                                       Margin="10"
-                                      Command="{Binding CloseCommand}" />
+                                      Command="{Binding CloseCommand}"
+                                      CommandParameter="{Binding PopupId, RelativeSource={RelativeSource AncestorType=local:ItemWindow}}"/>
             </DockPanel>
 
             <Grid Grid.Row="1"

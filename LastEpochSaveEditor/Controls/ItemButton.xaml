@@ -10,41 +10,28 @@
     </UserControl.Resources>
     <Grid Background="Transparent">
         <Button Style="{DynamicResource ImageButton}"
-                CommandParameter="{Binding Item.Type, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-                Click="OnButtonClick">
-            <!--<Button.Triggers>
-                <EventTrigger RoutedEvent="Button.Click">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <BooleanAnimationUsingKeyFrames Storyboard.TargetName="ItemWindowPopup"
-                                                            Storyboard.TargetProperty="IsOpen">
-                                <DiscreteBooleanKeyFrame Value="True"
-                                                         KeyTime="0:0:0" />
-                            </BooleanAnimationUsingKeyFrames>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-            </Button.Triggers>-->
-
+                x:Name="PART_Button"
+                Click="OnClick">
             <Border BorderThickness="1"
-                    BorderBrush="{Binding Item.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}">
+                    BorderBrush="{Binding ItemSource.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}">
                 <StackPanel>
                     <controls:ItemImage Margin="1"
-                                        Item="{Binding Item, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
+                                        Item="{Binding ItemSource, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch" />
                 </StackPanel>
             </Border>
         </Button>
 
-        <Popup x:Name="ItemWindowPopup"
-               IsOpen="False">
+		<Popup x:Name="PART_Popup"
+               PlacementTarget="{Binding ElementName=PART_Button}">
             <Thumb DragDelta="OnDragDelta">
                 <Thumb.Template>
                     <ControlTemplate>
                         <Border BorderThickness="2"
                                 BorderBrush="{DynamicResource DockBackgroundColor}">
-                            <popup:ItemWindow  />
+							<popup:ItemWindow Item="{Binding ItemSource, RelativeSource={RelativeSource AncestorType=controls:ItemButton}}"
+							                  PopupId="{Binding Id, RelativeSource={RelativeSource AncestorType=controls:ItemButton}}"/>
                         </Border>
                     </ControlTemplate>
                 </Thumb.Template>

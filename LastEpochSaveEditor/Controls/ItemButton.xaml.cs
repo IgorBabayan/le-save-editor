@@ -1,22 +1,38 @@
-﻿namespace LastEpochSaveEditor.Controls;
+﻿using System.Diagnostics;
 
-public partial class ItemButton : IRecipient<CloseCurrentPopupMessage>
+namespace LastEpochSaveEditor.Controls;
+
+public partial class ItemButton : IRecipient<ItemWindowCloseMessage>
 {
+	private Guid _id = Guid.Empty;
+	public Guid Id
+	{
+		get
+		{
+			if (_id == Guid.Empty)
+				_id = Guid.NewGuid();
+		    
+			return _id;
+		}
+	}
+	
     public ItemButton()
     {
 	    InitializeComponent();
-		
+
 	    var messenger = App.GetService<IMessenger>();
-	    messenger.RegisterAll(this);
+		messenger.RegisterAll(this);
+		
+		Debug.WriteLine($"ItemButton :: {Id}");
     }
 
-    public static readonly DependencyProperty ItemProperty = DependencyProperty.Register(
-	    nameof(Item), typeof(ItemDataInfo), typeof(ItemButton), new PropertyMetadata(default(ItemDataInfo)));
+    public static readonly DependencyProperty ItemSourceProperty = DependencyProperty.Register(
+	    nameof(ItemSource), typeof(ItemDataInfo), typeof(ItemButton), new PropertyMetadata(default(ItemDataInfo)));
 
-    public ItemDataInfo Item
+    public ItemDataInfo ItemSource
     {
-	    get => (ItemDataInfo)GetValue(ItemProperty);
-	    set => SetValue(ItemProperty, value);
+	    get => (ItemDataInfo)GetValue(ItemSourceProperty);
+	    set => SetValue(ItemSourceProperty, value);
     }
 
     private void OnDragDelta(object sender, DragDeltaEventArgs args)
@@ -29,14 +45,18 @@ public partial class ItemButton : IRecipient<CloseCurrentPopupMessage>
 	    }
     }
 
-    void IRecipient<CloseCurrentPopupMessage>.Receive(CloseCurrentPopupMessage _)
+    private void OnClick(object sender, RoutedEventArgs e)
     {
-	    ItemWindowPopup.IsOpen = false;
-	    // var control = this.FindName("ItemWindowPopup");
+	    if (FindName("PART_Popup") is Popup popup)
+		    popup.IsOpen = true;
     }
 
-    private void OnButtonClick(object sender, RoutedEventArgs e)
+    public void Receive(ItemWindowCloseMessage message)
     {
-	    ItemWindowPopup.IsOpen = true;
+	    if (message.Value == Id)
+	    {
+		    if (FindName("PART_Popup") is Popup popup)
+			    popup.IsOpen = false;
+		}
     }
 }

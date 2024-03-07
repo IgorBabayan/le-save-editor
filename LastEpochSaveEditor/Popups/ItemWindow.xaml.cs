@@ -8,12 +8,21 @@ public partial class ItemWindow
 		DataContext = App.GetService<ItemViewModel>();
 	}
 
-	public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register(
-		nameof(IsOpen), typeof(bool), typeof(ItemWindow), new PropertyMetadata(default(bool)));
+	public static readonly DependencyProperty ItemProperty = DependencyProperty.Register(
+		nameof(Item), typeof(ItemDataInfo), typeof(ItemWindow), new PropertyMetadata(default(ItemDataInfo)));
 
-	public bool IsOpen
+	public ItemDataInfo Item
 	{
-		get => (bool)GetValue(IsOpenProperty);
-		set => SetValue(IsOpenProperty, value);
+		get => (ItemDataInfo)GetValue(ItemProperty);
+		set => SetValue(ItemProperty, value);
+	}
+
+	public static readonly DependencyProperty PopupIdProperty = DependencyProperty.Register(
+		nameof(PopupId), typeof(Guid), typeof(ItemWindow), new PropertyMetadata(default(Guid)));
+
+	public Guid PopupId
+	{
+		get => (Guid)GetValue(PopupIdProperty);
+		set => SetValue(PopupIdProperty, value);
 	}
 }

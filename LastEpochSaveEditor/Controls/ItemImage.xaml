@@ -9,7 +9,7 @@
 
 		<Image Source="{Binding Item.Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemImage}}}"
 			   Stretch="Uniform" Cursor="Hand"
-			   Width="{Binding Item.Width, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-			   Height="{Binding Item.Height, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" />
+			   Width="{Binding ItemSource.Width, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
+			   Height="{Binding ItemSource.Height, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" />
 	</Grid>
 </UserControl>
