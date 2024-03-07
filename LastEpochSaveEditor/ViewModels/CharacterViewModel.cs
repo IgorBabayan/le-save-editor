@@ -45,8 +45,11 @@ public partial class CharacterViewModel : ObservableObject, IRecipient<SelectedC
 
 	void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 
-	private void ParseCharacter(CharacterInfo characterInfo)
+	private void ParseCharacter(CharacterInfo? characterInfo)
 	{
+		if (characterInfo == null)
+			return;
+		
 		_selectedCharacter = characterInfo.Character;
 
 		Helm = _selectedCharacter.Inventory.Helm;

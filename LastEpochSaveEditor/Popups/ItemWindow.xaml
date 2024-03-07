@@ -53,11 +53,12 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!--<controls:ItemButton Grid.Row="0" HorizontalAlignment="Right"
-										 IsEnabled="False"
-					                     Margin="10" Item="{Binding SelectedItem}" />-->
+				<controls:ItemImage Grid.Row="0"
+				                    HorizontalAlignment="Stretch"
+				                    VerticalAlignment="Stretch"
+				                    Item="{Binding Item, RelativeSource={RelativeSource AncestorType=local:ItemWindow}}"/>
 
-                <!--#region Base info -->
+				<!--#region Base info -->
 
                 <Border Grid.Row="0"
                         Grid.Column="1"

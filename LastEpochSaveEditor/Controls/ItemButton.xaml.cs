@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace LastEpochSaveEditor.Controls;
+﻿namespace LastEpochSaveEditor.Controls;
 
 public partial class ItemButton : IRecipient<ItemWindowCloseMessage>
 {
@@ -22,8 +20,6 @@ public partial class ItemButton : IRecipient<ItemWindowCloseMessage>
 
 	    var messenger = App.GetService<IMessenger>();
 		messenger.RegisterAll(this);
-		
-		Debug.WriteLine($"ItemButton :: {Id}");
     }
 
     public static readonly DependencyProperty ItemSourceProperty = DependencyProperty.Register(

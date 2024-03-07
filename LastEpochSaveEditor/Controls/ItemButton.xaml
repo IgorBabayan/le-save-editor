@@ -5,23 +5,15 @@
              xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
              Background="Transparent"
              xmlns:popup="clr-namespace:LastEpochSaveEditor.Popups">
-    <UserControl.Resources>
-        <converters:QualityToColorConverter x:Key="QualityToColorConverter"></converters:QualityToColorConverter>
-    </UserControl.Resources>
     <Grid Background="Transparent">
         <Button Style="{DynamicResource ImageButton}"
                 x:Name="PART_Button"
                 Click="OnClick">
-            <Border BorderThickness="1"
-                    BorderBrush="{Binding ItemSource.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}">
-                <StackPanel>
-                    <controls:ItemImage Margin="1"
-                                        Item="{Binding ItemSource, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch" />
-                </StackPanel>
-            </Border>
-        </Button>
+			<controls:ItemImage Margin="1"
+			                    Item="{Binding ItemSource, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
+			                    HorizontalAlignment="Stretch"
+			                    VerticalAlignment="Stretch" />
+		</Button>
 
 		<Popup x:Name="PART_Popup"
                PlacementTarget="{Binding ElementName=PART_Button}">
@@ -30,7 +22,7 @@
                     <ControlTemplate>
                         <Border BorderThickness="2"
                                 BorderBrush="{DynamicResource DockBackgroundColor}">
-							<popup:ItemWindow Item="{Binding ItemSource, RelativeSource={RelativeSource AncestorType=controls:ItemButton}}"
+							<popup:ItemWindow Item="{Binding ItemSource, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
 							                  PopupId="{Binding Id, RelativeSource={RelativeSource AncestorType=controls:ItemButton}}"/>
                         </Border>
                     </ControlTemplate>
