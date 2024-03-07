@@ -9,7 +9,7 @@ public class GlovesItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.Get(quality, itemType, id);
-		var path = $"{GLOVES}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
+		var path = $"{GLOVES}/{quality.GetQualityFolderName()}/{item.GetName()}.png";
 		return Path.GetFullPath(path);
 	}
 }

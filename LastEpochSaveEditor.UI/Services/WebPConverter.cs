@@ -17,7 +17,7 @@ internal static class WebPConverter
 		{
 			using (var pngFileStream = new FileStream(fullPath, FileMode.Create))
 			{
-				using (var image = SixLabors.ImageSharp.Image.Load(webpFileStream))
+				using (var image = await SixLabors.ImageSharp.Image.LoadAsync(webpFileStream))
 					await image.SaveAsPngAsync(pngFileStream);
 			}
 		}

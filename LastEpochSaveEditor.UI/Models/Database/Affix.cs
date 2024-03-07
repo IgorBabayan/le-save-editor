@@ -3,19 +3,19 @@
 public class Affix
 {
 	[JsonProperty("affixName")]
-	public string AffixName { get; set; }
+	public string? AffixName { get; set; }
 
 	[JsonProperty("affixDisplayName")]
-	public string AffixDisplayName { get; set; }
+	public string? AffixDisplayName { get; set; }
 
 	[JsonProperty("affixLootFilterOverrideName")]
-	public string AffixLootFilterOverrideName { get; set; }
+	public string? AffixLootFilterOverrideName { get; set; }
 
 	[JsonProperty("titleType")]
 	public int TitleType { get; set; }
 
 	[JsonProperty("affixTitle")]
-	public string AffixTitle { get; set; }
+	public string? AffixTitle { get; set; }
 
 	[JsonProperty("affixMorphology")]
 	public int AffixMorphology { get; set; }
@@ -57,10 +57,10 @@ public class Affix
 	public double ShardSaturationModifier { get; set; }
 
 	[JsonProperty("canRollOn")]
-	public List<int> CanRollOn { get; set; }
+	public List<int>? CanRollOn { get; set; }
 
 	[JsonProperty("specificRerollChances")]
-	public List<SpecificRerollChance> SpecificRerollChances { get; set; }
+	public List<SpecificRerollChance>? SpecificRerollChances { get; set; }
 
 	[JsonProperty("convertOnIncompatibleItemType")]
 	public bool ConvertOnIncompatibleItemType { get; set; }
@@ -69,7 +69,7 @@ public class Affix
 	public int AffixIDToConvertTo { get; set; }
 
 	[JsonProperty("tiers")]
-	public List<Tier> Tiers { get; set; }
+	public List<Tier>? Tiers { get; set; }
 
 	[JsonProperty("t6Compatibility")]
 	public int T6Compatibility { get; set; }

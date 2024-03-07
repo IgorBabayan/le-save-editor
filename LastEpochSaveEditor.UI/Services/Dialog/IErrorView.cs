@@ -1,3 +1,3 @@
 ﻿namespace LastEpochSaveEditor.Services.Dialog;
 
-internal interface IErrorView : IView { }
+internal interface IErrorView : IView;

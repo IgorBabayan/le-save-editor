@@ -4,7 +4,7 @@ public partial class MessageWindow : Window, IMessageView
 {
 	public MessageWindow() => InitializeComponent();
 
-	async Task IView.CloseDialog() => throw new NotImplementedException();
+	void IView.CloseDialog() => Hide();
 
 	async Task IView.ShowDialog() => throw new NotImplementedException();
 

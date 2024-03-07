@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Data;
 
-public class AffixRepository : Repository<Affix>
+public class AffixRepository(Database database) : Repository<Affix>(database)
 {
 	#region IRepository<TEntity>
 
@@ -19,10 +19,7 @@ public class AffixRepository : Repository<Affix>
 
 	public override IEnumerable<Affix> GetLens() => throw new ArgumentException($"Unsupported type {ItemInfoTypeEnum.Lens}");
 
-	public override IEnumerable<Affix> GetMiscs() => throw new ArgumentException($"Unsupported type {ItemInfoTypeEnum.Misc}");
+	public override IEnumerable<Affix> GetMisc() => throw new ArgumentException($"Unsupported type {ItemInfoTypeEnum.Misc}");
 
 	#endregion
-
-	public AffixRepository(Database database)
-		: base(database) { }
 }

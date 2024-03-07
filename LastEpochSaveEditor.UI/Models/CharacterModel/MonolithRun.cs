@@ -1,6 +1,4 @@
-﻿using LastEpochSaveEditor.UI.Models.CharacterModel;
-
-namespace LastEpochSaveEditor.Models.CharacterModel;
+﻿namespace LastEpochSaveEditor.Models.CharacterModel;
 
 public class MonolithRun
 {
@@ -23,7 +21,7 @@ public class MonolithRun
 	public bool BossLootDropped { get; set; }
 
 	[JsonProperty("savedEchoWeb")]
-	public SavedEchoWeb SavedEchoWeb { get; set; }
+	public SavedEchoWeb? SavedEchoWeb { get; set; }
 
 	[JsonProperty("stability")]
 	public int Stability { get; set; }
@@ -41,14 +39,14 @@ public class MonolithRun
 	public bool HasRerolledOptions { get; set; }
 
 	[JsonProperty("modIndexs")]
-	public List<int> ModIndexs { get; set; }
+	public List<int>? ModIndexs { get; set; }
 
 	[JsonProperty("modRemainingDurations")]
-	public List<int> ModRemainingDurations { get; set; }
+	public List<int>? ModRemainingDurations { get; set; }
 
 	[JsonProperty("modEffectModifiers")]
-	public List<double> ModEffectModifiers { get; set; }
+	public List<double>? ModEffectModifiers { get; set; }
 
 	[JsonProperty("options")]
-	public List<Option> Options { get; set; }
+	public List<Option>? Options { get; set; }
 }

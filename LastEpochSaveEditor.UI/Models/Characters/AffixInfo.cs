@@ -2,5 +2,5 @@
 
 public record AffixInfo(int Tier, int Id, int Value)
 {
-	public string Name { get; set; }
+	public string? Name { get; set; }
 }

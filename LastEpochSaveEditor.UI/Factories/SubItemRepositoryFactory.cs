@@ -1,16 +1,12 @@
 ﻿namespace LastEpochSaveEditor.Factories;
 
-public interface ISubItemRepositoryFactory : IRepositoryFactory<SubItem> { }
+public interface ISubItemRepositoryFactory : IRepositoryFactory<SubItem>;
 
-public class SubItemRepositoryFactory : ISubItemRepositoryFactory
+public class SubItemRepositoryFactory(IDatabaseFactory databaseFactory) : ISubItemRepositoryFactory
 {
-	private readonly IDatabaseFactory _databaseFactory;
-
-	public SubItemRepositoryFactory(IDatabaseFactory databaseFactory) => _databaseFactory = databaseFactory;
-
 	public async Task<IRepository<SubItem>> Create()
 	{
-		var database = await _databaseFactory.Create();
+		var database = await databaseFactory.Create();
 		return new SubItemRepository(database);
 	}
 }

@@ -2,9 +2,9 @@
 
 internal class QualityToColorConverter : IValueConverter
 {
-	public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
-		var quality = (QualityType)value;
+		var quality = (QualityType)(value ?? QualityType.Basic);
 		switch (quality)
 		{
 			case QualityType.Magic:
@@ -30,5 +30,5 @@ internal class QualityToColorConverter : IValueConverter
 		}
 	}
 
-	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 }

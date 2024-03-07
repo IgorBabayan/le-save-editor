@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-internal interface IDownloadViewModel : IViewModel { }
+internal interface IDownloadViewModel : IViewModel;
 
 internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 {
@@ -28,19 +28,22 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 	private int _removeProgress;
 
 	[ObservableProperty]
-	private string _downloadProgressText;
+	private string? _downloadProgressText;
 
 	[ObservableProperty]
-	private string _convertProgressText;
+	private string? _convertProgressText;
 
 	[ObservableProperty]
-	private string _removeProgressText;
+	private string? _removeProgressText;
 
 	[ObservableProperty]
 	private int _count;
 
 	[ObservableProperty]
 	private bool _canDownload;
+
+	[ObservableProperty]
+	private string? _dialogTitle;
 
 	#endregion
 
@@ -54,7 +57,7 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 	}
 
 	[RelayCommand]
-	private async Task Close() => await _downloadView.CloseDialog();
+	private void Close() => _downloadView.CloseDialog();
 
 	#endregion
 
@@ -71,6 +74,7 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 		_setRepositoryFactory = setRepositoryFactory;
 		_affixRepositoryFactory = affixRepositoryFactory;
 
+		DialogTitle = APPLICATION_DOWNLOAD_IMAGE_TITLE;
 		Count = int.MaxValue;
 		CanDownload = true;
 	}
@@ -148,9 +152,9 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 			Directory.CreateDirectory(folderPath);
 
 			if (result.ContainsKey(key))
-				result[key].AddRange(item.Value.Select(x => Path.Combine(folderPath, x.Name.GetItemNameAsWebP())));
+				result[key].AddRange(item.Value.Select(x => Path.Combine(folderPath, x.Name!.GetItemNameAsWebP())));
 			else
-				result[key] = new List<string>(item.Value.Select(x => Path.Combine(folderPath, x.Name.GetItemNameAsWebP())));
+				result[key] = [..item.Value.Select(x => Path.Combine(folderPath, x.Name!.GetItemNameAsWebP()))];
 		}
 	}
 
@@ -170,9 +174,9 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 			Directory.CreateDirectory(path);
 
 			if (result.ContainsKey(key))
-				result[key].AddRange(item.Value.Select(x => Path.Combine(path, x.Name.GetItemNameAsWebP())));
+				result[key].AddRange(item.Value.Select(x => Path.Combine(path, x.Name!.GetItemNameAsWebP())));
 			else
-				result[key] = new List<string>(item.Value.Select(x => Path.Combine(path, x.Name.GetItemNameAsWebP())));
+				result[key] = [..item.Value.Select(x => Path.Combine(path, x.Name!.GetItemNameAsWebP()))];
 		}
 	}
 
@@ -192,9 +196,9 @@ internal partial class DownloadViewModel : ObservableObject, IDownloadViewModel
 			Directory.CreateDirectory(path);
 
 			if (result.ContainsKey(key))
-				result[key].AddRange(item.Value.Select(x => Path.Combine(path, x.Name.GetItemNameAsWebP())));
+				result[key].AddRange(item.Value.Select(x => Path.Combine(path, x.Name!.GetItemNameAsWebP())));
 			else
-				result[key] = new List<string>(item.Value.Select(x => Path.Combine(path, x.Name.GetItemNameAsWebP())));
+				result[key] = [..item.Value.Select(x => Path.Combine(path, x.Name!.GetItemNameAsWebP()))];
 		}
 	}
 

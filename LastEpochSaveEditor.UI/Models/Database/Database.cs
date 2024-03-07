@@ -3,11 +3,11 @@
 public class Database
 {
 	[JsonProperty("itemTypes")]
-	public List<ItemType> ItemTypes { get; set; }
+	public List<ItemType>? ItemTypes { get; set; }
 
 	[JsonProperty("affixes")]
-	public List<Affix> Affixes { get; set; }
+	public List<Affix>? Affixes { get; set; }
 
 	[JsonProperty("uniques")]
-	public List<Unique> Uniques { get; set; }
+	public List<Unique>? Uniques { get; set; }
 }

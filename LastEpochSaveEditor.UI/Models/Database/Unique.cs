@@ -3,10 +3,10 @@
 public class Unique
 {
 	[JsonProperty("name")]
-	public string Name { get; set; }
+	public string? Name { get; set; }
 
 	[JsonProperty("displayName")]
-	public string DisplayName { get; set; }
+	public string? DisplayName { get; set; }
 
 	[JsonProperty("uniqueID")]
 	public int UniqueID { get; set; }
@@ -51,19 +51,19 @@ public class Unique
 	public ItemInfoTypeEnum BaseType { get; set; }
 
 	[JsonProperty("subTypes")]
-	public List<int> SubTypes { get; set; }
+	public List<int>? SubTypes { get; set; }
 
 	[JsonProperty("mods")]
-	public List<Mod> Mods { get; set; }
+	public List<Mod>? Mods { get; set; }
 
 	[JsonProperty("tooltipDescriptions")]
-	public List<TooltipDescription> TooltipDescriptions { get; set; }
+	public List<TooltipDescription>? TooltipDescriptions { get; set; }
 
 	[JsonProperty("loreText")]
-	public string LoreText { get; set; }
+	public string? LoreText { get; set; }
 
 	[JsonProperty("tooltipEntries")]
-	public List<TooltipEntry> TooltipEntries { get; set; }
+	public List<TooltipEntry>? TooltipEntries { get; set; }
 
 	[JsonProperty("oldSubTypeID")]
 	public int OldSubTypeID { get; set; }

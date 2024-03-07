@@ -17,7 +17,7 @@ public class ItemDataInfo
 	public IList<AffixInfo> Affixes { get; set; } = new List<AffixInfo>();
 	public IList<AffixInfo> SealedAffixes { get; set; } = new List<AffixInfo>();
 	public IList<AffixInfo> LegendaryAffixes { get; set; } = new List<AffixInfo>();
-	public Bitmap Icon { get; set; }
+	public Bitmap? Icon { get; set; }
 	public int Width { get; set; }
 	public int Height { get; set; }
 

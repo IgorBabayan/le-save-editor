@@ -106,6 +106,7 @@ internal static class Const
 
 	public const string APPLICATION_TITLE = "L A S T   E P O C H   S A V E   E D I T O R";
 	public const string APPLICATION_DESCRIPTION = "D E S I G N   T H E   C H A R A C T E R";
+	public const string APPLICATION_DOWNLOAD_IMAGE_TITLE = "D O W N L O A D   I M A G E S";
 
 	public const string SHARD_PREFIX = "shard_";
 }

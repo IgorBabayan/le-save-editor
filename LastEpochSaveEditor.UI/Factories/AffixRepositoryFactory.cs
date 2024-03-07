@@ -1,16 +1,12 @@
 ﻿namespace LastEpochSaveEditor.Factories;
 
-public interface IAffixRepositoryFactory : IRepositoryFactory<Affix> { }
+public interface IAffixRepositoryFactory : IRepositoryFactory<Affix>;
 
-public class AffixRepositoryFactory : IAffixRepositoryFactory
+public class AffixRepositoryFactory(IDatabaseFactory databaseFactory) : IAffixRepositoryFactory
 {
-	private readonly IDatabaseFactory _databaseFactory;
-
-	public AffixRepositoryFactory(IDatabaseFactory databaseFactory) => _databaseFactory = databaseFactory;
-
 	public async Task<IRepository<Affix>> Create()
 	{
-		var database = await _databaseFactory.Create();
+		var database = await databaseFactory.Create();
 		return new AffixRepository(database);
 	}
 }

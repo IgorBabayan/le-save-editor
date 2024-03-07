@@ -1,4 +1,4 @@
-﻿namespace LastEpochSaveEditor.UI.Models.CharacterModel;
+﻿namespace LastEpochSaveEditor.Models.CharacterModel;
 
 public class Option
 {

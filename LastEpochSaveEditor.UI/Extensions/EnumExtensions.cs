@@ -100,7 +100,7 @@ internal static class EnumExtensions
 		];
 	}
 
-	public static bool IsMiscs(this ItemInfoTypeEnum self)
+	public static bool IsMisc(this ItemInfoTypeEnum self)
 	{
 		if (self == ItemInfoTypeEnum.None || self == ItemInfoTypeEnum.All)
 			return false;
@@ -178,7 +178,7 @@ internal static class EnumExtensions
 			throw new ArgumentException(null, nameof(self));
 
 		var field = self.GetType().GetField(self.ToString());
-		var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
-		return attribute != null ? attribute.Description : self.ToString();
+		var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field!, typeof(DescriptionAttribute))!;
+		return attribute.Description;
 	}
 }

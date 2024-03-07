@@ -1,3 +1,3 @@
 ﻿namespace LastEpochSaveEditor.Services.Dialog;
 
-internal interface IDownloadView : IView { }
+internal interface IDownloadView : IView;

@@ -11,49 +11,73 @@
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="Transparent" />
         
         <Setter Property="Template">
             <ControlTemplate>
-                <Border x:Name="MainBorder"
-                        Classes="MainBorder"
+                <Button x:Name="MainButton"
+                        Width="{TemplateBinding Width}"
+                        Height="{TemplateBinding Height}"
+                        Background="{TemplateBinding Background}"
+                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalAlignment}"
+                        Cursor="{TemplateBinding Cursor}"
+                        Command="{TemplateBinding Command}"
                         BorderThickness="0">
-                    <Border.Background>
-                        <DrawingBrush Drawing="{DynamicResource PowerOffSolidDrawingGroup}" />
-                    </Border.Background>
-                    
-                    <Popup Width="70"
-                           PlacementTarget="{Binding ElementName=MainBorder}"
-                           IsOpen="{Binding ElementName=MainBorder, Path=IsPointerOver, Mode=OneWay}"
-                           Classes="Close">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition />
-                            </Grid.RowDefinitions>
-						
-                            <Path Classes="ArrowDown" />
+                    <Panel>
+                        <Image Source="{SvgImage ../Assets/Icons/Close.svg}"
+                               Width="{TemplateBinding Width}"
+                               Height="{TemplateBinding Height}"
+                               x:Name="Default"
+                               Stretch="Uniform" />
+                        <Image Source="{SvgImage ../Assets/Icons/Close-hover.svg}"
+                               Width="{TemplateBinding Width}"
+                               Height="{TemplateBinding Height}"
+                               x:Name="Hovered"
+                               Stretch="Uniform" />
+                        
+                        <Popup Width="70"
+                               PlacementTarget="{Binding ElementName=MainButton}"
+                               IsOpen="{Binding ElementName=MainButton, Path=IsPointerOver, Mode=OneWay}"
+                               Classes="Close">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+					
+                                <Path Classes="ArrowDown" />
 
-                            <Border Grid.Row="1" Classes="Popup">
-                                <TextBlock Text="{TemplateBinding PopupTooltip}" 
-                                           DataContext="{Binding ElementName=MainBorder}"
-                                           Classes="Popup" />
-                            </Border>
-                        </Grid>
-                    </Popup>
-                </Border>
+                                <Border Grid.Row="1" Classes="Popup">
+                                    <TextBlock Text="{TemplateBinding PopupTooltip}" 
+                                               DataContext="{Binding ElementName=MainButton}"
+                                               Classes="Popup" />
+                                </Border>
+                            </Grid>
+                        </Popup>
+                    </Panel>
+                </Button>
             </ControlTemplate>
         </Setter>
     </Style>
-    
-    <Style Selector="controls|CloseButton:pointerover /template/ Border.MainBorder">
-        <Setter Property="Background">
-            <DrawingBrush Drawing="{DynamicResource PowerOffSolidDrawingHoverGroup}" />
-        </Setter>
+        
+    <Style Selector="Button#MainButton Image#Default">
+        <Setter Property="IsVisible" Value="True" />
     </Style>
-    
-    <Style Selector="controls|CloseButton:pressed /template/ Border.MainBorder">
-        <Setter Property="Background">
-            <DrawingBrush Drawing="{DynamicResource PowerOffSolidDrawingHoverGroup}" />
-        </Setter>
+        
+    <Style Selector="Button#MainButton Image#Hovered">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+        
+    <Style Selector="Button#MainButton:pointerover Image#Default">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+        
+    <Style Selector="Button#MainButton:pointerover Image#Hovered">
+        <Setter Property="IsVisible" Value="True" />
+    </Style>
+        
+    <Style Selector="Button#MainButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
     </Style>
 </Styles>

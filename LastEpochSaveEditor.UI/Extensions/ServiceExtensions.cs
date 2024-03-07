@@ -2,7 +2,7 @@
 
 internal static class ServiceExtensions
 {
-	public static void RegisterRepositories(this IServiceCollection services)
+	private static void RegisterRepositories(this IServiceCollection services)
 	{
 		services.AddSingleton<IRepository<SubItem>, SubItemRepository>();
 		services.AddSingleton<IRepository<Unique>, UniqueRepository>();
@@ -39,7 +39,7 @@ internal static class ServiceExtensions
 		});
 	}
 
-	public static void RegisterParseFactories(this IServiceCollection services)
+	private static void RegisterParseFactories(this IServiceCollection services)
 	{
 		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, HelmItemInfo>();
 		services.AddTransient<IItemInfo<ItemInfoTypeEnum>, BodyItemInfo>();
@@ -72,8 +72,8 @@ internal static class ServiceExtensions
 		services.AddSingleton<IDatabaseService, DatabaseService>();
 		services.AddSingleton<INavigationService, NavigationService>();
 		services.AddSingleton<IDialogService, DialogService>();
-		services.AddTransient<Func<Type, ObservableObject>>(services => viewModelType =>
-			(ObservableObject)services.GetRequiredService(viewModelType));
+		services.AddTransient<Func<Type, ObservableObject>>(provider => viewModelType =>
+			(ObservableObject)provider.GetRequiredService(viewModelType));
 	}
 
 	public static void RegisterControls(this IServiceCollection services)

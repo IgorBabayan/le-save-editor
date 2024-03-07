@@ -33,7 +33,7 @@ internal partial class ErrorViewModel : ObservableObject, IErrorViewModel
 	#region Commands
 
 	[RelayCommand]
-	private async Task Close(object param)
+	private void Close(object param)
 	{
 		if (param == null)
 			Result = null;
@@ -41,7 +41,7 @@ internal partial class ErrorViewModel : ObservableObject, IErrorViewModel
 		if (param is string arg)
 			Result = bool.Parse(arg);
 
-		await _errorView.CloseDialog();
+		_errorView.CloseDialog();
 	}
 
 	#endregion

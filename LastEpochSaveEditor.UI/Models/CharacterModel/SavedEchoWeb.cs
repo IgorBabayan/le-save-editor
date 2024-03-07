@@ -15,5 +15,5 @@ public class SavedEchoWeb
 	public int GazeOfOrobyss { get; set; }
 
 	[JsonProperty("islands")]
-	public List<Island> Islands { get; set; }
+	public List<Island>? Islands { get; set; }
 }

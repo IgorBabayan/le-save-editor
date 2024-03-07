@@ -8,6 +8,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>LastEpochSaveEditor</RootNamespace>
     <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
+    <AssemblyName>LastEpochSaveEditor</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -58,6 +59,7 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.0.9" />
     <PackageReference Include="Avalonia.Desktop" Version="11.0.9" />
+    <PackageReference Include="Avalonia.Svg.Skia" Version="11.0.0.14" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.9" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.9" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
@@ -80,5 +82,10 @@
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
     </AvaloniaResource>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Assets\Icons\" />
   </ItemGroup>
 </Project>

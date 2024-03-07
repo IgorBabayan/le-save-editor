@@ -1,19 +1,11 @@
 ﻿namespace LastEpochSaveEditor.Services.Database;
 
-public class DatabaseService : IDatabaseService
+public class DatabaseService(
+	ISubItemRepositoryFactory _subItemFactory,
+	IUniqueRepositoryFactory _uniqueFactory,
+	ISetRepositoryFactory _setFactory)
+	: IDatabaseService
 {
-	private readonly ISubItemRepositoryFactory _subItemRepositoryFactory;
-	private readonly IUniqueRepositoryFactory _uniqueRepositoryFactory;
-	private readonly ISetRepositoryFactory _setRepositoryFactory;
-
-	public DatabaseService(ISubItemRepositoryFactory subItemFactory, IUniqueRepositoryFactory uniqueFactory,
-		ISetRepositoryFactory setFactory)
-	{
-		_subItemRepositoryFactory = subItemFactory;
-		_uniqueRepositoryFactory = uniqueFactory;
-		_setRepositoryFactory = setFactory;
-	}
-
 	public async Task<object> Get(QualityType quality, ItemInfoTypeEnum type, int id)
 	{
 		IRepository<SubItem> subItemRepository;
@@ -24,16 +16,16 @@ public class DatabaseService : IDatabaseService
 			case QualityType.Magic:
 			case QualityType.Rare:
 			case QualityType.Exalted:
-				subItemRepository = await _subItemRepositoryFactory.Create();
+				subItemRepository = await _subItemFactory.Create();
 				return subItemRepository.Get(type, id);
 
 			case QualityType.Unique:
 			case QualityType.Legendary:
-				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				uniqueRepository = await _uniqueFactory.Create();
 				return uniqueRepository.Get(type, id);
 
 			case QualityType.Set:
-				uniqueRepository = await _setRepositoryFactory.Create();
+				uniqueRepository = await _setFactory.Create();
 				return uniqueRepository.Get(type, id);
 
 			default:
@@ -51,16 +43,16 @@ public class DatabaseService : IDatabaseService
 			case QualityType.Magic:
 			case QualityType.Rare:
 			case QualityType.Exalted:
-				subItemRepository = await _subItemRepositoryFactory.Create();
+				subItemRepository = await _subItemFactory.Create();
 				return subItemRepository.Get(type);
 
 			case QualityType.Unique:
 			case QualityType.Legendary:
-				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				uniqueRepository = await _uniqueFactory.Create();
 				return uniqueRepository.Get(type);
 
 			case QualityType.Set:
-				uniqueRepository = await _setRepositoryFactory.Create();
+				uniqueRepository = await _setFactory.Create();
 				return uniqueRepository.Get(type);
 
 			default:
@@ -78,16 +70,16 @@ public class DatabaseService : IDatabaseService
 			case QualityType.Magic:
 			case QualityType.Rare:
 			case QualityType.Exalted:
-				subItemRepository = await _subItemRepositoryFactory.Create();
+				subItemRepository = await _subItemFactory.Create();
 				return subItemRepository.GetWeapon(id, type);
 
 			case QualityType.Unique:
 			case QualityType.Legendary:
-				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				uniqueRepository = await _uniqueFactory.Create();
 				return uniqueRepository.GetWeapon(id, type);
 
 			case QualityType.Set:
-				uniqueRepository = await _setRepositoryFactory.Create();
+				uniqueRepository = await _setFactory.Create();
 				return uniqueRepository.GetWeapon(id, type);
 
 			default:
@@ -105,16 +97,16 @@ public class DatabaseService : IDatabaseService
 			case QualityType.Magic:
 			case QualityType.Rare:
 			case QualityType.Exalted:
-				subItemRepository = await _subItemRepositoryFactory.Create();
+				subItemRepository = await _subItemFactory.Create();
 				return subItemRepository.GetWeapons();
 
 			case QualityType.Unique:
 			case QualityType.Legendary:
-				uniqueRepository = await _uniqueRepositoryFactory.Create();
+				uniqueRepository = await _uniqueFactory.Create();
 				return uniqueRepository.GetWeapons();
 
 			case QualityType.Set:
-				uniqueRepository = await _setRepositoryFactory.Create();
+				uniqueRepository = await _setFactory.Create();
 				return uniqueRepository.GetWeapons();
 
 			default:
@@ -124,9 +116,9 @@ public class DatabaseService : IDatabaseService
 
 	public async Task<int> Count()
 	{
-		var subItemRepository = await _subItemRepositoryFactory.Create();
-		var uniqueRepository = await _uniqueRepositoryFactory.Create();
-		var setRepository = await _setRepositoryFactory.Create();
+		var subItemRepository = await _subItemFactory.Create();
+		var uniqueRepository = await _uniqueFactory.Create();
+		var setRepository = await _setFactory.Create();
 
 		var subItemsCount = subItemRepository.GetAll().Count();
 		var uniquesCount = uniqueRepository.GetAll().Count();

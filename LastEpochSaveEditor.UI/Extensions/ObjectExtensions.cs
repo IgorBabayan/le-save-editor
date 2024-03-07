@@ -10,17 +10,17 @@ internal static class ObjectExtensions
 		return self.GetType() switch
 		{
 			{ } type when type == typeof(SubItem) => !string.IsNullOrWhiteSpace(((SubItem)self).Name)
-				? ((SubItem)self).Name.GetItemName()
-				: ((SubItem)self).DisplayName.GetItemName(),
+				? ((SubItem)self).Name!.GetItemName()
+				: ((SubItem)self).DisplayName!.GetItemName(),
 			{ } type when type == typeof(Unique) => !string.IsNullOrWhiteSpace(((Unique)self).Name)
-				? ((Unique)self).Name.GetItemName()
-				: ((Unique)self).DisplayName.GetItemName(),
+				? ((Unique)self).Name!.GetItemName()
+				: ((Unique)self).DisplayName!.GetItemName(),
 			{ } type when type == typeof(WeaponType<SubItem>) => !string.IsNullOrWhiteSpace(((WeaponType<SubItem>)self).Entity.Name)
-				? ((WeaponType<SubItem>)self).Entity.Name.GetItemName()
-				: ((WeaponType<SubItem>)self).Entity.DisplayName.GetItemName(),
+				? ((WeaponType<SubItem>)self).Entity.Name!.GetItemName()
+				: ((WeaponType<SubItem>)self).Entity.DisplayName!.GetItemName(),
 			{ } type when type == typeof(WeaponType<Unique>) => !string.IsNullOrWhiteSpace(((WeaponType<Unique>)self).Entity.Name)
-				? ((WeaponType<Unique>)self).Entity.Name.GetItemName()
-				: ((WeaponType<Unique>)self).Entity.DisplayName.GetItemName(),
+				? ((WeaponType<Unique>)self).Entity.Name!.GetItemName()
+				: ((WeaponType<Unique>)self).Entity.DisplayName!.GetItemName(),
 			_ => throw new ArgumentException("Type not supported")
 		};
 	}
@@ -32,7 +32,7 @@ internal static class ObjectExtensions
 
 		return self.GetType() switch
 		{
-			{ } type when type == typeof(SubItem) => ((SubItem)self).Name,
+			{ } type when type == typeof(SubItem) => ((SubItem)self).Name!,
 			{ } type when type == typeof(Unique) => ((Unique)self).BaseType.ToString(),
 			_ => throw new ArgumentException("Type not supported")
 		};

@@ -6,5 +6,5 @@ public class TimelineCompletion
 	public int TimelineID { get; set; }
 
 	[JsonProperty("progress")]
-	public List<int> Progress { get; set; }
+	public List<int>? Progress { get; set; }
 }

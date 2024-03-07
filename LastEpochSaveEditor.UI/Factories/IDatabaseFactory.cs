@@ -16,8 +16,8 @@ public class DatabaseFactory : IDatabaseFactory
 
 		var content = await FileDownloader.DownloadDatabase();
 		var database = JsonConvert.DeserializeObject<Database>(content)!;
-		foreach (var itemType in database!.ItemTypes)
-			itemType.SubItems = itemType.SubItems.Where(x => x.CannotDrop == false).ToList();
+		foreach (var itemType in database.ItemTypes)
+			itemType.SubItems = itemType.SubItems!.Where(x => x.CannotDrop == false).ToList();
 
 		await File.WriteAllTextAsync(DATA_FILE_PATH, JsonConvert.SerializeObject(database, Formatting.Indented));
 		return database;

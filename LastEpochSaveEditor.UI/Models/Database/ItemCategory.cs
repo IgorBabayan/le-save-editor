@@ -3,8 +3,8 @@
 internal class ItemCategory
 {
 	[JsonProperty("name")]
-	public string Name { get; set; }
+	public string? Name { get; set; }
 
 	[JsonProperty("categories")]
-	public List<Category> Categories { get; set; }
+	public List<Category>? Categories { get; set; }
 }

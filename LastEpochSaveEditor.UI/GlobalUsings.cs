@@ -7,13 +7,15 @@ global using System.Text;
 global using System;
 global using System.Linq;
 global using System.Threading.Tasks;
+global using System.Windows.Input;
+global using System.Collections;
 
 global using Avalonia;
+global using Avalonia.Platform;
 global using Avalonia.Data.Converters;
 global using Avalonia.Media;
 global using Avalonia.Controls;
 global using Avalonia.Controls.ApplicationLifetimes;
-global using Avalonia.Data;
 global using Avalonia.Markup.Xaml;
 global using Avalonia.Media.Imaging;
 global using Avalonia.Threading;

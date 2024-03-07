@@ -15,14 +15,14 @@ public class SavedMonolithQuest
 	public int QuestBranch { get; set; }
 
 	[JsonProperty("completeObjectives")]
-	public List<int> CompleteObjectives { get; set; }
+	public List<int>? CompleteObjectives { get; set; }
 
 	[JsonProperty("failedObjectives")]
-	public List<object> FailedObjectives { get; set; }
+	public List<object>? FailedObjectives { get; set; }
 
 	[JsonProperty("nolongerRelevantObjectives")]
-	public List<object> NolongerRelevantObjectives { get; set; }
+	public List<object>? NolongerRelevantObjectives { get; set; }
 
 	[JsonProperty("objectiveProgress")]
-	public List<object> ObjectiveProgress { get; set; }
+	public List<object>? ObjectiveProgress { get; set; }
 }

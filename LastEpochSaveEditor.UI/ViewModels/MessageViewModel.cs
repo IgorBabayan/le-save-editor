@@ -35,7 +35,7 @@ internal partial class MessageViewModel : ObservableObject, IMessageViewModel
 	#region Commands
 
 	[RelayCommand]
-	private async Task Close(object param)
+	private void Close(object param)
 	{
 		if (param == null)
 			Result = null;
@@ -43,7 +43,7 @@ internal partial class MessageViewModel : ObservableObject, IMessageViewModel
 		if (param is string arg)
 			Result = bool.Parse(arg);
 
-		await _messageView.CloseDialog();
+		_messageView.CloseDialog();
 	}
 
 	#endregion

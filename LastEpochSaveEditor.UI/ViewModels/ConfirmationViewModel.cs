@@ -34,7 +34,7 @@ internal partial class ConfirmationViewModel : ObservableObject, IConfirmationVi
 	#region Commands
 
 	[RelayCommand]
-	private async Task Close(object param)
+	private void Close(object param)
 	{
 		if (param == null)
 			Result = null;
@@ -42,7 +42,7 @@ internal partial class ConfirmationViewModel : ObservableObject, IConfirmationVi
 		if (param is string arg)
 			Result = bool.Parse(arg);
 
-		await _confirmationView.CloseDialog();
+		_confirmationView.CloseDialog();
 	}
 
 	#endregion

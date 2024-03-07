@@ -4,11 +4,11 @@ public partial class DownloadWindow : Window, IDownloadView
 {
 	public DownloadWindow() => InitializeComponent();
 
-	async Task IView.CloseDialog() => throw new NotImplementedException();
+	/*async Task IView.CloseDialog() => throw new NotImplementedException();
 
-	async Task IView.ShowDialog() => throw new NotImplementedException();
+	async Task IView.ShowDialog() => throw new NotImplementedException();*/
 
-	/*async Task IView.CloseDialog() => await Application.Current.Dispatcher.InvokeAsync(() => Hide());
+	void IView.CloseDialog() =>  Hide();
 
-	async Task IView.ShowDialog() => await Application.Current.Dispatcher.InvokeAsync(() => ShowDialog());*/
+	async Task IView.ShowDialog() => await ShowDialog(App.GetMainWindow());
 }

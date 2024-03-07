@@ -1,8 +1,68 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="LastEpochSaveEditor.Controls.DockButton">
-  Welcome to Avalonia!
-</UserControl>
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:LastEpochSaveEditor.Controls">
+    <Design.PreviewWith>
+        <controls:DockButton />
+    </Design.PreviewWith>
+
+    <Style Selector="controls|DockButton">
+        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Height" Value="50" />
+        <Setter Property="Width" Value="50" />
+        <Setter Property="Cursor" Value="Hand" />
+        
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel Orientation="Vertical" 
+                            HorizontalAlignment="Left" 
+                            VerticalAlignment="Center">
+                    <Button Command="{TemplateBinding Command}"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"
+                            Background="{TemplateBinding Background}"
+                            x:Name="MainDockButton">
+                        <Panel>
+                            <Image Source="{TemplateBinding Icon}"
+                                   Width="40"
+                                   Height="40"
+                                   Stretch="Uniform" />
+                            
+                            <Popup PlacementTarget="{Binding ElementName=MainDockButton}"
+                                   IsOpen="{Binding ElementName=MainDockButton, Path=IsPointerOver, Mode=OneWay}"
+                                   Classes="Style">
+                                <Grid>
+                                    <Border Classes="Popup">
+                                        <TextBlock Text="{TemplateBinding PopupTooltip}" 
+                                                   Classes="Popup"
+                                                   Margin="10,0,10,0" />
+                                    </Border>
+                                
+                                    <Path Classes="ArrowUp" />
+                                </Grid>
+                            </Popup>
+                        </Panel>
+                    </Button>
+                    
+                    <!--<Canvas HorizontalAlignment="Center"
+                            Margin="0,5,0,0">
+                        <Ellipse Width="5"
+                                 Height="5"
+                                 Fill="Red"
+                                 IsVisible="{TemplateBinding IsActive}"/>
+                    </Canvas>-->
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+    <Style Selector="Button#MainDockButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="RenderTransform" Value="scale(1.12)"></Setter>
+    </Style>
+    
+    <Style Selector="Button#MainDockButton:disabled /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Arrow">
+        </Setter>
+    </Style>
+</Styles>

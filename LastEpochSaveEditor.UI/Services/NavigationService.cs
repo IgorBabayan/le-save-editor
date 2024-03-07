@@ -6,24 +6,16 @@ internal interface INavigationService
 	void NavigateTo<TViewModel>() where TViewModel : ObservableObject;
 }
 
-internal partial class NavigationService : ObservableObject, INavigationService
+internal partial class NavigationService(Func<Type, ObservableObject> factory, IMessenger messenger)
+	: ObservableObject, INavigationService
 {
-	private readonly Func<Type, ObservableObject> _factory;
-	private readonly IMessenger _messenger;
-
 	[ObservableProperty]
-	private ObservableObject _currentView;
-
-	public NavigationService(Func<Type, ObservableObject> factory, IMessenger messenger)
-	{
-		_factory = factory;
-		_messenger = messenger;
-	}
+	private ObservableObject? _currentView;
 
 	public void NavigateTo<TViewModel>()
 		where TViewModel : ObservableObject
 	{
-		CurrentView = _factory.Invoke(typeof(TViewModel));
-		_messenger.Send(new CurrentViewChangedMessage(CurrentView));
+		CurrentView = factory.Invoke(typeof(TViewModel));
+		messenger.Send(new CurrentViewChangedMessage(CurrentView));
 	}
 }

@@ -3,10 +3,10 @@
 public class SubItem
 {
 	[JsonProperty("name")]
-	public string Name { get; set; }
+	public string? Name { get; set; }
 
 	[JsonProperty("displayName")]
-	public string DisplayName { get; set; }
+	public string? DisplayName { get; set; }
 
 	[JsonProperty("subTypeID")]
 	public int SubTypeID { get; set; }
@@ -24,7 +24,7 @@ public class SubItem
 	public bool HideSubTypeInLootFilter { get; set; }
 
 	[JsonProperty("implicits")]
-	public List<Implicit> Implicits { get; set; }
+	public List<Implicit>? Implicits { get; set; }
 
 	[JsonProperty("classRequirement")]
 	public int ClassRequirement { get; set; }
@@ -45,11 +45,11 @@ public class SubItem
 	public int IMSetTier { get; set; }
 
 	[JsonProperty("IMSetOverrides")]
-	public List<IMSetOverride> IMSetOverrides { get; set; }
+	public List<IMSetOverride>? IMSetOverrides { get; set; }
 
 	[JsonProperty("rerollChance")]
 	public double? RerollChance { get; set; }
 
 	[JsonProperty("description")]
-	public string Description { get; set; }
+	public string? Description { get; set; }
 }

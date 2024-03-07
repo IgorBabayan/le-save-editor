@@ -113,15 +113,15 @@ public interface IRepository<TEntity> : ISingleRepository<TEntity>, IEnumerableR
 
 	IEnumerable<TEntity> GetLens();
 
-	IEnumerable<TEntity> GetMiscs();
+	IEnumerable<TEntity> GetMisc();
 
 	IDictionary<ItemInfoTypeEnum, IEnumerable<TEntity>> GetByType(ItemInfoTypeEnum type);
 }
 
-public abstract class Repository<TEntity> : IRepository<TEntity>
+public abstract class Repository<TEntity>(Database database) : IRepository<TEntity>
 	where TEntity : class
 {
-	protected readonly Database _database;
+	protected readonly Database _database = database;
 
 	#region IEnumerableRepository<TEntity>
 
@@ -320,9 +320,7 @@ public abstract class Repository<TEntity> : IRepository<TEntity>
 
 	public abstract IEnumerable<TEntity> GetLens();
 
-	public abstract IEnumerable<TEntity> GetMiscs();
+	public abstract IEnumerable<TEntity> GetMisc();
 
 	#endregion
-
-	protected Repository(Database database) => _database = database;
 }

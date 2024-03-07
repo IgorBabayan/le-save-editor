@@ -43,13 +43,12 @@ internal class DialogService : IDialogService
 		where TView : class, IView
 		where TModel : IViewModel
 	{
-		/*var window = App.GetService<TView>();
-		window.Owner = Application.Current.MainWindow;
-		window.Width = Application.Current.MainWindow.Width;
-		window.Height = Application.Current.MainWindow.Height;
+		var window = App.GetService<TView>();
+		var mainWindow = App.GetMainWindow();
+		window.Width = mainWindow.Width;
+		window.Height = mainWindow.Height;
 		window.DataContext = viewModel;
 
-		return window;*/
-		throw new NotImplementedException();
+		return window;
 	}
 }

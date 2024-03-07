@@ -135,23 +135,23 @@ internal partial class CharacterViewModel : ObservableObject, IRecipient<Selecte
 
 	void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 
-	private void ParseCharacter(CharacterInfo characterInfo)
+	private void ParseCharacter(CharacterInfo? characterInfo)
 	{
 		if (characterInfo?.Character == null)
 			return;
 
 		_selectedCharacter = characterInfo.Character;
 
-		Helm = _selectedCharacter.Inventory.Helm;
-		Body = _selectedCharacter.Inventory.Body;
-		Weapon = _selectedCharacter.Inventory.Weapon;
-		OffHand = _selectedCharacter.Inventory.OffHand;
-		Gloves = _selectedCharacter.Inventory.Gloves;
-		Belt = _selectedCharacter.Inventory.Belt;
-		Boots = _selectedCharacter.Inventory.Boots;
-		LeftRing = _selectedCharacter.Inventory.LeftRing;
-		RightRing = _selectedCharacter.Inventory.RightRing;
-		Amulet = _selectedCharacter.Inventory.Amulet;
-		Relic = _selectedCharacter.Inventory.Relic;
+		Helm = _selectedCharacter.Inventory!.Helm;
+		Body = _selectedCharacter.Inventory!.Body;
+		Weapon = _selectedCharacter.Inventory!.Weapon;
+		OffHand = _selectedCharacter.Inventory!.OffHand;
+		Gloves = _selectedCharacter.Inventory!.Gloves;
+		Belt = _selectedCharacter.Inventory!.Belt;
+		Boots = _selectedCharacter.Inventory!.Boots;
+		LeftRing = _selectedCharacter.Inventory!.LeftRing;
+		RightRing = _selectedCharacter.Inventory!.RightRing;
+		Amulet = _selectedCharacter.Inventory!.Amulet;
+		Relic = _selectedCharacter.Inventory!.Relic;
 	}
 }

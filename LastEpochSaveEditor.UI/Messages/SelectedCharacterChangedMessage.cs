@@ -1,7 +1,3 @@
 ﻿namespace LastEpochSaveEditor.Messages;
 
-internal class SelectedCharacterChangedMessage : ValueChangedMessage<CharacterInfo>
-{
-	public SelectedCharacterChangedMessage(CharacterInfo character)
-		: base(character) { }
-}
+internal class SelectedCharacterChangedMessage(CharacterInfo? character) : ValueChangedMessage<CharacterInfo?>(character);

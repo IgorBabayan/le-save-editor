@@ -6,7 +6,7 @@ public partial class ConfirmationWindow : Window, IConfirmationView
 
 	public WindowBase? OwnerWindow { get; set; }
 
-	async Task IView.CloseDialog() => await Task.Run(() => Hide());
+	void IView.CloseDialog() => Hide();
 
 	async Task IView.ShowDialog() => await ShowDialog(null);
 }

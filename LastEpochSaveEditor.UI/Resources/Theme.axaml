@@ -10,4 +10,5 @@
 	<SolidColorBrush x:Key="ActiveColor" Color="#363A57"></SolidColorBrush>
 	<SolidColorBrush x:Key="CharacterForegroundColor" Color="#FCEBD5"></SolidColorBrush>
 	<SolidColorBrush x:Key="PopupColor" Color="#B8B4BE"></SolidColorBrush>
+	<SolidColorBrush x:Key="TertiaryColor" Color="#E1EFF8"></SolidColorBrush>
 </ResourceDictionary>

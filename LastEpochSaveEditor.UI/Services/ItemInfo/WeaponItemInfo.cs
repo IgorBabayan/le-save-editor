@@ -9,7 +9,7 @@ public class WeaponItemInfo : IItemInfo<ItemInfoTypeEnum>
 	public async Task<string> GetIcon(IDatabaseService db, QualityType quality, int id, ItemInfoTypeEnum itemType)
 	{
 		var item = await db.GetWeapon(quality, id, itemType);
-		var path = $"{item.GetWeaponTypePath()}/{itemType.GetDescriptionName()}/{quality.GetQualityFolderName()}/{item!.GetName()}.png";
+		var path = $"{item.GetWeaponTypePath()}/{itemType.GetDescriptionName()}/{quality.GetQualityFolderName()}/{item.GetName()}.png";
 		return Path.GetFullPath(path);
 	}
 }

@@ -10,10 +10,10 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	#region Properties
 
 	[ObservableProperty]
-	private IEnumerable<CharacterInfo> _characters;
+	private IEnumerable<CharacterInfo>? _characters;
 
 	[ObservableProperty]
-	private CharacterInfo _selectedCharacter;
+	private CharacterInfo? _selectedCharacter;
 
 	[ObservableProperty]
 	private bool _isCharacterActive;
@@ -41,7 +41,8 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 
 	#endregion
 
-	public MainViewModel(IMessenger messenger, INavigationService navigationService, IDialogService dialogService, IDownloadViewModel downloadViewModel)
+	public MainViewModel(IMessenger messenger, INavigationService navigationService, IDialogService dialogService, 
+		IDownloadViewModel downloadViewModel, IDatabaseFactory databaseFactory)
 	{
 		_messenger = messenger;
 		_messenger.RegisterAll(this);
@@ -49,6 +50,7 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 		NavigationService = navigationService;
 		_dialogService = dialogService;
 		_downloadViewModel = downloadViewModel;
+		_databaseFactory = databaseFactory;
 
 		IsCharactersLoaded = false;
 		AppTitle = APPLICATION_TITLE;
@@ -62,12 +64,10 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	{
 		Characters = await SaveFileLoader.Load();
 		IsCharactersLoaded = true;
-		CharacterPressed();
-		SelectedCharacter = Enumerable.FirstOrDefault(Characters)!;
 	}
 
 	[RelayCommand]
-	private void CharacterPressed() => NavigationService.NavigateTo<LastEpochSaveEditor.ViewModels.CharacterViewModel>();
+	private void CharacterPressed() => NavigationService.NavigateTo<CharacterViewModel>();
 
 	[RelayCommand]
 	private void StashPressed() => NavigationService.NavigateTo<CharacterStashViewModel>();
@@ -84,18 +84,25 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 	[RelayCommand]
 	private async Task Download() => await _dialogService.ShowCustomDialog<IDownloadView, IDownloadViewModel>(_downloadViewModel);
 
+	[RelayCommand]
+	private void Close()
+	{
+		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopApp)
+			desktopApp.Shutdown();
+	}
+
 	#endregion
 
 	#region Partials
 
-	partial void OnSelectedCharacterChanged(CharacterInfo value) => _messenger.Send(new SelectedCharacterChangedMessage(value));
+	partial void OnSelectedCharacterChanged(CharacterInfo? value) => _messenger.Send(new SelectedCharacterChangedMessage(value));
 
 	#endregion
 
 	void IRecipient<CurrentViewChangedMessage>.Receive(CurrentViewChangedMessage message)
 	{
 		var view = message.Value;
-		IsCharacterActive = view.GetType() == typeof(LastEpochSaveEditor.ViewModels.CharacterViewModel);
+		IsCharacterActive = view.GetType() == typeof(CharacterViewModel);
 		IsStashActive = view.GetType() == typeof(CharacterStashViewModel);
 		IsBlessingsActive = view.GetType() == typeof(BlessingViewModel);
 		IsIdolsActive = view.GetType() == typeof(IdolViewModel);

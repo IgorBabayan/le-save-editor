@@ -4,7 +4,7 @@ public partial class ErrorWindow : Window, IErrorView
 {
 	public ErrorWindow() => InitializeComponent();
 
-	async Task IView.CloseDialog() => throw new NotImplementedException();
+	void IView.CloseDialog() => Hide();
 
 	async Task IView.ShowDialog() => throw new NotImplementedException();
 

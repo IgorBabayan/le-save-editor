@@ -20,7 +20,7 @@ public partial class Character
 	}
 
 	[JsonIgnore]
-	public ICharacterInventory Inventory { get; set; }
+	public ICharacterInventory? Inventory { get; set; }
 
 	public async Task ParseSavedData()
 	{
@@ -47,7 +47,7 @@ public partial class Character
 
 	private async Task ParseCharacterInventory()
 	{
-		var data = Enumerable.Where<SavedItem>(SavedItems, x => ItemDataParser.CharacterInventoryIds.Contains(x.ContainerID)).ToDictionary(x => x.ContainerID, x => x.Data);
+		var data = SavedItems!.Where(x => ItemDataParser.CharacterInventoryIds.Contains(x.ContainerID)).ToDictionary(x => x.ContainerID, x => x.Data);
 		Inventory = App.GetService<ICharacterInventory>();
 		await Inventory.Parse(data);
 	}

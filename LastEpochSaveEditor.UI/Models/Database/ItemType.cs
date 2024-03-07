@@ -3,13 +3,13 @@
 public class ItemType
 {
 	[JsonProperty("BaseTypeName")]
-	public string BaseTypeName { get; set; }
+	public string? BaseTypeName { get; set; }
 
 	[JsonProperty("displayName")]
-	public string DisplayName { get; set; }
+	public string? DisplayName { get; set; }
 
 	[JsonProperty("lootFilterNameOverride")]
-	public string LootFilterNameOverride { get; set; }
+	public string? LootFilterNameOverride { get; set; }
 
 	[JsonProperty("baseTypeID")]
 	public ItemInfoTypeEnum BaseTypeID { get; set; }
@@ -24,7 +24,7 @@ public class ItemType
 	public double AffixEffectModifier { get; set; }
 
 	[JsonProperty("gridSize")]
-	public GridSize GridSize { get; set; }
+	public GridSize? GridSize { get; set; }
 
 	[JsonProperty("type")]
 	public int Type { get; set; }
@@ -63,8 +63,8 @@ public class ItemType
 	public bool UsePreClassIncompatibilityDropLists { get; set; }
 
 	[JsonProperty("preClassIncompatibilityDropLists")]
-	public List<PreClassIncompatibilityDropList> PreClassIncompatibilityDropLists { get; set; }
+	public List<PreClassIncompatibilityDropList>? PreClassIncompatibilityDropLists { get; set; }
 
 	[JsonProperty("subItems")]
-	public List<SubItem> SubItems { get; set; }
+	public List<SubItem>? SubItems { get; set; }
 }
