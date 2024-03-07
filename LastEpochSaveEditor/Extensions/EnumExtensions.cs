@@ -178,7 +178,7 @@ internal static class EnumExtensions
 			throw new ArgumentException(null, nameof(self));
 
 		var field = self.GetType().GetField(self.ToString());
-		var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
-		return attribute != null ? attribute.Description : self.ToString();
+		var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute))!;
+		return attribute.Description;
 	}
 }

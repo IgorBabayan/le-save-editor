@@ -2,7 +2,7 @@
 
 internal static class SaveFileLoader
 {
-    public static async Task<IEnumerable<CharacterInfo>> Load(string specialCharacterSlot = null)
+    public static async Task<IEnumerable<CharacterInfo>> Load(string? specialCharacterSlot = null)
     {
         var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var path = Path.Combine(userFolder, ADD_DATA, LOCAL_LOW, ELEVENTH_HOUR_GAMES, LAST_EPOCH, SAVES);

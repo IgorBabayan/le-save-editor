@@ -35,7 +35,8 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 
 	#endregion
 
-	public MainViewModel(IMessenger messenger, INavigationService navigationService, IDialogService dialogService, IDownloadViewModel downloadViewModel)
+	public MainViewModel(IMessenger messenger, INavigationService navigationService, IDialogService dialogService,
+		IDownloadViewModel downloadViewModel, IDatabaseFactory databaseFactory)
 	{
 		_messenger = messenger;
 		_messenger.RegisterAll(this);
@@ -43,7 +44,8 @@ internal partial class MainViewModel : ObservableObject, IRecipient<CurrentViewC
 		NavigationService = navigationService;
 		_dialogService = dialogService;
 		_downloadViewModel = downloadViewModel;
-		
+		_databaseFactory = databaseFactory;
+
 		IsCharactersLoaded = false;
 	}
 

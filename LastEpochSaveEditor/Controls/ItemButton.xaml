@@ -9,8 +9,12 @@
 	<Button Style="{DynamicResource ImageButton}">
 		<Border BorderBrush="{Binding Item.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
 		        BorderThickness="1">
-			<controls:ItemImage Item="{Binding Item, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" 
-								HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="1" />
+			<StackPanel>
+				<controls:ItemImage Item="{Binding Item, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" 
+				                    HorizontalAlignment="Stretch"
+				                    VerticalAlignment="Stretch"
+				                    Margin="1" />
+			</StackPanel>
 		</Border>
 	</Button>
 </UserControl>
