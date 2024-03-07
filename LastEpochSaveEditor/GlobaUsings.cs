@@ -10,6 +10,7 @@ global using System.Text;
 global using System.Windows.Input;
 global using System.Collections;
 global using System.Windows;
+global using System.Windows.Controls.Primitives;
 
 global using SixLabors.ImageSharp;
 

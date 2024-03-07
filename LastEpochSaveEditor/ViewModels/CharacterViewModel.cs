@@ -1,10 +1,7 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-internal partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
+public partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 {
-	private readonly IMessenger _messenger;
-	private readonly ItemWindow _itemInfoWindow;
-
 	private Character _selectedCharacter;
 
 	#region Properties
@@ -44,102 +41,12 @@ internal partial class CharacterViewModel : ObservableObject, IRecipient<Selecte
 
 	#endregion
 
-	#region Commands
-
-	[RelayCommand]
-	private void HelmPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Helm));*/
-	}
-
-	[RelayCommand]
-	private void AmuletPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Amulet));*/
-	}
-
-	[RelayCommand]
-	private void WeaponPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Weapon));*/
-	}
-
-	[RelayCommand]
-	private void BodyPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Body));*/
-	}
-
-	[RelayCommand]
-	private void OffHandPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.OffHand));*/
-	}
-
-	[RelayCommand]
-	private void LeftRingPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.LeftRing));*/
-	}
-
-	[RelayCommand]
-	private void BeltPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Belt));*/
-	}
-
-	[RelayCommand]
-	private void RightRingPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.RightRing));*/
-	}
-
-	[RelayCommand]
-	private void GlovesPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Gloves));*/
-	}
-
-	[RelayCommand]
-	private void BootsPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Boots));*/
-	}
-
-	[RelayCommand]
-	private void RelicPressed()
-	{
-		/*((MainWindow)App.Current.MainWindow).MainGrid.Children.Add(_itemInfoWindow);
-		_messenger.Send(new SelectedItemInfoMessage(_selectedCharacter, ItemInfoTypeEnum.Relic));*/
-	}
-
-	#endregion
-
-	public CharacterViewModel(IMessenger messenger)
-	{
-		_messenger = messenger; ;
-		_messenger.RegisterAll(this);
-
-		_itemInfoWindow = App.GetService<ItemWindow>();
-	}
+	public CharacterViewModel(IMessenger messenger) => messenger.RegisterAll(this);
 
 	void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 
 	private void ParseCharacter(CharacterInfo characterInfo)
 	{
-		if (characterInfo?.Character == null)
-			return;
-
 		_selectedCharacter = characterInfo.Character;
 
 		Helm = _selectedCharacter.Inventory.Helm;

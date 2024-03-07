@@ -9,6 +9,7 @@
 	</UserControl.Resources>
 	<StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center">
 		<Button Style="{StaticResource DockButtonStyle}"
+		        Cursor="Hand"
 		        DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
 		        Command="{Binding Command}">
 			<Button.Background>

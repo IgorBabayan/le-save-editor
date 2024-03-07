@@ -1,20 +1,54 @@
 ﻿<UserControl x:Class="LastEpochSaveEditor.Controls.ItemButton"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
-        xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters">
-	<UserControl.Resources>
-		<converters:QualityToColorConverter x:Key="QualityToColorConverter"></converters:QualityToColorConverter>
-	</UserControl.Resources>
-	<Button Style="{DynamicResource ImageButton}">
-		<Border BorderBrush="{Binding Item.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
-		        BorderThickness="1">
-			<StackPanel>
-				<controls:ItemImage Item="{Binding Item, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}" 
-				                    HorizontalAlignment="Stretch"
-				                    VerticalAlignment="Stretch"
-				                    Margin="1" />
-			</StackPanel>
-		</Border>
-	</Button>
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
+             xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+             Background="Transparent"
+             xmlns:popup="clr-namespace:LastEpochSaveEditor.Popups">
+    <UserControl.Resources>
+        <converters:QualityToColorConverter x:Key="QualityToColorConverter"></converters:QualityToColorConverter>
+    </UserControl.Resources>
+    <Grid Background="Transparent">
+        <Button Style="{DynamicResource ImageButton}"
+                CommandParameter="{Binding Item.Type, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
+                Click="OnButtonClick">
+            <!--<Button.Triggers>
+                <EventTrigger RoutedEvent="Button.Click">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <BooleanAnimationUsingKeyFrames Storyboard.TargetName="ItemWindowPopup"
+                                                            Storyboard.TargetProperty="IsOpen">
+                                <DiscreteBooleanKeyFrame Value="True"
+                                                         KeyTime="0:0:0" />
+                            </BooleanAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Button.Triggers>-->
+
+            <Border BorderThickness="1"
+                    BorderBrush="{Binding Item.Quality, Converter={StaticResource QualityToColorConverter}, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}">
+                <StackPanel>
+                    <controls:ItemImage Margin="1"
+                                        Item="{Binding Item, RelativeSource={RelativeSource AncestorType={x:Type controls:ItemButton}}}"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch" />
+                </StackPanel>
+            </Border>
+        </Button>
+
+        <Popup x:Name="ItemWindowPopup"
+               IsOpen="False">
+            <Thumb DragDelta="OnDragDelta">
+                <Thumb.Template>
+                    <ControlTemplate>
+                        <Border BorderThickness="2"
+                                BorderBrush="{DynamicResource DockBackgroundColor}">
+                            <popup:ItemWindow  />
+                        </Border>
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
+        </Popup>
+    </Grid>
 </UserControl>

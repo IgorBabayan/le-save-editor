@@ -1,120 +1,153 @@
 ﻿<UserControl x:Class="LastEpochSaveEditor.Views.CharacterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-			 xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
-			 mc:Ignorable="d" Background="Transparent"
-             d:DesignHeight="450" d:DesignWidth="800">
-	<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
-		</Grid.RowDefinitions>
-		
-		<Grid.ColumnDefinitions>
-			<ColumnDefinition />
-			<ColumnDefinition />
-			<ColumnDefinition />
-		</Grid.ColumnDefinitions>
+             xmlns:controls="clr-namespace:LastEpochSaveEditor.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:LastEpochSaveEditor.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance viewModels:CharacterViewModel}"
+             Background="Transparent">
+    <Grid HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch"
+          Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-		<!--#region Helm -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
 
-		<controls:ItemButton Grid.Row="0" Grid.Column="1" Width="69" Height="69"
-							 Margin="0,0,0,10"
-							 HorizontalAlignment="Center" VerticalAlignment="Center"
-		                     Item="{Binding Helm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     Command="{Binding HelmPressedCommand}" />
+        <!--#region Helm -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="0"
+                             Grid.Column="1"
+                             Width="{Binding Helm.Width}"
+                             Height="{Binding Helm.Height}"
+                             Margin="0,0,0,10"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Item="{Binding Helm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Amulet -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="0" Grid.Column="2"
-		                     Item="{Binding Amulet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Left" Width="54" Height="54"
-		                     Command="{Binding AmuletPressedCommand}" />
+        <!--#region Amulet -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="0"
+                             Grid.Column="2"
+                             Width="{Binding Amulet.Width}"
+                             Height="{Binding Amulet.Height}"
+                             HorizontalAlignment="Left"
+                             Item="{Binding Amulet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Weapon -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="1" Grid.Column="0" Margin="0,0,0,10"
-		                     Item="{Binding Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Right" Width="86" Height="174"
-		                     Command="{Binding WeaponPressedCommand}" />
+        <!--#region Weapon -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="1"
+                             Grid.Column="0"
+                             Margin="0,0,0,10"
+                             Width="{Binding Weapon.Width}"
+                             Height="{Binding Weapon.Height}"
+                             HorizontalAlignment="Right"
+                             Item="{Binding Weapon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Body -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="1" Grid.Column="1" Width="116" Height="176" Margin="0,0,0,10"
-		                     Item="{Binding Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     Command="{Binding BodyPressedCommand}" />
+        <!--#region Body -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="1"
+                             Grid.Column="1"
+                             Width="{Binding Body.Width}"
+                             Height="{Binding Body.Height}"
+                             Margin="0,0,0,10"
+                             Item="{Binding Body, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Off-hand -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="1" Grid.Column="2" Margin="0,0,0,10"
-		                     Item="{Binding OffHand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Left" Width="86" Height="174"
-		                     Command="{Binding OffHandPressedCommand}" />
+        <!--#region Off-hand -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="1"
+                             Grid.Column="2"
+                             Margin="0,0,0,10"
+                             Width="{Binding OffHand.Width}"
+                             Height="{Binding OffHand.Height}"
+                             HorizontalAlignment="Left"
+                             Item="{Binding OffHand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Left ring -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="2" Grid.Column="0" Margin="0,0,0,10"
-		                     Item="{Binding LeftRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Right" Width="54" Height="54"
-		                     Command="{Binding LeftRingPressedCommand}" />
+        <!--#region Left ring -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="2"
+                             Grid.Column="0"
+                             Margin="0,0,0,10"
+                             Width="{Binding LeftRing.Width}"
+                             Height="{Binding LeftRing.Height}"
+                             HorizontalAlignment="Right"
+                             Item="{Binding LeftRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Belt -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="2" Grid.Column="1" Width="116" Height="49" Margin="0,0,0,10"
-		                     Item="{Binding Belt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     Command="{Binding BeltPressedCommand}" />
+        <!--#region Belt -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="2"
+                             Grid.Column="1"
+                             Width="{Binding Belt.Width}"
+                             Height="{Binding Belt.Height}"
+                             Margin="0,0,0,10"
+                             Item="{Binding Belt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Right ring -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="2" Grid.Column="2" Margin="0,0,0,10"
-		                     Item="{Binding RightRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Left" Width="54" Height="54"
-		                     Command="{Binding RightRingPressedCommand}" />
+        <!--#region Right ring -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="2"
+                             Grid.Column="2"
+                             Width="{Binding RightRing.Width}"
+                             Height="{Binding RightRing.Height}"
+                             Margin="0,0,0,10"
+                             HorizontalAlignment="Left"
+                             Item="{Binding RightRing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Gloves -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="3" Grid.Column="0"
-		                     Item="{Binding Gloves, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Right" Width="86" Height="86"
-		                     Command="{Binding GlovesPressedCommand}" />
+        <!--#region Gloves -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="3"
+                             Grid.Column="0"
+                             Width="{Binding Gloves.Width}"
+                             Height="{Binding Gloves.Height}"
+                             HorizontalAlignment="Right"
+                             Item="{Binding Gloves, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Boots -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="3" Grid.Column="1" Width="86" Height="86"
-		                     Item="{Binding Boots, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     Command="{Binding BootsPressedCommand}" />
+        <!--#region Boots -->
 
-		<!--#endregion-->
+        <controls:ItemButton Grid.Row="3"
+                             Grid.Column="1"
+                             Width="{Binding Boots.Width}"
+                             Height="{Binding Boots.Height}"
+                             Item="{Binding Boots, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-		<!--#region Relic -->
+        <!--#endregion-->
 
-		<controls:ItemButton Grid.Row="3" Grid.Column="2"
-		                     Item="{Binding Relic, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-		                     HorizontalAlignment="Left" Width="86" Height="86"
-		                     Command="{Binding RelicPressedCommand}" />
+        <!--#region Relic -->
 
-		<!--#endregion-->
-	</Grid>
+        <controls:ItemButton Grid.Row="3"
+                             Grid.Column="2"
+                             Width="{Binding Relic.Width}"
+                             Height="{Binding Relic.Height}"
+                             HorizontalAlignment="Left"
+                             Item="{Binding Relic, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <!--#endregion-->
+    </Grid>
 </UserControl>

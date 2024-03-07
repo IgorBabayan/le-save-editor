@@ -1,13 +1,13 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemInfoMessage>
+public partial class ItemViewModel : ObservableObject
 {
 	private readonly IMessenger _messenger;
 
 	#region Properties
 
 	[ObservableProperty]
-	private ItemDataInfo _selectedItem;
+	private ItemDataInfo _item;
 
 	[ObservableProperty]
 	private IEnumerable<ItemTypeCategory> _itemTypes;
@@ -29,6 +29,9 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 	#region Commands
 
 	[RelayCommand]
+	private void Close() => _messenger.Send(new CloseCurrentPopupMessage(true));
+
+	[RelayCommand]
 	private void SetQuality(QualityType quality)
 	{
 		SelectedQuality = quality;
@@ -39,20 +42,11 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 
 	public ItemViewModel(IMessenger messenger)
 	{
-		_messenger = messenger; ;
-		_messenger.RegisterAll(this);
+		_messenger = messenger;
 
 		Qualities = new[] { QualityType.Basic, QualityType.Magic, QualityType.Rare, QualityType.Exalted, QualityType.Unique, QualityType.Set,
 			QualityType.Legendary };
 		PopulateCategory();
-	}
-
-	[RelayCommand]
-	private void Close()
-	{
-		/*var window = App.GetService<ItemWindow>();
-		var grid = ((MainWindow)App.Current.MainWindow).MainGrid;
-		grid.Children.Remove(window);*/
 	}
 
 	private void PopulateCategory()
@@ -91,63 +85,5 @@ public partial class ItemViewModel : ObservableObject, IRecipient<SelectedItemIn
 				SubCategories = new[]{ "2H Axes", "2H Maces", "2H Polearm", "2H Staff", "2H Swords", "Bows" }
 			}
 		};
-	}
-
-	void IRecipient<SelectedItemInfoMessage>.Receive(SelectedItemInfoMessage message) => ReceiveItemInfo(message);
-
-	private void ReceiveItemInfo(SelectedItemInfoMessage selectedItem)
-	{
-		/*switch (selectedItem.InfoType)
-		{
-			case ItemInfoTypeEnum.Helm:
-				SelectedItem = selectedItem.Value.CharacterInventory.Helm;
-				break;
-
-			case ItemInfoTypeEnum.Amulet:
-				SelectedItem = selectedItem.Value.CharacterInventory.Amulet;
-				break;
-
-			case ItemInfoTypeEnum.Weapon:
-				SelectedItem = selectedItem.Value.CharacterInventory.Weapon;
-				break;
-
-			case ItemInfoTypeEnum.Body:
-				SelectedItem = selectedItem.Value.CharacterInventory.Body;
-				break;
-
-			case ItemInfoTypeEnum.OffHand:
-				SelectedItem = selectedItem.Value.CharacterInventory.OffHand;
-				break;
-
-			case ItemInfoTypeEnum.LeftRing:
-				SelectedItem = selectedItem.Value.CharacterInventory.LeftRing;
-				break;
-
-			case ItemInfoTypeEnum.Belt:
-				SelectedItem = selectedItem.Value.CharacterInventory.Belt;
-				break;
-
-			case ItemInfoTypeEnum.RightRing:
-				SelectedItem = selectedItem.Value.CharacterInventory.RightRing;
-				break;
-
-			case ItemInfoTypeEnum.Gloves:
-				SelectedItem = selectedItem.Value.CharacterInventory.Gloves;
-				break;
-
-			case ItemInfoTypeEnum.Boots:
-				SelectedItem = selectedItem.Value.CharacterInventory.Boots;
-				break;
-
-			case ItemInfoTypeEnum.Relic:
-				SelectedItem = selectedItem.Value.CharacterInventory.Relic;
-				break;
-
-			case ItemInfoTypeEnum.All:
-				SelectedItem = ItemDataInfo.Empty;
-				break;
-		}
-
-		SelectedQuality = SelectedItem.Quality;*/
 	}
 }

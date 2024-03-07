@@ -1,8 +1,14 @@
 ﻿namespace LastEpochSaveEditor.Controls;
 
-public partial class ItemButton
+public partial class ItemButton : IRecipient<CloseCurrentPopupMessage>
 {
-    public ItemButton() => InitializeComponent();
+    public ItemButton()
+    {
+	    InitializeComponent();
+		
+	    var messenger = App.GetService<IMessenger>();
+	    messenger.RegisterAll(this);
+    }
 
     public static readonly DependencyProperty ItemProperty = DependencyProperty.Register(
 	    nameof(Item), typeof(ItemDataInfo), typeof(ItemButton), new PropertyMetadata(default(ItemDataInfo)));
@@ -13,12 +19,24 @@ public partial class ItemButton
 	    set => SetValue(ItemProperty, value);
     }
 
-    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
-	    nameof(Command), typeof(ICommand), typeof(ItemButton), new PropertyMetadata(default(ICommand)));
-
-    public ICommand Command
+    private void OnDragDelta(object sender, DragDeltaEventArgs args)
     {
-	    get => (ICommand)GetValue(CommandProperty);
-	    set => SetValue(CommandProperty, value);
+	    var thumb = sender as Thumb;
+	    if (thumb?.Parent is Popup popup)
+	    {
+		    popup.HorizontalOffset += args.HorizontalChange;
+		    popup.VerticalOffset += args.VerticalChange;
+	    }
+    }
+
+    void IRecipient<CloseCurrentPopupMessage>.Receive(CloseCurrentPopupMessage _)
+    {
+	    ItemWindowPopup.IsOpen = false;
+	    // var control = this.FindName("ItemWindowPopup");
+    }
+
+    private void OnButtonClick(object sender, RoutedEventArgs e)
+    {
+	    ItemWindowPopup.IsOpen = true;
     }
 }
