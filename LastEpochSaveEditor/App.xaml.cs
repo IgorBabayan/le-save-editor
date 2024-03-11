@@ -1,8 +1,8 @@
 ﻿namespace LastEpochSaveEditor;
 
-public partial class App : Application
+public partial class App
 {
-    private readonly static IHost? _host;
+    private static readonly IHost? _host;
 
     static App()
     {
@@ -45,14 +45,14 @@ public partial class App : Application
     protected override async void OnExit(ExitEventArgs e)
     {
         var mainViewModel = _host!.Services.GetRequiredService<MainViewModel>();
-        var characterViewModel = _host!.Services.GetRequiredService<CharacterViewModel>();
-        var itemViewModel = _host!.Services.GetRequiredService<ItemViewModel>();
+        var characterViewModel = _host.Services.GetRequiredService<CharacterViewModel>();
+        var itemViewModel = _host.Services.GetRequiredService<ItemViewModel>();
 
         WeakReferenceMessenger.Default.UnregisterAll(mainViewModel);
         WeakReferenceMessenger.Default.UnregisterAll(characterViewModel);
         WeakReferenceMessenger.Default.UnregisterAll(itemViewModel);
 
-        await _host!.StopAsync();
+        await _host.StopAsync();
         base.OnExit(e);
     }
 }

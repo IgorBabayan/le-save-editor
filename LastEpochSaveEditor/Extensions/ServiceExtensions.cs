@@ -108,7 +108,7 @@ internal static class ServiceExtensions
 		services.AddSingleton<CharacterStashViewModel>();
 		services.AddSingleton<BlessingViewModel>();
 		services.AddSingleton<IdolViewModel>();
-		services.AddSingleton<ItemViewModel>();
+		services.AddTransient<ItemViewModel>();
 	}
 
 	public static void RegisterMessenger(this IServiceCollection services)

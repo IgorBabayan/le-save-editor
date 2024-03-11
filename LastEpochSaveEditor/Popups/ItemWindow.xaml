@@ -56,7 +56,7 @@
 				<controls:ItemImage Grid.Row="0"
 				                    HorizontalAlignment="Stretch"
 				                    VerticalAlignment="Stretch"
-				                    Item="{Binding Item, RelativeSource={RelativeSource AncestorType=local:ItemWindow}}"/>
+				                    Item="{Binding Item}"/>
 
 				<!--#region Base info -->
 

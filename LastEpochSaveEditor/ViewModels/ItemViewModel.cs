@@ -1,13 +1,14 @@
 ﻿namespace LastEpochSaveEditor.ViewModels;
 
-public partial class ItemViewModel : ObservableObject
+public partial class ItemViewModel : ObservableObject, IRecipient<ItemSelectedMessage>
 {
 	private readonly IMessenger _messenger;
+	private Guid _id;
 
 	#region Properties
 
 	[ObservableProperty]
-	private ItemDataInfo _item;
+	private ItemDataInfo? _item;
 
 	[ObservableProperty]
 	private string _selectedItemCategory;
@@ -40,6 +41,8 @@ public partial class ItemViewModel : ObservableObject
 	public ItemViewModel(IMessenger messenger)
 	{
 		_messenger = messenger;
+		_messenger.RegisterAll(this);
+		
 		Qualities = new[] 
 		{
 			QualityType.Basic,
@@ -50,5 +53,16 @@ public partial class ItemViewModel : ObservableObject
 			QualityType.Set,
 			QualityType.Legendary
 		};
+	}
+
+	void IRecipient<ItemSelectedMessage>.Receive(ItemSelectedMessage args)
+	{
+		if (Item == null)
+		{
+			Item = args.Value.Value;
+			_id = args.Value.Id;
+		}
+		else if (_id == args.Value.Id)
+			Item = args.Value.Value;
 	}
 }

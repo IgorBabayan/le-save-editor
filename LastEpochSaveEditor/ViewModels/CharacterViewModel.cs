@@ -2,6 +2,7 @@
 
 public partial class CharacterViewModel : ObservableObject, IRecipient<SelectedCharacterChangedMessage>
 {
+	private readonly IMessenger _messenger;
 	private Character _selectedCharacter;
 
 	#region Properties
@@ -41,7 +42,18 @@ public partial class CharacterViewModel : ObservableObject, IRecipient<SelectedC
 
 	#endregion
 
-	public CharacterViewModel(IMessenger messenger) => messenger.RegisterAll(this);
+	#region Commands
+
+	[RelayCommand]
+	private void SelectItem(ItemSelectedValue args) => _messenger.Send(new ItemSelectedMessage(args));
+
+	#endregion
+
+	public CharacterViewModel(IMessenger messenger)
+	{
+		_messenger = messenger;
+		_messenger.RegisterAll(this);
+	}
 
 	void IRecipient<SelectedCharacterChangedMessage>.Receive(SelectedCharacterChangedMessage message) => ParseCharacter(message.Value);
 

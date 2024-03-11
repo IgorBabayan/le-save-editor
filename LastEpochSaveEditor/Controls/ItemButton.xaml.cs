@@ -31,6 +31,15 @@ public partial class ItemButton : IRecipient<ItemWindowCloseMessage>
 	    set => SetValue(ItemSourceProperty, value);
     }
 
+    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
+	    nameof(Command), typeof(ICommand), typeof(ItemButton), new PropertyMetadata(default(ICommand?)));
+
+    public ICommand? Command
+    {
+	    get => (ICommand?)GetValue(CommandProperty);
+	    set => SetValue(CommandProperty, value);
+    }
+
     private void OnDragDelta(object sender, DragDeltaEventArgs args)
     {
 	    var thumb = sender as Thumb;
@@ -44,7 +53,10 @@ public partial class ItemButton : IRecipient<ItemWindowCloseMessage>
     private void OnClick(object sender, RoutedEventArgs e)
     {
 	    if (FindName("PART_Popup") is Popup popup)
+	    {
 		    popup.IsOpen = true;
+			Command?.Execute(new ItemSelectedValue(Id, ItemSource));
+	    }
     }
 
     public void Receive(ItemWindowCloseMessage message)
