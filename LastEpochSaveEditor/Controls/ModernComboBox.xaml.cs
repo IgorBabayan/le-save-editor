@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Controls;
 
-public partial class ModernComboBox : UserControl
+public partial class ModernComboBox
 {
 	public ModernComboBox() => InitializeComponent();
 
@@ -13,15 +13,6 @@ public partial class ModernComboBox : UserControl
 	public static readonly DependencyProperty ItemsSourceProperty =
 		DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable), typeof(ModernComboBox), new PropertyMetadata(default(IEnumerable)));
 
-	public object ButtonContent
-	{
-		get => GetValue(ButtonContentProperty);
-		set => SetValue(ButtonContentProperty, value);
-	}
-
-	public static readonly DependencyProperty ButtonContentProperty =
-		DependencyProperty.Register(nameof(ButtonContent), typeof(object), typeof(ModernComboBox), new PropertyMetadata(default(object)));
-
 	public object SelectedItem
 	{
 		get => GetValue(SelectedItemProperty);
@@ -29,32 +20,20 @@ public partial class ModernComboBox : UserControl
 	}
 
 	public static readonly DependencyProperty SelectedItemProperty =
-		DependencyProperty.Register(nameof(SelectedItem), typeof(object), typeof(ModernComboBox), new PropertyMetadata(default(object)));
+		DependencyProperty.Register(nameof(SelectedItem), typeof(object), typeof(ModernComboBox), new PropertyMetadata(default(object), OnSelectedItemChanged));
 
-	public string DisplayMemberPath
+	private static void OnSelectedItemChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
 	{
-		get => (string)GetValue(DisplayMemberPathProperty);
-		set => SetValue(DisplayMemberPathProperty, value);
+		if (args.OldValue == null)
+			return;
+		
+		var comboBox = (sender as ModernComboBox)!;
+		if (comboBox.GetTemplateChild("PART_MainButton") is ToggleButton button)
+			button.IsChecked = false;
 	}
 
-	public static readonly DependencyProperty DisplayMemberPathProperty =
-		DependencyProperty.Register(nameof(DisplayMemberPath), typeof(string), typeof(ModernComboBox), new PropertyMetadata(default(string)));
-
-	public object ItemsContent
+	private void OnPopupClosed(object? sender, EventArgs _)
 	{
-		get => GetValue(ItemsContentProperty);
-		set => SetValue(ItemsContentProperty, value);
+		
 	}
-
-	public static readonly DependencyProperty ItemsContentProperty =
-		DependencyProperty.Register(nameof(ItemsContent), typeof(object), typeof(ModernComboBox), new PropertyMetadata(default(object)));
-
-	public bool IsChecked
-	{
-		get => (bool)GetValue(IsCheckedProperty);
-		set => SetValue(IsCheckedProperty, value);
-	}
-
-	public static readonly DependencyProperty IsCheckedProperty =
-		DependencyProperty.Register(nameof(IsChecked), typeof(bool), typeof(ModernComboBox), new PropertyMetadata(default(bool)));
 }

@@ -1,4 +1,4 @@
-﻿namespace LastEpochSaveEditor.ViewModels;
+﻿namespace LastEpochSaveEditor.ViewModels.Dialog;
 
 internal interface IMessageViewModel : IViewModel
 {

@@ -10,7 +10,7 @@
 		<Grid.Background>
 			<ImageBrush Stretch="UniformToFill"
 			            Opacity="0.9"
-			            ImageSource="../Images/Misc/ItemBackground.png" />
+			            ImageSource="/Assets/Images/Misc/ItemBackground.png" />
 		</Grid.Background>
 
 		<Border BorderThickness="1"

@@ -30,16 +30,16 @@ internal static class Const
 	public const string RELIC = "Images/Accessories/Relic";
 	public const string OFF_HAND = "Images/Off Hands";
 
-	public const string HELM_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Helm.png";
-	public const string BODY_ARMOR_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Body.png";
-	public const string WEAPON_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Weapon.png";
-	public const string GLOVES_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Gloves.png";
-	public const string BELTS_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Belt.png";
-	public const string BOOTS_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Boots.png";
-	public const string RING_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Ring.png";
-	public const string AMULET_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Amulet.png";
-	public const string RELIC_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Relic.png";
-	public const string OFF_HAND_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Images/Misc/Off-Hand.png";
+	public const string HELM_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Helm.png";
+	public const string BODY_ARMOR_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Body.png";
+	public const string WEAPON_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Weapon.png";
+	public const string GLOVES_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Gloves.png";
+	public const string BELTS_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Belt.png";
+	public const string BOOTS_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Boots.png";
+	public const string RING_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Ring.png";
+	public const string AMULET_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Amulet.png";
+	public const string RELIC_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Relic.png";
+	public const string OFF_HAND_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Misc/Off-Hand.png";
 
 	public const string DATA_URL = "https://assets-ng.maxroll.gg/leplanner/game/data.json";
 	public const string DATA_FILE_PATH = "database.json";
@@ -107,4 +107,14 @@ internal static class Const
 	public const string APPLICATION_TITLE = "L A S T   E P O C H   S A V E   E D I T O R";
 
 	public const string SHARD_PREFIX = "shard_";
+
+	public const string ITEM_HELM_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Helm.png";
+	public const string ITEM_BODY_ARMOR_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Body.png";
+	public const string ITEM_GLOVES_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Gloves.png";
+	public const string ITEM_BELT_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Belt.png";
+	public const string ITEM_BOOTS_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Boots.png";
+	public const string ITEM_RING_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Ring.png";
+	public const string ITEM_AMULET_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Amulet.png";
+	public const string ITEM_RELIC_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Relic.png";
+	public const string ITEM_OFF_HAND_ICON = "pack://application:,,,/LastEpochSaveEditor;component/Assets/Images/Items/Off-Hand.png";
 }

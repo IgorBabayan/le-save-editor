@@ -11,16 +11,19 @@ public partial class ItemViewModel : ObservableObject, IRecipient<ItemSelectedMe
 	private ItemDataInfo? _item;
 
 	[ObservableProperty]
-	private string _selectedItemCategory;
+	private ItemDataInfo _selectedItem;
+
+	/*[ObservableProperty]
+	private string _selectedItemCategory;*/
 
 	[ObservableProperty]
 	private IEnumerable<QualityType> _qualities;
 
-	[ObservableProperty]
-	private QualityType _selectedQuality;
+	/*[ObservableProperty]
+	private QualityType _selectedQuality;*/
 
-	[ObservableProperty]
-	private bool _isChecked;
+	/*[ObservableProperty]
+	private bool _isChecked;*/
 
 	#endregion
 
@@ -29,12 +32,21 @@ public partial class ItemViewModel : ObservableObject, IRecipient<ItemSelectedMe
 	[RelayCommand]
 	private void SetQuality(QualityType quality)
 	{
-		SelectedQuality = quality;
-		IsChecked = false;
+		/*SelectedQuality = quality;
+		IsChecked = false;*/
 	}
 
 	[RelayCommand]
 	private void Close(object id) => _messenger.Send(new ItemWindowCloseMessage((Guid)id));
+
+	[RelayCommand]
+	private void Reset() => SelectedItem = Item!.Clone();
+
+	[RelayCommand]
+	private void Save()
+	{
+		
+	}
 
 	#endregion
 
@@ -59,10 +71,15 @@ public partial class ItemViewModel : ObservableObject, IRecipient<ItemSelectedMe
 	{
 		if (Item == null)
 		{
-			Item = args.Value.Value;
 			_id = args.Value.Id;
+			
+			Item = args.Value.Value;
+			SelectedItem = Item.Clone();
 		}
 		else if (_id == args.Value.Id)
+		{
 			Item = args.Value.Value;
+			SelectedItem = Item.Clone();
+		}
 	}
 }

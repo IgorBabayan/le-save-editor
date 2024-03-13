@@ -6,46 +6,69 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <PackageIcon>Logo.png</PackageIcon>
-    <ApplicationIcon>Images\Logo.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Images\Classes\Acolyte.png" />
-    <None Remove="Images\Classes\Beastmaster.png" />
-    <None Remove="Images\Classes\Bladedancer.png" />
-    <None Remove="Images\Classes\Druid.png" />
-    <None Remove="Images\Classes\Falconer.png" />
-    <None Remove="Images\Classes\ForgeGuard.png" />
-    <None Remove="Images\Classes\Lich.png" />
-    <None Remove="Images\Classes\Mage.png" />
-    <None Remove="Images\Classes\Marksman.png" />
-    <None Remove="Images\Classes\Necromancer.png" />
-    <None Remove="Images\Classes\Paladin.png" />
-    <None Remove="Images\Classes\Primalist.png" />
-    <None Remove="Images\Classes\Rogue.png" />
-    <None Remove="Images\Classes\Runemaster.png" />
-    <None Remove="Images\Classes\Sentinel.png" />
-    <None Remove="Images\Classes\Shaman.png" />
-    <None Remove="Images\Classes\Sorcerer.png" />
-    <None Remove="Images\Classes\Spellblade.png" />
-    <None Remove="Images\Classes\VoidKnight.png" />
-    <None Remove="Images\Classes\Warlock.png" />
-    <None Remove="Images\Misc\Amulet.png" />
-    <None Remove="Images\Misc\Belt.png" />
-    <None Remove="Images\Misc\Body.png" />
-    <None Remove="Images\Misc\Boots.png" />
-    <None Remove="Images\Misc\Gloves.png" />
-    <None Remove="Images\Misc\Helm.png" />
-    <None Remove="Images\Misc\ItemBackground.png" />
-    <None Remove="Images\Misc\Off-Hand.png" />
-    <None Remove="Images\Misc\Relic.png" />
-    <None Remove="Images\Misc\Ring.png" />
-    <None Remove="Images\Misc\Weapon.png" />
+    <None Remove="Assets\Images\Classes\Acolyte.png" />
+    <None Remove="Assets\Images\Classes\Beastmaster.png" />
+    <None Remove="Assets\Images\Classes\Bladedancer.png" />
+    <None Remove="Assets\Images\Classes\Druid.png" />
+    <None Remove="Assets\Images\Classes\Falconer.png" />
+    <None Remove="Assets\Images\Classes\ForgeGuard.png" />
+    <None Remove="Assets\Images\Classes\Lich.png" />
+    <None Remove="Assets\Images\Classes\Mage.png" />
+    <None Remove="Assets\Images\Classes\Marksman.png" />
+    <None Remove="Assets\Images\Classes\Necromancer.png" />
+    <None Remove="Assets\Images\Classes\Paladin.png" />
+    <None Remove="Assets\Images\Classes\Primalist.png" />
+    <None Remove="Assets\Images\Classes\Rogue.png" />
+    <None Remove="Assets\Images\Classes\Runemaster.png" />
+    <None Remove="Assets\Images\Classes\Sentinel.png" />
+    <None Remove="Assets\Images\Classes\Shaman.png" />
+    <None Remove="Assets\Images\Classes\Sorcerer.png" />
+    <None Remove="Assets\Images\Classes\Spellblade.png" />
+    <None Remove="Assets\Images\Classes\VoidKnight.png" />
+    <None Remove="Assets\Images\Classes\Warlock.png" />
+    <None Remove="Assets\Images\Items\1H Mace.png" />
+    <None Remove="Assets\Images\Items\1H Sceptre.png" />
+    <None Remove="Assets\Images\Items\1H Sword.png" />
+    <None Remove="Assets\Images\Items\2H  Sword.png" />
+    <None Remove="Assets\Images\Items\2H Axe.png" />
+    <None Remove="Assets\Images\Items\2H Axes.png" />
+    <None Remove="Assets\Images\Items\2H Maces.png" />
+    <None Remove="Assets\Images\Items\Amulet.png" />
+    <None Remove="Assets\Images\Items\Belt.png" />
+    <None Remove="Assets\Images\Items\Body.png" />
+    <None Remove="Assets\Images\Items\Boots.png" />
+    <None Remove="Assets\Images\Items\Bow.png" />
+    <None Remove="Assets\Images\Items\Catalyst.png" />
+    <None Remove="Assets\Images\Items\Dagger.png" />
+    <None Remove="Assets\Images\Items\Gloves.png" />
+    <None Remove="Assets\Images\Items\Helm.png" />
+    <None Remove="Assets\Images\Items\Poleram.png" />
+    <None Remove="Assets\Images\Items\Quiver.png" />
+    <None Remove="Assets\Images\Items\Relic.png" />
+    <None Remove="Assets\Images\Items\Ring.png" />
+    <None Remove="Assets\Images\Items\Shield.png" />
+    <None Remove="Assets\Images\Items\Staff.png" />
+    <None Remove="Assets\Images\Items\Wand.png" />
+    <None Remove="Assets\Images\Misc\Amulet.png" />
+    <None Remove="Assets\Images\Misc\Belt.png" />
+    <None Remove="Assets\Images\Misc\Body.png" />
+    <None Remove="Assets\Images\Misc\Boots.png" />
+    <None Remove="Assets\Images\Misc\Gloves.png" />
+    <None Remove="Assets\Images\Misc\Helm.png" />
+    <None Remove="Assets\Images\Misc\ItemBackground.png" />
+    <None Remove="Assets\Images\Misc\Off-Hand.png" />
+    <None Remove="Assets\Images\Misc\Relic.png" />
+    <None Remove="Assets\Images\Misc\Ring.png" />
+    <None Remove="Assets\Images\Misc\Weapon.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Images\Logo.ico" />
+    <Content Include="Assets\Logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,44 +85,60 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Images\Classes\Acolyte.png" />
-    <Resource Include="Images\Classes\Beastmaster.png" />
-    <Resource Include="Images\Classes\Bladedancer.png" />
-    <Resource Include="Images\Classes\Druid.png" />
-    <Resource Include="Images\Classes\Falconer.png" />
-    <Resource Include="Images\Classes\ForgeGuard.png" />
-    <Resource Include="Images\Classes\Sentinel.png" />
-    <Resource Include="Images\Classes\Lich.png" />
-    <Resource Include="Images\Classes\Mage.png" />
-    <Resource Include="Images\Classes\Marksman.png" />
-    <Resource Include="Images\Classes\Necromancer.png" />
-    <Resource Include="Images\Classes\Paladin.png" />
-    <Resource Include="Images\Classes\Primalist.png" />
-    <Resource Include="Images\Classes\Rogue.png" />
-    <Resource Include="Images\Classes\Runemaster.png" />
-    <Resource Include="Images\Classes\Shaman.png" />
-    <Resource Include="Images\Classes\Sorcerer.png" />
-    <Resource Include="Images\Classes\Spellblade.png" />
-    <Resource Include="Images\Classes\VoidKnight.png" />
-    <Resource Include="Images\Classes\Warlock.png" />
-    <Resource Include="Images\Misc\Amulet.png" />
-    <Resource Include="Images\Misc\Belt.png" />
-    <Resource Include="Images\Misc\Body.png" />
-    <Resource Include="Images\Misc\Boots.png" />
-    <Resource Include="Images\Misc\Gloves.png" />
-    <Resource Include="Images\Misc\Helm.png" />
-    <Resource Include="Images\Misc\ItemBackground.png" />
-    <Resource Include="Images\Misc\Off-Hand.png" />
-    <Resource Include="Images\Misc\Relic.png" />
-    <Resource Include="Images\Misc\Ring.png" />
-    <Resource Include="Images\Misc\Weapon.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Images\Logo.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
+    <Resource Include="Assets\Images\Classes\Acolyte.png" />
+    <Resource Include="Assets\Images\Classes\Beastmaster.png" />
+    <Resource Include="Assets\Images\Classes\Bladedancer.png" />
+    <Resource Include="Assets\Images\Classes\Druid.png" />
+    <Resource Include="Assets\Images\Classes\Falconer.png" />
+    <Resource Include="Assets\Images\Classes\ForgeGuard.png" />
+    <Resource Include="Assets\Images\Classes\Sentinel.png" />
+    <Resource Include="Assets\Images\Classes\Lich.png" />
+    <Resource Include="Assets\Images\Classes\Mage.png" />
+    <Resource Include="Assets\Images\Classes\Marksman.png" />
+    <Resource Include="Assets\Images\Classes\Necromancer.png" />
+    <Resource Include="Assets\Images\Classes\Paladin.png" />
+    <Resource Include="Assets\Images\Classes\Primalist.png" />
+    <Resource Include="Assets\Images\Classes\Rogue.png" />
+    <Resource Include="Assets\Images\Classes\Runemaster.png" />
+    <Resource Include="Assets\Images\Classes\Shaman.png" />
+    <Resource Include="Assets\Images\Classes\Sorcerer.png" />
+    <Resource Include="Assets\Images\Classes\Spellblade.png" />
+    <Resource Include="Assets\Images\Classes\VoidKnight.png" />
+    <Resource Include="Assets\Images\Classes\Warlock.png" />
+    <Resource Include="Assets\Images\Items\1H Mace.png" />
+    <Resource Include="Assets\Images\Items\1H Sceptre.png" />
+    <Resource Include="Assets\Images\Items\1H Sword.png" />
+    <Resource Include="Assets\Images\Items\2H  Sword.png" />
+    <Resource Include="Assets\Images\Items\2H Axe.png" />
+    <Resource Include="Assets\Images\Items\2H Axes.png" />
+    <Resource Include="Assets\Images\Items\2H Maces.png" />
+    <Resource Include="Assets\Images\Items\Amulet.png" />
+    <Resource Include="Assets\Images\Items\Belt.png" />
+    <Resource Include="Assets\Images\Items\Body.png" />
+    <Resource Include="Assets\Images\Items\Boots.png" />
+    <Resource Include="Assets\Images\Items\Bow.png" />
+    <Resource Include="Assets\Images\Items\Catalyst.png" />
+    <Resource Include="Assets\Images\Items\Dagger.png" />
+    <Resource Include="Assets\Images\Items\Gloves.png" />
+    <Resource Include="Assets\Images\Items\Helm.png" />
+    <Resource Include="Assets\Images\Items\Poleram.png" />
+    <Resource Include="Assets\Images\Items\Quiver.png" />
+    <Resource Include="Assets\Images\Items\Relic.png" />
+    <Resource Include="Assets\Images\Items\Ring.png" />
+    <Resource Include="Assets\Images\Items\Shield.png" />
+    <Resource Include="Assets\Images\Items\Staff.png" />
+    <Resource Include="Assets\Images\Items\Wand.png" />
+    <Resource Include="Assets\Images\Misc\Amulet.png" />
+    <Resource Include="Assets\Images\Misc\Belt.png" />
+    <Resource Include="Assets\Images\Misc\Body.png" />
+    <Resource Include="Assets\Images\Misc\Boots.png" />
+    <Resource Include="Assets\Images\Misc\Gloves.png" />
+    <Resource Include="Assets\Images\Misc\Helm.png" />
+    <Resource Include="Assets\Images\Misc\ItemBackground.png" />
+    <Resource Include="Assets\Images\Misc\Off-Hand.png" />
+    <Resource Include="Assets\Images\Misc\Relic.png" />
+    <Resource Include="Assets\Images\Misc\Ring.png" />
+    <Resource Include="Assets\Images\Misc\Weapon.png" />
   </ItemGroup>
 
 </Project>

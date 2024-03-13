@@ -29,6 +29,8 @@ global using CommunityToolkit.Mvvm.Input;
 global using CommunityToolkit.Mvvm.Messaging.Messages;
 
 global using LastEpochSaveEditor.ViewModels;
+global using LastEpochSaveEditor.ViewModels.Controls;
+global using LastEpochSaveEditor.ViewModels.Dialog;
 global using LastEpochSaveEditor.Models.Characters;
 global using LastEpochSaveEditor.Models.CharacterModel;
 global using LastEpochSaveEditor.Popups;
@@ -42,6 +44,8 @@ global using LastEpochSaveEditor.Models.Utils;
 global using LastEpochSaveEditor.Services;
 global using LastEpochSaveEditor.Extensions;
 global using LastEpochSaveEditor.Services.Factories;
+global using LastEpochSaveEditor.Common;
+global using System.Windows.Markup;
 
 global using Color = System.Windows.Media.Color;
 global using static LastEpochSaveEditor.Utils.Const;

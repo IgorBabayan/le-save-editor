@@ -1,80 +1,149 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Style TargetType="ListViewItem"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters">
+	<Style TargetType="ListViewItem"
            x:Key="CharacterCard">
-        <Setter Property="Background"
+		<Setter Property="Background"
                 Value="Transparent">
-        </Setter>
-        <Setter Property="Cursor"
+		</Setter>
+		<Setter Property="Cursor"
                 Value="Hand">
-        </Setter>
-        <Setter Property="Foreground"
+		</Setter>
+		<Setter Property="Foreground"
                 Value="White">
-        </Setter>
+		</Setter>
 
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListViewItem">
-                    <Border Background="{TemplateBinding Background}"
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="ListViewItem">
+					<Border Background="{TemplateBinding Background}"
                             CornerRadius="4"
                             Margin="8,2,8,2">
-                        <Grid DataContext="{Binding Character}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="80*" />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
+						<Grid DataContext="{Binding Character}">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="80*" />
+								<ColumnDefinition />
+							</Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="0"
+							<StackPanel Grid.Column="0"
                                         Orientation="Vertical"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Center"
                                         Margin="10,0,0,0">
-                                <TextBlock Text="{Binding CharacterName}"
+								<TextBlock Text="{Binding CharacterName}"
                                            FontWeight="ExtraBold"
                                            Foreground="{DynamicResource CharacterForegroundColor}">
-                                </TextBlock>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="lv. "
+								</TextBlock>
+								<StackPanel Orientation="Horizontal">
+									<TextBlock Text="lv. "
                                                Foreground="{DynamicResource TertiaryColor}">
-                                    </TextBlock>
-                                    <TextBlock Text="{Binding Level}"></TextBlock>
-                                    <TextBlock Text=" "></TextBlock>
-                                    <TextBlock DataContext="{Binding ClassInfo}"
+									</TextBlock>
+									<TextBlock Text="{Binding Level}"></TextBlock>
+									<TextBlock Text=" "></TextBlock>
+									<TextBlock DataContext="{Binding ClassInfo}"
                                                Text="{Binding Name}">
-                                    </TextBlock>
-                                    <TextBlock Text=" "></TextBlock>
-                                    <TextBlock Text="{Binding Challenge}"></TextBlock>
-                                </StackPanel>
-                            </StackPanel>
+									</TextBlock>
+									<TextBlock Text=" "></TextBlock>
+									<TextBlock Text="{Binding Challenge}"></TextBlock>
+								</StackPanel>
+							</StackPanel>
 
-                            <StackPanel Grid.Column="1"
+							<StackPanel Grid.Column="1"
                                         HorizontalAlignment="Right"
                                         DataContext="{Binding ClassInfo}">
-                                <Image Source="{Binding Icon}"
+								<Image Source="{Binding Icon}"
                                        Width="50"
                                        Height="50"
                                        Stretch="Uniform">
-                                </Image>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+								</Image>
+							</StackPanel>
+						</Grid>
+					</Border>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
 
-        <Style.Triggers>
-            <Trigger Property="IsSelected"
+		<Style.Triggers>
+			<Trigger Property="IsSelected"
                      Value="True">
-                <Setter Property="Background"
+				<Setter Property="Background"
                         Value="{DynamicResource ActiveColor}">
-                </Setter>
-            </Trigger>
-            <Trigger Property="IsMouseOver"
+				</Setter>
+			</Trigger>
+			<Trigger Property="IsMouseOver"
                      Value="True">
-                <Setter Property="Background"
+				<Setter Property="Background"
                         Value="{DynamicResource HoverColor}">
-                </Setter>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
+				</Setter>
+			</Trigger>
+		</Style.Triggers>
+	</Style>
+
+	<converters:QualityToColorConverter x:Key="QualityToColorConverter" />
+	<Style x:Key="QualityComboBoxListViewItem"
+           TargetType="ListViewItem">
+		<Style.Setters>
+			<Setter Property="Padding" Value="0" />
+
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="ListViewItem">
+						<Border Background="{TemplateBinding Background}"
+						        Cursor="Hand">
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="Auto" />
+									<ColumnDefinition Width="*" />
+								</Grid.ColumnDefinitions>
+
+								<Ellipse Grid.Column="0"
+								         Width="10"
+								         Height="10"
+										 Margin="5,0"
+								         Fill="{Binding Converter={StaticResource QualityToColorConverter}}" />
+								<TextBlock Grid.Column="1"
+										   Margin="0,5,5,5"
+										   Foreground="{DynamicResource BigTitleBackgroundColor}"
+								           Text="{Binding}" />
+							</Grid>
+						</Border>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style.Setters>
+
+		<Style.Triggers>
+			<Trigger Property="IsSelected"
+			         Value="True">
+				<Setter Property="Background"
+				        Value="{DynamicResource ActiveColor}">
+				</Setter>
+			</Trigger>
+			<Trigger Property="IsMouseOver"
+			         Value="True">
+				<Setter Property="Background"
+				        Value="{DynamicResource HoverColor}">
+				</Setter>
+			</Trigger>
+		</Style.Triggers>
+	</Style>
+
+	<Style x:Key="ItemTypesComboBoxListViewItem"
+	       TargetType="ListViewItem">
+		<Style.Setters>
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}"
+						        Cursor="Hand">
+							<TextBlock Margin="0,5,5,5"
+							           Foreground="{DynamicResource BigTitleBackgroundColor}"
+							           Text="{Binding Description}" />
+						</Border>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style.Setters>
+	</Style>
 </ResourceDictionary>

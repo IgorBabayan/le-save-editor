@@ -3,19 +3,24 @@
 public enum ItemInfoTypeEnum
 {
 	[Description(ARMOURS_HELMETS)]
+	[Icon(ITEM_HELM_ICON)]
     Helmet = 0,
 
 	[Description(ARMOURS_BODY)]
-    Body = 1,
+	[Icon(ITEM_BODY_ARMOR_ICON)]
+	Body = 1,
 
 	[Description(ARMOURS_BELTS)]
-    Belt = 2,
+	[Icon(ITEM_BELT_ICON)]
+	Belt = 2,
 
 	[Description(ARMOURS_BOOTS)]
-    Boots = 3,
+	[Icon(ITEM_BOOTS_ICON)]
+	Boots = 3,
 
 	[Description(ARMOURS_GLOVES)]
-    Gloves = 4,
+	[Icon(ITEM_GLOVES_ICON)]
+	Gloves = 4,
 
 	[Description(ONE_HAND_AXES)]
     OneHandAxes = 5,
@@ -63,13 +68,16 @@ public enum ItemInfoTypeEnum
 	Catalyst = 19,
 
 	[Description(ACCESSORIES_AMULET)]
+	[Icon(ITEM_AMULET_ICON)]
 	Amulet = 20,
 
 	[Description(ACCESSORIES_RING)]
+	[Icon(ITEM_RING_ICON)]
 	Ring = 21,
 
 	[Description(ACCESSORIES_RELIC)]
-    Relic = 22,
+	[Icon(ITEM_RELIC_ICON)]
+	Relic = 22,
 
 	[Description(TWO_HAND_BOWS)]
 	Bows = 23,

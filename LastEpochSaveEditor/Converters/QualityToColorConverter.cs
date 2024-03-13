@@ -3,8 +3,11 @@
 [ValueConversion(typeof(QualityType), typeof(Brush))]
 internal class QualityToColorConverter : IValueConverter
 {
-	public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
+		if (value == null)
+			return new SolidColorBrush(Color.FromRgb(170, 170, 170));
+
 		var quality = (QualityType)value;
 		switch (quality)
 		{
@@ -31,5 +34,5 @@ internal class QualityToColorConverter : IValueConverter
 		}
 	}
 
-	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 }

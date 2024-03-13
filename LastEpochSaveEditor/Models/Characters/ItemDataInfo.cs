@@ -1,6 +1,6 @@
 ﻿namespace LastEpochSaveEditor.Models.Characters;
 
-public class ItemDataInfo
+public class ItemDataInfo : ICloneable<ItemDataInfo>
 {
 	public bool IsSeal { get; set; }
 	public int UniqueOrSetId { get; set; }
@@ -17,25 +17,12 @@ public class ItemDataInfo
 	public IList<AffixInfo> Affixes { get; set; } = new List<AffixInfo>();
 	public IList<AffixInfo> SealedAffixes { get; set; } = new List<AffixInfo>();
 	public IList<AffixInfo> LegendaryAffixes { get; set; } = new List<AffixInfo>();
+	[JsonConverter(typeof(BitmapImageJsonConverter))]
 	public BitmapImage Icon { get; set; }
 	public int Width { get; set; }
 	public int Height { get; set; }
 
 	public static readonly ItemDataInfo Empty;
-
-	public ItemDataInfo Copy() => new()
-	{
-		IsSeal = IsSeal,
-		UniqueOrSetId = UniqueOrSetId,
-		Patch = Patch,
-		Type = Empty.Type,
-		BaseId = BaseId,
-		LegendaryPotencial = LegendaryPotencial,
-		Instability = Instability,
-		ForgingPotencial = ForgingPotencial,
-		AffixCount = AffixCount,
-		Quality = Quality
-	};
 
 	static ItemDataInfo() => Empty = new()
 	{
@@ -50,4 +37,12 @@ public class ItemDataInfo
 		AffixCount = -1,
 		Quality = QualityType.Basic
 	};
+
+	public ItemDataInfo Clone()
+	{
+		var content = JsonConvert.SerializeObject(this, Formatting.None);
+		return JsonConvert.DeserializeObject<ItemDataInfo>(content);
+	}
+
+	object ICloneable.Clone() => Clone();
 }

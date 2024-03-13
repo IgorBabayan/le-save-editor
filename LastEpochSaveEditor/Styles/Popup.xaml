@@ -103,13 +103,16 @@
     <Style x:Key="ModernComboBoxPopup"
            TargetType="Popup">
         <Setter Property="AllowsTransparency"
-                Value="True">
-        </Setter>
+                Value="True" />
         <Setter Property="StaysOpen"
-                Value="False">
-        </Setter>
+                Value="False" />
         <Setter Property="Placement"
-                Value="Bottom">
-        </Setter>
-    </Style>
+                Value="Bottom" />
+        <Setter Property="MinHeight"
+                Value="200" />
+        <Setter Property="Height"
+                Value="200" />
+        <Setter Property="MaxHeight"
+                Value="200" />
+	</Style>
 </ResourceDictionary>

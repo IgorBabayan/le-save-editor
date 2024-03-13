@@ -30,33 +30,9 @@
 	<Color x:Key="Popup">#B8B4BE</Color>
 	<SolidColorBrush x:Key="PopupColor" Color="{StaticResource Popup}"></SolidColorBrush>
 
-	<!--<Color x:Key="Background">#1D1E22</Color>
-	<SolidColorBrush x:Key="BackgroundColor" Color="{StaticResource Background}"></SolidColorBrush>
+	<Color x:Key="ActiveDockButton">#82BFE0</Color>
+	<SolidColorBrush x:Key="ActiveDockButtonColor" Color="{StaticResource ActiveDockButton}"></SolidColorBrush>
 
-	<Color x:Key="Foreground">#D4D4DC</Color>
-	<SolidColorBrush x:Key="ForegroundColor" Color="{StaticResource Foreground}"></SolidColorBrush>
-
-	<Color x:Key="Hover">#393F4D</Color>
-	<SolidColorBrush x:Key="HoverColor" Color="{StaticResource Hover}"></SolidColorBrush>
-
-	<Color x:Key="Active">#363A57</Color>
-	<SolidColorBrush x:Key="ActiveColor" Color="{StaticResource Active}"></SolidColorBrush>
-
-	<Color x:Key="Tertiary">#E1EFF8</Color>
-	<SolidColorBrush x:Key="TertiaryColor" Color="{StaticResource Tertiary}"></SolidColorBrush>
-
-	<Color x:Key="Quinary">#F4FFDC</Color>
-	<SolidColorBrush x:Key="QuinaryColor" Color="{StaticResource Quinary}"></SolidColorBrush>
-
-	<Color x:Key="Error">#BF0D0D</Color>
-	<SolidColorBrush x:Key="ErrorColor" Color="{StaticResource Error}"></SolidColorBrush>
-
-	<Color x:Key="Success">#7A9A3E</Color>
-	<SolidColorBrush x:Key="SuccessColor" Color="{StaticResource Success}"></SolidColorBrush>
-
-	<Color x:Key="Popup">#B8B4BE</Color>
-	<SolidColorBrush x:Key="PopupColor" Color="{StaticResource Popup}"></SolidColorBrush>
-
-	<Color x:Key="Pressed">#758C92</Color>
-	<SolidColorBrush x:Key="PressedColor" Color="{StaticResource Pressed}"></SolidColorBrush>-->
+	<Color x:Key="ComboBoxBorder">#4F4450</Color>
+	<SolidColorBrush x:Key="ComboBoxBorderColor" Color="{StaticResource ComboBoxBorder}"></SolidColorBrush>
 </ResourceDictionary>

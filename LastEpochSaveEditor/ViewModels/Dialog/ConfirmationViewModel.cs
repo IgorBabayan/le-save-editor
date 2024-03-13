@@ -1,13 +1,14 @@
-﻿namespace LastEpochSaveEditor.ViewModels;
+﻿namespace LastEpochSaveEditor.ViewModels.Dialog;
 
-internal interface IErrorViewModel : IViewModel
+internal interface IConfirmationViewModel : IViewModel
 {
 	void SetData(string title, string message);
 }
 
-internal partial class ErrorViewModel : ObservableObject, IErrorViewModel
+internal partial class ConfirmationViewModel : ObservableObject, IConfirmationViewModel
 {
-	private readonly IErrorView _errorView;
+	private readonly IConfirmationView _confirmationView;
+
 	public bool? Result { get; private set; }
 
 	#region Properties
@@ -20,7 +21,7 @@ internal partial class ErrorViewModel : ObservableObject, IErrorViewModel
 
 	#endregion
 
-	#region IErrorViewModel
+	#region IConfirmationViewModel
 
 	public void SetData(string title, string message)
 	{
@@ -41,10 +42,10 @@ internal partial class ErrorViewModel : ObservableObject, IErrorViewModel
 		if (param is string arg)
 			Result = bool.Parse(arg);
 
-		await _errorView.CloseDialog();
+		await _confirmationView.CloseDialog();
 	}
 
 	#endregion
 
-	public ErrorViewModel(IErrorView errorView) => _errorView = errorView;
+	public ConfirmationViewModel(IConfirmationView confirmationView) => _confirmationView = confirmationView;
 }

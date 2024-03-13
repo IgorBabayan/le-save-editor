@@ -3,11 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 			 HorizontalAlignment="Center" VerticalAlignment="Center"
              xmlns:local="clr-namespace:LastEpochSaveEditor.Controls"
+             xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
              x:Name="MainDockButton">
 	<UserControl.Resources>
-		<BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"></BooleanToVisibilityConverter>
+		<BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+		<converters:WidthToX2Converter x:Key="WidthToX2Converter" />
 	</UserControl.Resources>
-	<StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Center">
+	<StackPanel Orientation="Vertical"
+	            HorizontalAlignment="Left"
+	            VerticalAlignment="Center">
 		<Button Style="{StaticResource DockButtonStyle}"
 		        Cursor="Hand"
 		        DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
@@ -30,10 +34,21 @@
 			</Popup>
 		</Button>
 
-		<Canvas HorizontalAlignment="Center" Margin="0,5,0,0">
-			<Ellipse Fill="Red" Width="5" Height="5"
-			         DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
-			         Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}"></Ellipse>
+		<Canvas HorizontalAlignment="Stretch"
+		        Margin="0,5">
+			<Line X1="0"
+			      Y1="0"
+			      Y2="0"
+			      Stroke="{DynamicResource ActiveDockButtonColor}"
+			      StrokeThickness="2"
+			      DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:DockButton}}}"
+			      Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}">
+				<Line.X2>
+					<MultiBinding Converter="{StaticResource WidthToX2Converter}">
+						<Binding ElementName="MainDockButton" Path="ActualWidth"/>
+					</MultiBinding>
+				</Line.X2>
+			</Line>
 		</Canvas>
 	</StackPanel>
 </UserControl>

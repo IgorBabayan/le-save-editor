@@ -1,44 +1,147 @@
 ﻿<UserControl x:Class="LastEpochSaveEditor.Controls.ModernComboBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:LastEpochSaveEditor.Controls">
-	<Grid>
-		<Grid.RowDefinitions>
-			<RowDefinition />
-			<RowDefinition Height="*" />
-		</Grid.RowDefinitions>
+             xmlns:converters="clr-namespace:LastEpochSaveEditor.Converters"
+             xmlns:c="clr-namespace:LastEpochSaveEditor.Controls"
+             xmlns:type="clr-namespace:LastEpochSaveEditor.Models">
+	<UserControl.Resources>
+		<converters:QualityToColorConverter x:Key="QualityToColorConverter" />
 
-		<StackPanel Grid.Row="0" Orientation="Horizontal">
-			<ToggleButton x:Name="MainButton" Margin="0,0,5,0" Width="15"
-						  IsChecked="{Binding IsChecked, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}"
-						  IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}">
-				<ContentPresenter Content="{Binding ButtonContent, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}" />
-			</ToggleButton>
+		<Style x:Key="QualityComboBox"
+		       TargetType="{x:Type c:ModernComboBox}">
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate>
+						<Grid>
+							<Grid.RowDefinitions>
+								<RowDefinition />
+								<RowDefinition Height="*" />
+							</Grid.RowDefinitions>
 
-			<TextBlock Text="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}" 
-					   Foreground="White" />
-		</StackPanel>
+							<StackPanel Grid.Row="0"
+							            Orientation="Horizontal">
+								<ToggleButton x:Name="PART_MainButton"
+								              Margin="0,0,5,0"
+								              Width="15"
+								              IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}">
+									<Ellipse Width="10"
+									         Height="10"
+									         Fill="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}, Converter={StaticResource QualityToColorConverter}}" />
+								</ToggleButton>
 
-		<Popup Grid.Row="2" Style="{StaticResource ModernComboBoxPopup}"
-			   IsOpen="{Binding ElementName=MainButton, Path=IsChecked, Mode=OneWay}"
-			   PlacementTarget="{Binding ElementName=MainButton}">
-			<Grid>
-				<Grid.RowDefinitions>
-					<RowDefinition Height="Auto" />
-					<RowDefinition />
-				</Grid.RowDefinitions>
+								<TextBlock Foreground="White"
+								           Text="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}" />
+							</StackPanel>
 
-				<Path Grid.Row="0" Style="{StaticResource ArrowPathDown}"
-					  Fill="{DynamicResource ActiveColor}"
-					  Stroke="{DynamicResource ActiveColor}"
-					  HorizontalAlignment="Left" />
+							<Popup Grid.Row="1"
+								   Closed="OnPopupClosed"
+							       Style="{StaticResource ModernComboBoxPopup}"
+							       IsOpen="{Binding ElementName=PART_MainButton, Path=IsChecked, Mode=OneWay}"
+							       PlacementTarget="{Binding ElementName=PART_MainButton}">
+								<Grid>
+									<Grid.RowDefinitions>
+										<RowDefinition Height="Auto" />
+										<RowDefinition />
+									</Grid.RowDefinitions>
 
-				<Border Grid.Row="1" CornerRadius="0,4,4,4" BorderThickness="0"
-						Background="{DynamicResource ActiveColor}">
-					<ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}"
-								  ItemTemplate="{Binding ItemsContent, RelativeSource={RelativeSource AncestorType={x:Type local:ModernComboBox}}}" />
-				</Border>
-			</Grid>
-		</Popup>
-	</Grid>
+									<Path Grid.Row="0"
+									      Style="{StaticResource ArrowPathDown}"
+									      Fill="{DynamicResource ActiveColor}"
+									      Stroke="{DynamicResource ComboBoxBorderColor}"
+									      HorizontalAlignment="Left" />
+
+									<Border Grid.Row="1"
+									        CornerRadius="0,4,4,4"
+									        BorderThickness="1"
+									        BorderBrush="{DynamicResource ComboBoxBorderColor}"
+									        Background="{DynamicResource ActiveColor}">
+										<ListView Background="Transparent"
+										          BorderThickness="0"
+										          ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}"
+										          SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}"
+										          ItemContainerStyle="{StaticResource QualityComboBoxListViewItem}" />
+									</Border>
+								</Grid>
+							</Popup>
+						</Grid>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+
+		<Style x:Key="ItemTypesComboBox"
+		       TargetType="{x:Type c:ModernComboBox}">
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate>
+						<Grid>
+							<Grid.RowDefinitions>
+								<RowDefinition />
+								<RowDefinition Height="*" />
+							</Grid.RowDefinitions>
+
+							<StackPanel Grid.Row="0"
+							            Orientation="Horizontal">
+								<ToggleButton x:Name="PART_MainButton"
+								              Margin="0,0,5,0"
+								              Width="15"
+								              IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}">
+
+								</ToggleButton>
+
+								<TextBlock Foreground="White"
+								           Text="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}" />
+							</StackPanel>
+
+							<Popup Grid.Row="1"
+							       Closed="OnPopupClosed"
+							       Style="{StaticResource ModernComboBoxPopup}"
+							       IsOpen="{Binding ElementName=PART_MainButton, Path=IsChecked, Mode=OneWay}"
+							       PlacementTarget="{Binding ElementName=PART_MainButton}">
+								<Grid>
+									<Grid.RowDefinitions>
+										<RowDefinition Height="Auto" />
+										<RowDefinition />
+									</Grid.RowDefinitions>
+
+									<Path Grid.Row="0"
+									      Style="{StaticResource ArrowPathDown}"
+									      Fill="{DynamicResource ActiveColor}"
+									      Stroke="{DynamicResource ComboBoxBorderColor}"
+									      HorizontalAlignment="Left" />
+
+									<Border Grid.Row="1"
+									        CornerRadius="0,4,4,4"
+									        BorderThickness="1"
+									        BorderBrush="{DynamicResource ComboBoxBorderColor}"
+									        Background="{DynamicResource ActiveColor}">
+										<ListView Background="Transparent"
+										          BorderThickness="0"
+										          ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}"
+										          SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType={x:Type c:ModernComboBox}}}"
+										          ItemContainerStyle="{StaticResource ItemTypesComboBoxListViewItem}" />
+									</Border>
+								</Grid>
+							</Popup>
+						</Grid>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+
+			<Style.Triggers>
+				<!--<DataTrigger Binding="{Binding}" Value="{x:Static type:ItemInfoTypeEnum.Crossbow}">
+					<Setter Property="Visibility" Value="Collapsed" />
+				</DataTrigger>
+				<DataTrigger Binding="{Binding}" Value="{x:Static type:ItemInfoTypeEnum.Crossbow}">
+					<Setter Property="Visibility" Value="Collapsed" />
+				</DataTrigger>-->
+			</Style.Triggers>
+		</Style>
+
+		<Style x:Key="ItemsComboBox"
+		       TargetType="{x:Type c:ModernComboBox}"></Style>
+
+		<Style x:Key="GroupItemsComboBox"
+		       TargetType="{x:Type c:ModernComboBox}"></Style>
+	</UserControl.Resources>
 </UserControl>

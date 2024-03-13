@@ -1,4 +1,6 @@
-﻿namespace LastEpochSaveEditor.Models.Characters;
+﻿using System.Diagnostics;
+
+namespace LastEpochSaveEditor.Models.Characters;
 
 public interface ICharacterInventory : IInventory
 {
@@ -44,6 +46,8 @@ public class CharacterInventory : ICharacterInventory
 
 	public async Task Parse(IDictionary<int, List<int>> data)
 	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
 		var tasks = await Task.WhenAll(new[]
 		{
 			Parse(data, 2, "Helm"),
@@ -58,6 +62,9 @@ public class CharacterInventory : ICharacterInventory
 			Parse(data, 11, "Amulet"),
 			Parse(data, 12, "Relic")
 		});
+		stopWatch.Stop();
+		_logger.LogInformation($"Parsing finished by {stopWatch.ElapsedMilliseconds} ms.");
+		
 		_items = new List<ItemDataInfo>(tasks);
 	}
 
@@ -85,7 +92,7 @@ public class CharacterInventory : ICharacterInventory
 	private async Task<ItemDataInfo> Parse(IDictionary<int, List<int>> data, int index, string name)
 	{
 		if (!data.Any())
-			return ItemDataInfo.Empty.Copy();
+			return ItemDataInfo.Empty.Clone();
 
 		var hasError = false;
 		var result = ItemDataInfo.Empty;
