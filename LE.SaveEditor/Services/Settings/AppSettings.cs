@@ -9,4 +9,10 @@ public sealed record AppSettings
 
     /// <summary>Folder with Last Epoch offline character saves.</summary>
     public string? SaveFolderPath { get; init; }
+
+    /// <summary>
+    /// When enabled, the latest GitHub release is checked on every start and, if newer,
+    /// downloaded, installed and the app restarted automatically.
+    /// </summary>
+    public bool AutoUpdate { get; init; } = true;
 }

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:settingsVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Settings"
+        xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=settingsVm:SettingsViewModel, IsDesignTimeCreatable=False}"
         Title="Settings"
@@ -121,9 +122,12 @@
                              AutomationProperties.Name="Last Epoch saves folder" />
                     <Button Grid.Column="1"
                             Margin="8,0,0,0"
-                            Style="{StaticResource DialogButtonStyle}"
-                            Content="_Select folder"
-                            Command="{Binding SelectFolderCommand}" />
+                            Style="{StaticResource IconButtonStyle}"
+                            ToolTip="Select folder"
+                            AutomationProperties.Name="Select folder"
+                            Command="{Binding SelectFolderCommand}">
+                        <wpf:MaterialIcon Kind="FolderOpen" Width="18" Height="18" />
+                    </Button>
                 </Grid>
 
                 <TextBlock Margin="0,6,0,0"
@@ -131,6 +135,26 @@
                            Foreground="{DynamicResource WarningForegroundBrush}"
                            Text="This folder does not exist."
                            Visibility="{Binding IsSaveFolderMissing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                <!-- Updates -->
+                <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Margin="0,20,0,0" Text="Updates" />
+                <TextBlock Style="{StaticResource SecondaryTextStyle}"
+                           Margin="0,2,0,8"
+                           Text="{Binding CurrentVersionText}" />
+
+                <CheckBox Content="_Auto-update"
+                          IsChecked="{Binding AutoUpdate}"
+                          AutomationProperties.Name="Auto-update" />
+                <TextBlock Style="{StaticResource SecondaryTextStyle}"
+                           Margin="26,4,0,0"
+                           Text="On every start, check GitHub for a newer release. If one is found, it is downloaded and installed, and the editor restarts automatically." />
+
+                <TextBlock Margin="0,6,0,0"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource WarningForegroundBrush}"
+                           Text="This copy was not installed with the installer, so it will not be updated."
+                           Visibility="{Binding IsNotInstalled, Converter={StaticResource BooleanToVisibilityConverter}}" />
             </StackPanel>
 
             <!-- ===== Footer ===== -->

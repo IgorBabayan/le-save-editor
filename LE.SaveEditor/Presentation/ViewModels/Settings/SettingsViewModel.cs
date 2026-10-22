@@ -2,6 +2,7 @@ using System.IO;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.Settings;
 using LE.SaveEditor.Services.Theming;
+using LE.SaveEditor.Services.Updates;
 
 namespace LE.SaveEditor.Presentation.ViewModels.Settings;
 
@@ -18,7 +19,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public SettingsViewModel(
         ISettingsService settingsService,
         IThemeService themeService,
-        IFolderPickerService folderPicker)
+        IFolderPickerService folderPicker,
+        IUpdateService updateService)
     {
         _settingsService = settingsService;
         _themeService = themeService;
@@ -40,6 +42,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
         SaveFolderPath = !string.IsNullOrWhiteSpace(settings.SaveFolderPath)
             ? settings.SaveFolderPath
             : Directory.Exists(LastEpochPaths.DefaultSaveFolder) ? LastEpochPaths.DefaultSaveFolder : string.Empty;
+
+        AutoUpdate = settings.AutoUpdate;
+        CurrentVersionText = $"Current version: {updateService.CurrentVersion.ToString(3)}";
+        IsNotInstalled = !updateService.IsInstalled;
     }
 
     /// <summary>Asks the view to close: <c>true</c> = saved, <c>false</c> = cancelled.</summary>
@@ -53,6 +59,15 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSaveFolderMissing))]
     private string _saveFolderPath = string.Empty;
+
+    /// <summary>Check GitHub for a new release on every start and install it automatically.</summary>
+    [ObservableProperty]
+    private bool _autoUpdate;
+
+    public string CurrentVersionText { get; }
+
+    /// <summary>True for development builds / unpacked copies, which are never updated.</summary>
+    public bool IsNotInstalled { get; }
 
     /// <summary>True when a path is entered but the folder does not exist.</summary>
     public bool IsSaveFolderMissing =>
@@ -81,7 +96,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _settingsService.Save(_settingsService.Current with
         {
             Theme = SelectedThemeOption.Theme,
-            SaveFolderPath = string.IsNullOrEmpty(path) ? null : path
+            SaveFolderPath = string.IsNullOrEmpty(path) ? null : path,
+            AutoUpdate = AutoUpdate
         });
 
         _isSaved = true;
