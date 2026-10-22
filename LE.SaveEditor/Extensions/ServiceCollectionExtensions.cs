@@ -1,10 +1,12 @@
 using LE.SaveEditor.Presentation.Services;
+using LE.SaveEditor.Presentation.ViewModels.Notifications;
 using LE.SaveEditor.Presentation.ViewModels.Settings;
 using LE.SaveEditor.Presentation.ViewModels.Shell;
 using LE.SaveEditor.Presentation.ViewModels.Updates;
 using LE.SaveEditor.Presentation.Views;
 using LE.SaveEditor.Presentation.Views.Settings;
 using LE.SaveEditor.Presentation.Views.Updates;
+using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Settings;
 using LE.SaveEditor.Services.Theming;
@@ -25,6 +27,7 @@ static class ServiceCollectionExtensions
             services.AddSingleton<ISettingsService, JsonSettingsService>();
             services.AddSingleton<IThemeService, ThemeService>();
             services.AddSingleton<IUpdateService, GitHubUpdateService>();
+            services.AddSingleton<INotificationService, JsonNotificationService>();
 
             // Save files
             services.AddSingleton<ISaveFolderScanner, SaveFolderScanner>();
@@ -40,6 +43,9 @@ static class ServiceCollectionExtensions
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IFolderPickerService, FolderPickerService>();
             services.AddSingleton<IAutoUpdater, AutoUpdater>();
+
+            // Notification center (bell in the title bar)
+            services.AddSingleton<NotificationCenterViewModel>();
 
             // Shell
             services.AddSingleton<MainViewModel>();

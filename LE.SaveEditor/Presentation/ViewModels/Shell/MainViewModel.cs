@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
+using LE.SaveEditor.Presentation.ViewModels.Notifications;
+using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
 using LE.SaveEditor.Services.Settings;
@@ -11,9 +13,14 @@ namespace LE.SaveEditor.Presentation.ViewModels.Shell;
 public partial class MainViewModel(
     IDialogService dialogService,
     ISettingsService settingsService,
-    ISaveFolderLoader saveFolderLoader) : ViewModelBase
+    ISaveFolderLoader saveFolderLoader,
+    INotificationService notificationService,
+    NotificationCenterViewModel notificationCenter) : ViewModelBase
 {
     private CancellationTokenSource? _loadCts;
+
+    /// <summary>Bell button and notification popup in the title bar.</summary>
+    public NotificationCenterViewModel NotificationCenter { get; } = notificationCenter;
 
     /// <summary>Characters of the selected save folder, ordered by their save slot.</summary>
     public ObservableCollection<CharacterSave> Characters { get; } = [];
@@ -93,6 +100,9 @@ public partial class MainViewModel(
             Replace(Characters, content.Characters.OrderBy(c => c.Slot));
             Replace(StashFiles, content.StashFiles);
             Replace(LoadErrors, content.Errors);
+
+            if (content.Errors.Count > 0)
+                NotifyLoadErrors(content.Errors);
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
@@ -106,6 +116,8 @@ public partial class MainViewModel(
             StashFiles.Clear();
             LoadErrors.Clear();
             LoadErrors.Add(new SaveFileError(folder, ex.Message));
+
+            notificationService.Notify("Save folder could not be read", $"{folder}: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
@@ -122,6 +134,18 @@ public partial class MainViewModel(
                             ?? Characters.FirstOrDefault();
 
         NotifyStateChanged();
+    }
+
+    private void NotifyLoadErrors(IReadOnlyCollection<SaveFileError> errors)
+    {
+        var title = errors.Count == 1
+            ? "1 save file could not be read"
+            : $"{errors.Count} save files could not be read";
+
+        var message = string.Join(Environment.NewLine,
+            errors.Select(e => $"{Path.GetFileName(e.FilePath)}: {e.Message}"));
+
+        notificationService.Notify(title, message, NotificationSeverity.Warning);
     }
 
     private void NotifyStateChanged()

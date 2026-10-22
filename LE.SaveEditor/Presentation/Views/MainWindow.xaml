@@ -7,6 +7,8 @@
         xmlns:local="clr-namespace:LE.SaveEditor"
         xmlns:shellVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Shell"
         xmlns:models="clr-namespace:LE.SaveEditor.Services.Saves.Models"
+        xmlns:notifications="clr-namespace:LE.SaveEditor.Services.Notifications"
+        xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
         Title="Last Epoch Save Editor" Height="900" Width="1600"
@@ -61,6 +63,194 @@
 
                 <!-- Custom buttons placed next to the standard caption buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!--
+                        Notification center. While the popup is open the toggle is not hit-testable:
+                        a click on it then only closes the popup (StaysOpen=False) instead of reopening it.
+                    -->
+                    <ToggleButton x:Name="NotificationsButton"
+                                  DataContext="{Binding NotificationCenter}"
+                                  Style="{StaticResource TitleBarToggleButtonStyle}"
+                                  ToolTip="{Binding BellToolTip}"
+                                  IsChecked="{Binding IsOpen, Mode=TwoWay}"
+                                  IsHitTestVisible="{Binding IsOpen, ElementName=NotificationsPopup, Converter={StaticResource InverseBooleanConverter}}">
+                        <wpf:MaterialIcon Width="18" Height="18">
+                            <wpf:MaterialIcon.Style>
+                                <Style TargetType="wpf:MaterialIcon">
+                                    <Setter Property="Kind" Value="BellOutline" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasUnread}" Value="True">
+                                            <Setter Property="Kind" Value="Bell" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </wpf:MaterialIcon.Style>
+                        </wpf:MaterialIcon>
+                    </ToggleButton>
+
+                    <Popup x:Name="NotificationsPopup"
+                           DataContext="{Binding NotificationCenter}"
+                           PlacementTarget="{Binding ElementName=NotificationsButton}"
+                           Placement="Custom"
+                           StaysOpen="False"
+                           AllowsTransparency="True"
+                           PopupAnimation="Fade"
+                           IsOpen="{Binding IsOpen, Mode=TwoWay}">
+                        <!-- Outer 8px margin leaves room for the shadow; MainWindow.PlaceNotificationsPopup compensates for it. -->
+                        <Grid Margin="8" Width="380">
+                            <!-- Shadow is drawn by a separate element so the content text stays crisp. -->
+                            <Border CornerRadius="8" Background="{DynamicResource WindowBackgroundBrush}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.35" Color="Black" />
+                                </Border.Effect>
+                            </Border>
+
+                            <Border CornerRadius="8"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    Background="{DynamicResource WindowBackgroundBrush}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Header -->
+                                    <DockPanel Grid.Row="0" Margin="14,10,8,10" LastChildFill="True">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="Mark all as read"
+                                                    Style="{StaticResource TextLinkButtonStyle}"
+                                                    Command="{Binding MarkAllAsReadCommand}" />
+                                            <Button Content="Clear all"
+                                                    Style="{StaticResource TextLinkButtonStyle}"
+                                                    Command="{Binding ClearAllCommand}" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="Notifications" Style="{StaticResource SectionHeaderTextStyle}" />
+                                            <Border Margin="8,0,0,0"
+                                                    Padding="6,0"
+                                                    MinWidth="18"
+                                                    Height="18"
+                                                    CornerRadius="9"
+                                                    VerticalAlignment="Center"
+                                                    Background="{DynamicResource AccentBrush}"
+                                                    Visibility="{Binding HasUnread, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBlock Text="{Binding UnreadCount}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentForegroundBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </DockPanel>
+
+                                    <Rectangle Grid.Row="1" Height="1" Fill="{DynamicResource WindowBorderBrush}" />
+
+                                    <!-- List / empty state -->
+                                    <Grid Grid.Row="2">
+                                        <TextBlock Margin="16,28"
+                                                   HorizontalAlignment="Center"
+                                                   Text="No notifications yet."
+                                                   Style="{StaticResource SecondaryTextStyle}"
+                                                   Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                        <ScrollViewer MaxHeight="440"
+                                                      VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      Visibility="{Binding HasNotifications, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ItemsControl Margin="4" ItemsSource="{Binding Notifications}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type notifications:Notification}">
+                                                        <Grid Margin="0,1">
+                                                            <!-- Clicking the row marks it as read. -->
+                                                            <Button Style="{StaticResource ListRowButtonStyle}"
+                                                                    Command="{Binding DataContext.MarkAsReadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="12" />   <!-- unread dot -->
+                                                                        <ColumnDefinition Width="Auto" /> <!-- severity icon -->
+                                                                        <ColumnDefinition Width="*" />    <!-- text -->
+                                                                        <ColumnDefinition Width="28" />   <!-- room for the remove button -->
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <Ellipse x:Name="UnreadDot"
+                                                                             Grid.Column="0"
+                                                                             Width="6"
+                                                                             Height="6"
+                                                                             Margin="0,7,0,0"
+                                                                             HorizontalAlignment="Left"
+                                                                             VerticalAlignment="Top"
+                                                                             Fill="{DynamicResource AccentBrush}" />
+
+                                                                    <wpf:MaterialIcon x:Name="SeverityIcon"
+                                                                                      Grid.Column="1"
+                                                                                      Width="18"
+                                                                                      Height="18"
+                                                                                      Margin="0,0,10,0"
+                                                                                      VerticalAlignment="Top"
+                                                                                      Kind="InformationOutline"
+                                                                                      Foreground="{DynamicResource AccentBrush}" />
+
+                                                                    <StackPanel Grid.Column="2">
+                                                                        <TextBlock x:Name="NotificationTitle"
+                                                                                   Text="{Binding Title}"
+                                                                                   FontSize="13"
+                                                                                   FontWeight="SemiBold"
+                                                                                   TextWrapping="Wrap" />
+                                                                        <TextBlock Margin="0,2,0,0"
+                                                                                   Text="{Binding Message}"
+                                                                                   Style="{StaticResource SecondaryTextStyle}"
+                                                                                   Visibility="{Binding HasMessage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                        <TextBlock Margin="0,4,0,0"
+                                                                                   FontSize="11"
+                                                                                   Style="{StaticResource SecondaryTextStyle}"
+                                                                                   Text="{Binding CreatedAtLocal, StringFormat='{}{0:g}'}" />
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </Button>
+
+                                                            <!-- Sibling of the row button (not nested), so its click does not also mark the row as read. -->
+                                                            <Button Margin="0,6,6,0"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Top"
+                                                                    ToolTip="Remove"
+                                                                    Style="{StaticResource SubtleIconButtonStyle}"
+                                                                    Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}">
+                                                                <wpf:MaterialIcon Kind="Close" Width="14" Height="14" />
+                                                            </Button>
+                                                        </Grid>
+
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsRead}" Value="True">
+                                                                <Setter TargetName="UnreadDot" Property="Visibility" Value="Hidden" />
+                                                                <Setter TargetName="NotificationTitle" Property="FontWeight" Value="Normal" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static notifications:NotificationSeverity.Success}">
+                                                                <Setter TargetName="SeverityIcon" Property="Kind" Value="CheckCircleOutline" />
+                                                                <Setter TargetName="SeverityIcon" Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static notifications:NotificationSeverity.Warning}">
+                                                                <Setter TargetName="SeverityIcon" Property="Kind" Value="AlertOutline" />
+                                                                <Setter TargetName="SeverityIcon" Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Severity}" Value="{x:Static notifications:NotificationSeverity.Error}">
+                                                                <Setter TargetName="SeverityIcon" Property="Kind" Value="AlertCircleOutline" />
+                                                                <Setter TargetName="SeverityIcon" Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Popup>
+
                     <Button x:Name="SettingsButton"
                             Style="{StaticResource TitleBarToolButtonStyle}"
                             ToolTip="Settings"

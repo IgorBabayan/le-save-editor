@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using LE.SaveEditor.Presentation.ViewModels.Shell;
@@ -16,6 +17,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+
+        NotificationsPopup.CustomPopupPlacementCallback = PlaceNotificationsPopup;
 
         // Auto-load characters if a save folder was selected in a previous session.
         Loaded += async (_, _) => await viewModel.InitializeAsync();
@@ -35,6 +38,30 @@ public partial class MainWindow : Window
     private void OnRestoreExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.RestoreWindow(this);
 
     private void OnCloseExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.CloseWindow(this);
+
+    #endregion
+
+    #region Notification popup
+
+    /// <summary>Transparent margin around the popup content that holds its drop shadow (see MainWindow.xaml).</summary>
+    private const double PopupShadowMargin = 8;
+
+    /// <summary>Gap between the bell button and the popup.</summary>
+    private const double PopupGap = 2;
+
+    /// <summary>
+    /// Opens the popup below the bell with its right edge aligned to the bell's right edge,
+    /// independent of the system menu-drop alignment. Sizes and offsets here are in device pixels.
+    /// </summary>
+    private CustomPopupPlacement[] PlaceNotificationsPopup(Size popupSize, Size targetSize, Point offset)
+    {
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var margin = PopupShadowMargin * dpi.DpiScaleX;
+        var x = targetSize.Width - popupSize.Width + margin;
+        var y = targetSize.Height + (PopupGap - PopupShadowMargin) * dpi.DpiScaleY;
+
+        return [new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.Vertical)];
+    }
 
     #endregion
 

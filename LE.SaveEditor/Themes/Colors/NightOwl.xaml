@@ -25,5 +25,7 @@
     <SolidColorBrush x:Key="SelectionBackgroundBrush"        Color="#1D3B53" />
     <SolidColorBrush x:Key="ListItemHoverBackgroundBrush"     Color="#0E2D45" />
     <SolidColorBrush x:Key="WarningForegroundBrush"          Color="#FFCB8B" />
+    <SolidColorBrush x:Key="ErrorForegroundBrush"            Color="#EF5350" />
+    <SolidColorBrush x:Key="SuccessForegroundBrush"          Color="#ADDB67" />
 
 </ResourceDictionary>
