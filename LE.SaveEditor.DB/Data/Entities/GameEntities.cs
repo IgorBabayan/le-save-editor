@@ -50,12 +50,19 @@ public sealed class Stat : GameEntity
 {
 }
 
-/// <summary><c>icons</c></summary>
+/// <summary>
+/// One image of the <c>icons</c> node. In <c>data.json</c> the node groups icon names by folder
+/// (<c>"uniques": ["abacus_rod", ...]</c>); every name becomes its own row.
+/// <see cref="GameEntity.Key"/> and <see cref="Path"/> are <c>{Group}/{Name}</c>.
+/// </summary>
 public sealed class Icon : GameEntity
 {
+    /// <summary>Folder of the icon, e.g. <c>uniques</c>, <c>helmets</c>, <c>1h_axes</c>.</summary>
+    public string Group { get; set; } = string.Empty;
+
     /// <summary>
-    /// Icon path relative to the asset root without extension, e.g. <c>uniques/spirit_xylem</c>.
-    /// The editor loads <c>Config/Icons/{Path}.png</c>.
+    /// Icon path without extension, e.g. <c>uniques/spirit_xylem</c>: downloaded from
+    /// <c>.../last-epoch/webp/{Path}.webp</c>, loaded by the editor from <c>Icons/{Path}.png</c>.
     /// </summary>
     public string? Path { get; set; }
 }

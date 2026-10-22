@@ -126,6 +126,16 @@ internal sealed class DatabaseUpdater(ConfigPaths paths)
         return record;
     }
 
+    /// <summary>
+    /// <c>false</c> when base.db was made with another table layout (see <see cref="GameDbContext.SchemaVersion"/>)
+    /// and has to be rebuilt.
+    /// </summary>
+    public async Task<bool> IsSchemaCurrentAsync(CancellationToken ct)
+    {
+        await using var db = new GameDbContext(paths.DatabaseFile);
+        return await db.GetSchemaVersionAsync(ct) == GameDbContext.SchemaVersion;
+    }
+
     /// <summary>The newest applied migration, or <c>null</c> for a database without history.</summary>
     public async Task<DataMigration?> GetLastMigrationAsync(CancellationToken ct)
     {

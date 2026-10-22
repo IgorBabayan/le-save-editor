@@ -7,7 +7,7 @@ using SkiaSharp;
 namespace LE.SaveEditor.DB.Icons;
 
 /// <summary>
-/// Keeps <c>Config/Icons</c> in line with the <c>Icons</c> table: downloads the WebP images,
+/// Keeps <c>%APPDATA%\LE.SaveEditor\Icons</c> in line with the <c>Icons</c> table: downloads the WebP images,
 /// converts them to PNG (WPF cannot decode WebP without an optional Windows codec) and
 /// deletes the WebP files and the PNGs of icons that no longer exist.
 /// </summary>

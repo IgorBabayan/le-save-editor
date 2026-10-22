@@ -2,7 +2,7 @@ using System.Windows.Media;
 
 namespace LE.SaveEditor.Services.GameData;
 
-/// <summary>Loads game icons from <c>Config/Icons</c>.</summary>
+/// <summary>Loads game icons from <c>%APPDATA%\LE.SaveEditor\Icons</c>.</summary>
 public interface IIconProvider
 {
     /// <summary>

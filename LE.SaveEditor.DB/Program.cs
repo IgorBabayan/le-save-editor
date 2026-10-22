@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using LE.SaveEditor.DB.Icons;
 using LE.SaveEditor.DB.Import;
@@ -7,8 +7,8 @@ using LE.SaveEditor.DB.Infrastructure;
 namespace LE.SaveEditor.DB;
 
 /// <summary>
-/// Generator of <c>LE.SaveEditor/Config/base.db</c> and <c>LE.SaveEditor/Config/Icons</c>
-/// from maxroll's Last Epoch planner data.
+/// Generator of <c>%APPDATA%\LE.SaveEditor\base.db</c> and <c>%APPDATA%\LE.SaveEditor\Icons</c>
+/// (the editor's config folder) from maxroll's Last Epoch planner data.
 /// Usage: <c>LE.SaveEditor.DB [--config &lt;folder&gt;]</c>.
 /// </summary>
 internal static class Program
@@ -105,6 +105,13 @@ internal static class Program
         }
 
         var updater = new DatabaseUpdater(paths);
+        if (!await updater.IsSchemaCurrentAsync(ct))
+        {
+            WriteLine($"{ConfigPaths.DatabaseFileName} was made by an older generator version, rebuilding it.", ConsoleColor.Yellow);
+            await BuildAsync(http, paths, ct);
+            return;
+        }
+
         var last = await updater.GetLastMigrationAsync(ct);
         if (last is not null)
             Console.WriteLine($"Current data: {last.Name} (applied {last.AppliedAtUtc.ToLocalTime():g})");
@@ -166,7 +173,7 @@ internal static class Program
             $"Icons: {result.Total} in database, {result.Downloaded} downloaded, {result.Converted} converted, {result.Removed} stale files removed.");
 
         if (result.WithoutPath > 0)
-            WriteLine($"{result.WithoutPath} icon entries have no image path and were skipped.", ConsoleColor.Yellow);
+            WriteLine($"{result.WithoutPath} icon names are not valid file names and were skipped.", ConsoleColor.Yellow);
 
         if (result.Failures.Count == 0)
             return;

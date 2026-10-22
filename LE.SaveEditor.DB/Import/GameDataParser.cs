@@ -64,6 +64,9 @@ internal static class GameDataParser
 
     private static List<GameEntity> ParseNode(GameNode node, JsonElement element)
     {
+        if (node == GameNode.Icons)
+            return ParseIcons(element);
+
         var keyed = element.ValueKind switch
         {
             JsonValueKind.Object => element.EnumerateObject().Select(p => (p.Name, p.Value)).ToList(),
@@ -75,6 +78,46 @@ internal static class GameDataParser
         var result = new List<GameEntity>(keyed.Count);
         foreach (var (key, value) in keyed)
             result.Add(CreateEntity(node, key, value));
+
+        return result;
+    }
+
+    /// <summary>
+    /// <c>"icons": { "uniques": ["abacus_rod", ...], "helmets": [...] }</c> → one row per image,
+    /// keyed <c>uniques/abacus_rod</c>, so updates add/remove single icons instead of whole groups.
+    /// </summary>
+    private static List<GameEntity> ParseIcons(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+            throw new InvalidDataException($"data.json: node \"icons\" is {element.ValueKind}, expected an object of icon groups.");
+
+        var result = new List<GameEntity>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in element.EnumerateObject())
+        {
+            if (group.Value.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException($"data.json: icon group \"{group.Name}\" is {group.Value.ValueKind}, expected an array of names.");
+
+            foreach (var item in group.Value.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(item.GetString()))
+                    continue;
+
+                var name = item.GetString()!;
+                var key = $"{group.Name}/{name}";
+
+                // Windows paths are case-insensitive: two names differing only by case would share one file.
+                if (!seen.Add(key))
+                    continue;
+
+                var icon = (Icon)CreateEntity(GameNode.Icons, key, item);
+                icon.Group = group.Name;
+                icon.Name = name;
+                icon.Path = IconPaths.Normalize(key);
+                result.Add(icon);
+            }
+        }
 
         return result;
     }
@@ -147,9 +190,6 @@ internal static class GameDataParser
         entity.Name = FindName(value);
         entity.Json = Encoding.UTF8.GetString(buffer.WrittenSpan);
         entity.Hash = Convert.ToHexString(SHA256.HashData(buffer.WrittenSpan));
-
-        if (entity is Icon icon)
-            icon.Path = IconPaths.Extract(key, value);
 
         return entity;
     }

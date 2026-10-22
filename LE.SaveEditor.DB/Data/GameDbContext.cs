@@ -23,12 +23,35 @@ internal sealed class GameDbContext(string databaseFile) : DbContext
     }
 
     /// <summary>
+    /// Version of the table layout, stored as SQLite <c>user_version</c>. Bump it whenever an entity
+    /// or table changes: Update then rebuilds the database instead of failing on the old layout.
+    /// </summary>
+    public const int SchemaVersion = 2;
+
+    public async Task<int> GetSchemaVersionAsync(CancellationToken ct)
+    {
+        var connection = Database.GetDbConnection();
+        await Database.OpenConnectionAsync(ct);
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA user_version;";
+            return Convert.ToInt32(await command.ExecuteScalarAsync(ct));
+        }
+        finally
+        {
+            await Database.CloseConnectionAsync();
+        }
+    }
+
+    /// <summary>
     /// Leaves base.db as one self-contained file: EF Core creates SQLite databases in WAL mode,
     /// which needs writable -wal/-shm side files and can fail to open read-only from Program Files.
     /// </summary>
     public async Task SealAsync(bool compact, CancellationToken ct)
     {
         await Database.ExecuteSqlRawAsync("PRAGMA journal_mode = DELETE;", ct);
+        await Database.ExecuteSqlRawAsync($"PRAGMA user_version = {SchemaVersion};", ct);
         if (compact)
             await Database.ExecuteSqlRawAsync("VACUUM;", ct);
     }
@@ -47,7 +70,11 @@ internal sealed class GameDbContext(string databaseFile) : DbContext
             });
         }
 
-        modelBuilder.Entity<Icon>().HasIndex(i => i.Path);
+        modelBuilder.Entity<Icon>(entity =>
+        {
+            entity.HasIndex(i => i.Group);
+            entity.HasIndex(i => i.Path);
+        });
 
         modelBuilder.Entity<DataMigration>(entity =>
         {
