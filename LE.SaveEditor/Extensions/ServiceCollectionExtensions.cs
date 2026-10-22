@@ -5,6 +5,7 @@ using LE.SaveEditor.Presentation.ViewModels.Updates;
 using LE.SaveEditor.Presentation.Views;
 using LE.SaveEditor.Presentation.Views.Settings;
 using LE.SaveEditor.Presentation.Views.Updates;
+using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Settings;
 using LE.SaveEditor.Services.Theming;
 using LE.SaveEditor.Services.Updates;
@@ -24,6 +25,11 @@ static class ServiceCollectionExtensions
             services.AddSingleton<ISettingsService, JsonSettingsService>();
             services.AddSingleton<IThemeService, ThemeService>();
             services.AddSingleton<IUpdateService, GitHubUpdateService>();
+
+            // Save files
+            services.AddSingleton<ISaveFolderScanner, SaveFolderScanner>();
+            services.AddSingleton<ICharacterSaveParser, CharacterSaveParser>();
+            services.AddSingleton<ISaveFolderLoader, SaveFolderLoader>();
 
             return services;
         }

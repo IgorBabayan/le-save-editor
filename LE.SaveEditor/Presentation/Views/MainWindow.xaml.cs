@@ -17,6 +17,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
 
+        // Read the save folder chosen in a previous session.
+        Loaded += async (_, _) => await viewModel.LoadSavesCommand.ExecuteAsync(null);
+
         StateChanged += (_, _) => UpdateWindowState();
         // Resource references (not brush instances) so the title follows runtime theme changes.
         Activated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "WindowForegroundBrush");
