@@ -1,6 +1,8 @@
 ﻿using System.Windows;
 using LE.SaveEditor.Extensions;
 using LE.SaveEditor.Presentation.Views;
+using LE.SaveEditor.Services.Settings;
+using LE.SaveEditor.Services.Theming;
 
 namespace LE.SaveEditor;
 
@@ -27,6 +29,10 @@ public partial class App : Application
                 ValidateOnBuild = true,
                 ValidateScopes = true
             });
+
+        // Apply the saved theme before any window is created.
+        var settings = _services.GetRequiredService<ISettingsService>().Current;
+        _services.GetRequiredService<IThemeService>().Apply(settings.Theme);
 
         var mainWindow = _services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;

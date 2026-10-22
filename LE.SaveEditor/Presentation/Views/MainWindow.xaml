@@ -8,11 +8,11 @@
         xmlns:shellVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Shell"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
-        Title="Last Epoch Save Editor" Height="450" Width="800"
+        Title="Last Epoch Save Editor" Height="900" Width="1600"
         MinHeight="300" MinWidth="500"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource WindowBackgroundBrush}"
-        Foreground="{StaticResource WindowForegroundBrush}">
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource WindowForegroundBrush}">
 
     <!--
         WindowChrome removes the native title bar but keeps native behaviour:
@@ -34,7 +34,7 @@
     </Window.CommandBindings>
 
     <Border x:Name="RootBorder"
-            BorderBrush="{StaticResource WindowBorderBrush}"
+            BorderBrush="{DynamicResource WindowBorderBrush}"
             BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
@@ -43,7 +43,7 @@
             </Grid.RowDefinitions>
 
             <!-- ===== Title bar ===== -->
-            <Grid x:Name="TitleBar" Grid.Row="0" Background="{StaticResource TitleBarBackgroundBrush}">
+            <Grid x:Name="TitleBar" Grid.Row="0" Background="{DynamicResource TitleBarBackgroundBrush}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />  <!-- icon + title -->
                     <ColumnDefinition Width="*" />     <!-- free drag area -->
@@ -65,7 +65,7 @@
                             ToolTip="Settings"
                             Content="&#xE713;"
                             Command="{Binding OpenSettingsCommand}" />
-                    <Rectangle Width="1" Margin="4,8" Fill="{StaticResource WindowBorderBrush}" />
+                    <Rectangle Width="1" Margin="4,8" Fill="{DynamicResource WindowBorderBrush}" />
                 </StackPanel>
 
                 <!-- Standard caption buttons -->

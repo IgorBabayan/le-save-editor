@@ -2,16 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
 
-    <!-- Palette -->
-    <SolidColorBrush x:Key="TitleBarBackgroundBrush" Color="#1F1F1F" />
-    <SolidColorBrush x:Key="TitleBarInactiveForegroundBrush" Color="#7A7A7A" />
-    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#2B2B2B" />
-    <SolidColorBrush x:Key="WindowBorderBrush" Color="#3C3C3C" />
-    <SolidColorBrush x:Key="WindowForegroundBrush" Color="#E6E6E6" />
-    <SolidColorBrush x:Key="CaptionButtonHoverBrush" Color="#33FFFFFF" />
-    <SolidColorBrush x:Key="CaptionButtonPressedBrush" Color="#22FFFFFF" />
-    <SolidColorBrush x:Key="CloseButtonHoverBrush" Color="#C42B1C" />
-    <SolidColorBrush x:Key="CloseButtonPressedBrush" Color="#A32317" />
+    <!--
+        Colors live in Themes/Colors/*.xaml and are swapped at runtime by IThemeService,
+        so every brush here is referenced with DynamicResource.
+    -->
 
     <!-- Segoe Fluent Icons on Windows 11, falls back to Segoe MDL2 Assets on Windows 10 -->
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
@@ -20,7 +14,7 @@
     <Style x:Key="CaptionButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="46" />
         <Setter Property="Height" Value="32" />
-        <Setter Property="Foreground" Value="{StaticResource WindowForegroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
         <Setter Property="FontSize" Value="10" />
@@ -36,10 +30,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CaptionButtonHoverBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CaptionButtonHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CaptionButtonPressedBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CaptionButtonPressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4" />
@@ -66,11 +60,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CloseButtonHoverBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CloseButtonHoverBrush}" />
                             <Setter Property="Foreground" Value="White" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource CloseButtonPressedBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CloseButtonPressedBrush}" />
                             <Setter Property="Foreground" Value="White" />
                         </Trigger>
                     </ControlTemplate.Triggers>

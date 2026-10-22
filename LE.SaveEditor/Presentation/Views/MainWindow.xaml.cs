@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using LE.SaveEditor.Presentation.ViewModels.Shell;
@@ -17,8 +18,9 @@ public partial class MainWindow : Window
         DataContext = viewModel;
 
         StateChanged += (_, _) => UpdateWindowState();
-        Activated += (_, _) => TitleText.Foreground = (Brush)FindResource("WindowForegroundBrush");
-        Deactivated += (_, _) => TitleText.Foreground = (Brush)FindResource("TitleBarInactiveForegroundBrush");
+        // Resource references (not brush instances) so the title follows runtime theme changes.
+        Activated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "WindowForegroundBrush");
+        Deactivated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "TitleBarInactiveForegroundBrush");
     }
 
     #region Caption buttons
