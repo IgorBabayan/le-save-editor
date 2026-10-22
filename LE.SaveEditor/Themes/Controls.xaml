@@ -270,4 +270,67 @@
         </Setter>
     </Style>
 
+    <!-- ===== Plain list (character list in the main window) ===== -->
+    <Style x:Key="PlainListBoxStyle" TargetType="ListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+
+    <!-- Row with a hover highlight and an accent bar on the left when selected. -->
+    <Style x:Key="ListRowItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Margin" Value="4,1" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd"
+                            CornerRadius="4"
+                            Background="Transparent"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Border x:Name="Indicator"
+                                    Width="3"
+                                    Margin="0,8"
+                                    HorizontalAlignment="Left"
+                                    CornerRadius="1.5"
+                                    Background="{DynamicResource AccentBrush}"
+                                    Visibility="Collapsed" />
+                            <ContentPresenter Margin="12,8,10,8"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                        </Trigger>
+                        <!-- Declared last so it wins over hover. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                            <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Small "HC" style badge. -->
+    <Style x:Key="BadgeBorderStyle" TargetType="Border">
+        <Setter Property="Padding" Value="5,1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource WarningForegroundBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
 </ResourceDictionary>

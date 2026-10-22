@@ -17,8 +17,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
 
-        // Read the save folder chosen in a previous session.
-        Loaded += async (_, _) => await viewModel.LoadSavesCommand.ExecuteAsync(null);
+        // Auto-load characters if a save folder was selected in a previous session.
+        Loaded += async (_, _) => await viewModel.InitializeAsync();
 
         StateChanged += (_, _) => UpdateWindowState();
         // Resource references (not brush instances) so the title follows runtime theme changes.

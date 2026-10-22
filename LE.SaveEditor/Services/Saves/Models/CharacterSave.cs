@@ -19,6 +19,9 @@ public sealed record CharacterSave
 
     public DateTimeOffset? LastPlayed { get; init; }
 
+    /// <summary><see cref="LastPlayed"/> in the user's time zone, for display.</summary>
+    public DateTime? LastPlayedLocal => LastPlayed?.LocalDateTime;
+
     public string ClassDisplayName => CharacterClassCatalog.GetDisplayName(CharacterClass);
     public string MasteryDisplayName => CharacterClassCatalog.GetDisplayName(Mastery);
 }

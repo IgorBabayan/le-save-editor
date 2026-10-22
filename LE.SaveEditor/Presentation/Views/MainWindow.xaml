@@ -6,6 +6,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:LE.SaveEditor"
         xmlns:shellVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Shell"
+        xmlns:models="clr-namespace:LE.SaveEditor.Services.Saves.Models"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
         Title="Last Epoch Save Editor" Height="900" Width="1600"
@@ -92,9 +93,178 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ===== Window content ===== -->
+            <!-- ===== Window content: characters (left) | inventory of the selected character (right) ===== -->
             <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" MinWidth="220" MaxWidth="600" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" MinWidth="300" />
+                </Grid.ColumnDefinitions>
 
+                <!-- ===== Characters ===== -->
+                <Grid Grid.Column="0" Background="{DynamicResource TitleBarBackgroundBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Margin="16,14,16,8"
+                               Text="Characters"
+                               Style="{StaticResource SectionHeaderTextStyle}" />
+
+                    <ListBox Grid.Row="1"
+                             Style="{StaticResource PlainListBoxStyle}"
+                             ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                             ItemsSource="{Binding Characters}"
+                             SelectedItem="{Binding SelectedCharacter, Mode=TwoWay}"
+                             Visibility="{Binding HasCharacters, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:CharacterSave}">
+                                <StackPanel>
+                                    <DockPanel LastChildFill="False">
+                                        <TextBlock DockPanel.Dock="Left"
+                                                   Text="{Binding CharacterName}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Border DockPanel.Dock="Right"
+                                                Style="{StaticResource BadgeBorderStyle}"
+                                                ToolTip="Hardcore"
+                                                Visibility="{Binding Hardcore, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="HC"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource WarningForegroundBrush}" />
+                                        </Border>
+                                    </DockPanel>
+                                    <TextBlock Margin="0,2,0,0" Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}Level {0} {1} · {2}">
+                                                <Binding Path="Level" />
+                                                <Binding Path="ClassDisplayName" />
+                                                <Binding Path="MasteryDisplayName" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Margin="0,2,0,0"
+                                               FontSize="11"
+                                               Style="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding LastPlayedLocal, StringFormat='Last played {0:g}', TargetNullValue='Never played'}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Empty / loading states -->
+                    <StackPanel Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                                Visibility="{Binding ShowNoSaveFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="No save folder selected." TextWrapping="Wrap" Style="{StaticResource SecondaryTextStyle}" />
+                        <Button Margin="0,12,0,0"
+                                HorizontalAlignment="Left"
+                                Content="Open settings"
+                                Style="{StaticResource DialogButtonStyle}"
+                                Command="{Binding OpenSettingsCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                               Text="Loading characters…"
+                               Style="{StaticResource SecondaryTextStyle}"
+                               Visibility="{Binding ShowLoading, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                    <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                               Text="No characters found in the save folder."
+                               TextWrapping="Wrap"
+                               Style="{StaticResource SecondaryTextStyle}"
+                               Visibility="{Binding ShowNoCharacters, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                    <!-- Files that could not be read -->
+                    <TextBlock Grid.Row="2"
+                               Margin="16,8,16,12"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource WarningForegroundBrush}"
+                               Text="{Binding LoadErrors.Count, StringFormat='{}{0} save file(s) could not be read'}"
+                               Visibility="{Binding HasLoadErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock.ToolTip>
+                            <ItemsControl ItemsSource="{Binding LoadErrors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:SaveFileError}">
+                                        <TextBlock Margin="0,2">
+                                            <Run Text="{Binding FilePath, Mode=OneWay}" FontWeight="SemiBold" />
+                                            <Run Text=": " />
+                                            <Run Text="{Binding Message, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+                </Grid>
+
+                <!-- 1px divider with a wider, invisible grab area for resizing. -->
+                <Rectangle Grid.Column="1" Width="1" Fill="{DynamicResource WindowBorderBrush}" />
+                <GridSplitter Grid.Column="1"
+                              Width="5"
+                              Margin="-2,0"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Stretch"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="Transparent" />
+
+                <!-- ===== Inventory of the selected character ===== -->
+                <Grid Grid.Column="2">
+                    <TextBlock HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Text="Select a character to see its inventory."
+                               Style="{StaticResource SecondaryTextStyle}"
+                               Visibility="{Binding ShowSelectCharacterHint, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                    <Grid DataContext="{Binding Inventory}"
+                          Margin="24,16"
+                          Visibility="{Binding DataContext.HasSelectedCharacter, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Character header -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock Text="{Binding Character.CharacterName}" FontSize="22" FontWeight="SemiBold" />
+                            <TextBlock Margin="0,4,0,0" Style="{StaticResource SecondaryTextStyle}">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}Level {0} {1} · {2}">
+                                        <Binding Path="Character.Level" />
+                                        <Binding Path="Character.ClassDisplayName" />
+                                        <Binding Path="Character.MasteryDisplayName" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="1"
+                                   Margin="0,24,0,8"
+                                   Text="Inventory"
+                                   Style="{StaticResource SectionHeaderTextStyle}" />
+
+                        <Border Grid.Row="2"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <Grid>
+                                <!-- Item grid comes here once inventory parsing is implemented. -->
+                                <ItemsControl ItemsSource="{Binding Items}" Margin="8" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Text="Inventory is empty."
+                                           Style="{StaticResource SecondaryTextStyle}"
+                                           Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
             </Grid>
         </Grid>
     </Border>

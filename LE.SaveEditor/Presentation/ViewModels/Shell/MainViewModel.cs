@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using LE.SaveEditor.Presentation.Services;
+using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
 using LE.SaveEditor.Services.Settings;
@@ -14,7 +15,7 @@ public partial class MainViewModel(
 {
     private CancellationTokenSource? _loadCts;
 
-    /// <summary>Characters parsed from <c>1CHARACTERSLOT_*</c> files of the selected save folder.</summary>
+    /// <summary>Characters of the selected save folder, ordered by their save slot.</summary>
     public ObservableCollection<CharacterSave> Characters { get; } = [];
 
     /// <summary>Paths of <c>STASH_*</c> files of the selected save folder (parsed later).</summary>
@@ -24,7 +25,44 @@ public partial class MainViewModel(
     public ObservableCollection<SaveFileError> LoadErrors { get; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedCharacter))]
+    [NotifyPropertyChangedFor(nameof(ShowSelectCharacterHint))]
+    private CharacterSave? _selectedCharacter;
+
+    /// <summary>Inventory of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
+    [ObservableProperty]
+    private InventoryViewModel? _inventory;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowNoCharacters))]
+    [NotifyPropertyChangedFor(nameof(ShowLoading))]
     private bool _isLoading;
+
+    public bool HasSaveFolder => IsExistingFolder(settingsService.Current.SaveFolderPath);
+    public bool ShowNoSaveFolder => !HasSaveFolder;
+    public bool HasCharacters => Characters.Count > 0;
+    public bool HasSelectedCharacter => SelectedCharacter is not null;
+    public bool HasLoadErrors => LoadErrors.Count > 0;
+
+    /// <summary>A folder is selected and loaded, but it holds no readable characters.</summary>
+    public bool ShowNoCharacters => HasSaveFolder && !IsLoading && !HasCharacters;
+
+    /// <summary>Loading message is shown only while the list is still empty (a reload keeps the old list visible).</summary>
+    public bool ShowLoading => IsLoading && !HasCharacters;
+
+    public bool ShowSelectCharacterHint => HasCharacters && !HasSelectedCharacter;
+
+    partial void OnSelectedCharacterChanged(CharacterSave? value) =>
+        Inventory = value is null ? null : new InventoryViewModel(value);
+
+    /// <summary>Called once when the main window opens: loads characters if a save folder was selected earlier.</summary>
+    public async Task InitializeAsync()
+    {
+        if (HasSaveFolder)
+            await LoadSavesAsync();
+        else
+            NotifyStateChanged();
+    }
 
     [RelayCommand]
     private async Task OpenSettingsAsync()
@@ -34,7 +72,6 @@ public partial class MainViewModel(
             await LoadSavesAsync();
     }
 
-    /// <summary>Loads the save folder from the current settings. Also called once when the main window opens.</summary>
     [RelayCommand]
     private async Task LoadSavesAsync()
     {
@@ -43,22 +80,24 @@ public partial class MainViewModel(
         using var cts = new CancellationTokenSource();
         _loadCts = cts;
 
+        var folder = settingsService.Current.SaveFolderPath ?? string.Empty;
+        var previousSelection = SelectedCharacter?.FilePath;
+
         IsLoading = true;
         try
         {
-            var folder = settingsService.Current.SaveFolderPath ?? string.Empty;
             var content = await saveFolderLoader.LoadAsync(folder, cts.Token);
-
             if (cts.IsCancellationRequested)
                 return;
 
-            Replace(Characters, content.Characters);
+            Replace(Characters, content.Characters.OrderBy(c => c.Slot));
             Replace(StashFiles, content.StashFiles);
             Replace(LoadErrors, content.Errors);
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
             // Superseded by a newer load.
+            return;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -66,7 +105,7 @@ public partial class MainViewModel(
             Characters.Clear();
             StashFiles.Clear();
             LoadErrors.Clear();
-            LoadErrors.Add(new SaveFileError(settingsService.Current.SaveFolderPath ?? string.Empty, ex.Message));
+            LoadErrors.Add(new SaveFileError(folder, ex.Message));
         }
         finally
         {
@@ -76,7 +115,28 @@ public partial class MainViewModel(
                 IsLoading = false;
             }
         }
+
+        // Keep the same character selected after a reload, otherwise select the first one.
+        SelectedCharacter = Characters.FirstOrDefault(c =>
+                                string.Equals(c.FilePath, previousSelection, StringComparison.OrdinalIgnoreCase))
+                            ?? Characters.FirstOrDefault();
+
+        NotifyStateChanged();
     }
+
+    private void NotifyStateChanged()
+    {
+        OnPropertyChanged(nameof(HasSaveFolder));
+        OnPropertyChanged(nameof(ShowNoSaveFolder));
+        OnPropertyChanged(nameof(HasCharacters));
+        OnPropertyChanged(nameof(HasLoadErrors));
+        OnPropertyChanged(nameof(ShowNoCharacters));
+        OnPropertyChanged(nameof(ShowLoading));
+        OnPropertyChanged(nameof(ShowSelectCharacterHint));
+    }
+
+    private static bool IsExistingFolder(string? path) =>
+        !string.IsNullOrWhiteSpace(path) && Directory.Exists(path);
 
     private static void Replace<T>(ObservableCollection<T> target, IEnumerable<T> items)
     {

@@ -23,6 +23,7 @@
     <SolidColorBrush x:Key="AccentPressedBrush"              Color="#6E48B3" />
     <SolidColorBrush x:Key="AccentForegroundBrush"           Color="#FFFFFF" />
     <SolidColorBrush x:Key="SelectionBackgroundBrush"        Color="#1D3B53" />
+    <SolidColorBrush x:Key="ListItemHoverBackgroundBrush"     Color="#0E2D45" />
     <SolidColorBrush x:Key="WarningForegroundBrush"          Color="#FFCB8B" />
 
 </ResourceDictionary>
