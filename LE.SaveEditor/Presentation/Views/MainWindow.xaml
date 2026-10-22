@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:LE.SaveEditor"
+        xmlns:shellVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Shell"
         mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
         Title="Last Epoch Save Editor" Height="450" Width="800"
         MinHeight="300" MinWidth="500"
         WindowStartupLocation="CenterScreen"
@@ -58,21 +60,11 @@
 
                 <!-- Custom buttons placed next to the standard caption buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button x:Name="OpenSaveButton"
-                            Style="{StaticResource TitleBarToolButtonStyle}"
-                            ToolTip="Open save file"
-                            Content="&#xE8E5;"
-                            Click="OnOpenSaveClick" />
-                    <Button x:Name="SaveButton"
-                            Style="{StaticResource TitleBarToolButtonStyle}"
-                            ToolTip="Save"
-                            Content="&#xE74E;"
-                            Click="OnSaveClick" />
                     <Button x:Name="SettingsButton"
                             Style="{StaticResource TitleBarToolButtonStyle}"
                             ToolTip="Settings"
                             Content="&#xE713;"
-                            Click="OnSettingsClick" />
+                            Command="{Binding OpenSettingsCommand}" />
                     <Rectangle Width="1" Margin="4,8" Fill="{StaticResource WindowBorderBrush}" />
                 </StackPanel>
 

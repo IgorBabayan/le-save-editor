@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using LE.SaveEditor.Presentation.ViewModels.Shell;
 
 namespace LE.SaveEditor.Presentation.Views;
 
@@ -10,9 +11,10 @@ namespace LE.SaveEditor.Presentation.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
+        DataContext = viewModel;
 
         StateChanged += (_, _) => UpdateWindowState();
         Activated += (_, _) => TitleText.Foreground = (Brush)FindResource("WindowForegroundBrush");
@@ -28,25 +30,6 @@ public partial class MainWindow : Window
     private void OnRestoreExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.RestoreWindow(this);
 
     private void OnCloseExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.CloseWindow(this);
-
-    #endregion
-
-    #region Custom title bar buttons
-
-    private void OnOpenSaveClick(object sender, RoutedEventArgs e)
-    {
-        // TODO: open Last Epoch save file
-    }
-
-    private void OnSaveClick(object sender, RoutedEventArgs e)
-    {
-        // TODO: save changes
-    }
-
-    private void OnSettingsClick(object sender, RoutedEventArgs e)
-    {
-        // TODO: open settings
-    }
 
     #endregion
 
