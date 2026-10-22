@@ -9,6 +9,7 @@
         xmlns:models="clr-namespace:LE.SaveEditor.Services.Saves.Models"
         xmlns:notifications="clr-namespace:LE.SaveEditor.Services.Notifications"
         xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
+        xmlns:toastViews="clr-namespace:LE.SaveEditor.Presentation.Views.Toasts"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
         Title="Last Epoch Save Editor" Height="900" Width="1600"
@@ -456,6 +457,9 @@
                     </Grid>
                 </Grid>
             </Grid>
+
+            <!-- ===== Toasts (bottom-right, above the content) ===== -->
+            <toastViews:ToastHost Grid.Row="1" Panel.ZIndex="10" />
         </Grid>
     </Border>
 </Window>

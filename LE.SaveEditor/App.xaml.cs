@@ -19,13 +19,9 @@ public partial class App : Application
     public static IServiceProvider Services =>
         ((App)Current)._services ?? throw new InvalidOperationException("Services are not initialized yet.");
 
-    protected override async void OnStartup(StartupEventArgs e)
+    protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-
-        // The update window may open and close before the main window exists;
-        // that must not shut the app down.
-        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         _services = new ServiceCollection()
             .AddApplicationServices()
@@ -39,32 +35,25 @@ public partial class App : Application
         var settings = _services.GetRequiredService<ISettingsService>().Current;
         _services.GetRequiredService<IThemeService>().Apply(settings.Theme);
 
-        // Auto-update: if a newer release was downloaded and its installer started,
-        // exit so the installer can replace the files. It starts the new version afterwards.
-        if (await TryAutoUpdateAsync(_services))
-        {
-            Shutdown();
-            return;
-        }
-
         var mainWindow = _services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
 
-        ShutdownMode = ShutdownMode.OnLastWindowClose;
+        // Auto-update runs in the background and reports through toasts:
+        // download progress, then a countdown before the editor restarts into the new version.
+        _ = RunAutoUpdateAsync(_services);
     }
 
-    private static async Task<bool> TryAutoUpdateAsync(IServiceProvider services)
+    private static async Task RunAutoUpdateAsync(IServiceProvider services)
     {
         try
         {
-            return await services.GetRequiredService<IAutoUpdater>().TryUpdateOnStartupAsync();
+            await services.GetRequiredService<IAutoUpdater>().RunOnStartupAsync();
         }
         catch (Exception ex)
         {
-            // An update problem must never prevent the editor from starting.
+            // An update problem must never take the editor down.
             System.Diagnostics.Debug.WriteLine($"Auto-update failed: {ex}");
-            return false;
         }
     }
 

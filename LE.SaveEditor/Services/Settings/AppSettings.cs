@@ -15,4 +15,13 @@ public sealed record AppSettings
     /// downloaded, installed and the app restarted automatically.
     /// </summary>
     public bool AutoUpdate { get; init; } = true;
+
+    /// <summary>Longest allowed delay for <see cref="RestartDelaySeconds"/>.</summary>
+    public const int MaxRestartDelaySeconds = 300;
+
+    /// <summary>
+    /// Countdown (in seconds) shown before the editor closes to install a downloaded update.
+    /// 0 restarts immediately.
+    /// </summary>
+    public int RestartDelaySeconds { get; init; } = 5;
 }
