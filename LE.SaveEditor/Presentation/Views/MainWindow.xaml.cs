@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace LE.SaveEditor;
+namespace LE.SaveEditor.Presentation.Views;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
