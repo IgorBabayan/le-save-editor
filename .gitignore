@@ -55,3 +55,9 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# LE.SaveEditor.DB intermediates (a build in progress / SQLite side files)
+*.db.building*
+*.db-journal
+*.db-wal
+*.db-shm
