@@ -3,10 +3,106 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:LE.SaveEditor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Last Epoch Save Editor" Height="450" Width="800"
+        MinHeight="300" MinWidth="500"
+        Background="{StaticResource WindowBackgroundBrush}"
+        Foreground="{StaticResource WindowForegroundBrush}">
 
-    </Grid>
+    <!--
+        WindowChrome removes the native title bar but keeps native behaviour:
+        resize borders, Aero Snap, drag to move, double-click to maximize, Alt+Space menu.
+    -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="32"
+                            ResizeBorderThickness="6"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static SystemCommands.MinimizeWindowCommand}" Executed="OnMinimizeExecuted" />
+        <CommandBinding Command="{x:Static SystemCommands.MaximizeWindowCommand}" Executed="OnMaximizeExecuted" />
+        <CommandBinding Command="{x:Static SystemCommands.RestoreWindowCommand}" Executed="OnRestoreExecuted" />
+        <CommandBinding Command="{x:Static SystemCommands.CloseWindowCommand}" Executed="OnCloseExecuted" />
+    </Window.CommandBindings>
+
+    <Border x:Name="RootBorder"
+            BorderBrush="{StaticResource WindowBorderBrush}"
+            BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ===== Title bar ===== -->
+            <Grid x:Name="TitleBar" Grid.Row="0" Background="{StaticResource TitleBarBackgroundBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />  <!-- icon + title -->
+                    <ColumnDefinition Width="*" />     <!-- free drag area -->
+                    <ColumnDefinition Width="Auto" />  <!-- custom buttons -->
+                    <ColumnDefinition Width="Auto" />  <!-- min / max / close -->
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <TextBlock x:Name="TitleText"
+                               Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Custom buttons placed next to the standard caption buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="OpenSaveButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Open save file"
+                            Content="&#xE8E5;"
+                            Click="OnOpenSaveClick" />
+                    <Button x:Name="SaveButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Save"
+                            Content="&#xE74E;"
+                            Click="OnSaveClick" />
+                    <Button x:Name="SettingsButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Settings"
+                            Content="&#xE713;"
+                            Click="OnSettingsClick" />
+                    <Rectangle Width="1" Margin="4,8" Fill="{StaticResource WindowBorderBrush}" />
+                </StackPanel>
+
+                <!-- Standard caption buttons -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal">
+                    <Button Style="{StaticResource CaptionButtonStyle}"
+                            ToolTip="Minimize"
+                            Content="&#xE921;"
+                            Command="{x:Static SystemCommands.MinimizeWindowCommand}" />
+                    <Button x:Name="MaximizeButton"
+                            Style="{StaticResource CaptionButtonStyle}"
+                            ToolTip="Maximize"
+                            Content="&#xE922;"
+                            Command="{x:Static SystemCommands.MaximizeWindowCommand}" />
+                    <Button x:Name="RestoreButton"
+                            Style="{StaticResource CaptionButtonStyle}"
+                            ToolTip="Restore Down"
+                            Content="&#xE923;"
+                            Visibility="Collapsed"
+                            Command="{x:Static SystemCommands.RestoreWindowCommand}" />
+                    <Button Style="{StaticResource CloseCaptionButtonStyle}"
+                            ToolTip="Close"
+                            Content="&#xE8BB;"
+                            Command="{x:Static SystemCommands.CloseWindowCommand}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ===== Window content ===== -->
+            <Grid Grid.Row="1">
+
+            </Grid>
+        </Grid>
+    </Border>
 </Window>
