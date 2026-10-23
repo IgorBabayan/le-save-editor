@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using LE.SaveEditor.Presentation.Services;
-using LE.SaveEditor.Presentation.ViewModels.Inventory;
+using LE.SaveEditor.Presentation.ViewModels.Characters;
 using LE.SaveEditor.Presentation.ViewModels.Notifications;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.Notifications;
@@ -37,9 +37,9 @@ public partial class MainViewModel(
     [NotifyPropertyChangedFor(nameof(ShowSelectCharacterHint))]
     private CharacterSave? _selectedCharacter;
 
-    /// <summary>Inventory of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
+    /// <summary>Details (Blessings / Inventory tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
     [ObservableProperty]
-    private InventoryViewModel? _inventory;
+    private CharacterViewModel? _characterDetails;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowNoCharacters))]
@@ -61,7 +61,7 @@ public partial class MainViewModel(
     public bool ShowSelectCharacterHint => HasCharacters && !HasSelectedCharacter;
 
     partial void OnSelectedCharacterChanged(CharacterSave? value) =>
-        Inventory = value is null ? null : new InventoryViewModel(value);
+        CharacterDetails = value is null ? null : new CharacterViewModel(value);
 
     /// <summary>Called once when the main window opens: loads characters if a save folder was selected earlier.</summary>
     public async Task InitializeAsync()

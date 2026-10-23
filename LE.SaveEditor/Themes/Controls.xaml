@@ -438,4 +438,209 @@
         </Setter>
     </Style>
 
+    <!-- ===== Tabs ===== -->
+
+    <!-- Tab strip with an accent underline under the selected tab (character view: Blessings / Inventory). -->
+    <Style x:Key="UnderlineTabControlStyle" TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+        <Setter Property="ItemContainerStyle" Value="{DynamicResource UnderlineTabItemStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Rectangle Height="1"
+                                       VerticalAlignment="Bottom"
+                                       Fill="{DynamicResource WindowBorderBrush}" />
+                            <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1" />
+                        </Grid>
+
+                        <ContentPresenter Grid.Row="1"
+                                          Margin="{TemplateBinding Padding}"
+                                          ContentSource="SelectedContent" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="UnderlineTabItemStyle" TargetType="TabItem">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Grid Background="Transparent" Margin="0,0,4,0">
+                        <ContentPresenter x:Name="Header"
+                                          Margin="14,10,14,10"
+                                          ContentSource="Header"
+                                          RecognizesAccessKey="True"
+                                          HorizontalAlignment="Center" />
+                        <Border x:Name="Underline"
+                                Height="2"
+                                VerticalAlignment="Bottom"
+                                CornerRadius="1"
+                                Background="{DynamicResource AccentBrush}"
+                                Visibility="Hidden" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+                        </Trigger>
+                        <!-- Declared last so it wins over hover. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter TargetName="Underline" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Smaller pill-shaped tabs for sections inside a page (inventory: Items / Resources / Woven echoes). -->
+    <Style x:Key="PillTabControlStyle" TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+        <Setter Property="ItemContainerStyle" Value="{DynamicResource PillTabItemStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0"
+                                HorizontalAlignment="Left"
+                                Padding="3"
+                                CornerRadius="8"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1" />
+                        </Border>
+
+                        <ContentPresenter Grid.Row="1"
+                                          Margin="{TemplateBinding Padding}"
+                                          ContentSource="SelectedContent" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PillTabItemStyle" TargetType="TabItem">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Bd"
+                            Margin="1,0"
+                            Padding="14,6"
+                            CornerRadius="6"
+                            Background="Transparent"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter ContentSource="Header"
+                                          RecognizesAccessKey="True"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                        </Trigger>
+                        <!-- Declared last so it wins over hover. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Character inventory ===== -->
+
+    <!-- Empty equipment slot: a framed box with the slot name (Tag) shown faintly in the middle. -->
+    <Style x:Key="EquipmentSlotStyle" TargetType="ContentControl">
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="ToolTip" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Border x:Name="Bd"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource ControlBackgroundBrush}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock x:Name="SlotName"
+                                       Margin="4"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Opacity="0.7"
+                                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                       Text="{TemplateBinding Tag}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+                            <Setter TargetName="SlotName" Property="Opacity" Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Framed content area of an inventory section (Items / Resources / Woven echoes). -->
+    <Style x:Key="InventorySectionBorderStyle" TargetType="Border">
+        <Setter Property="MinHeight" Value="240" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
+    </Style>
+
+    <!-- Centered "nothing here yet" message of pages that are not implemented yet. -->
+    <Style x:Key="EmptyPageTextStyle" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+        <Setter Property="Margin" Value="16,32" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+    </Style>
+
 </ResourceDictionary>

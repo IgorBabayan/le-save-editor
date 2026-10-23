@@ -1,0 +1,184 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Inventory.InventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=inventoryVm:InventoryViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="800" d:DesignWidth="900">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid Margin="0,16,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ===== Main information: equipment (left) | idols + crafting materials (right) ===== -->
+            <Grid Grid.Row="0" HorizontalAlignment="Left">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="32" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- ===== Equipment (empty slots until items are parsed) ===== -->
+                <Grid Grid.Column="0" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="112" />
+                        <ColumnDefinition Width="144" />
+                        <ColumnDefinition Width="112" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="96" />
+                        <RowDefinition Height="200" />
+                        <RowDefinition Height="64" />
+                        <RowDefinition Height="96" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0: helmet, amulet -->
+                    <ContentControl Grid.Row="0" Grid.Column="1" Width="96"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Helmet" />
+                    <ContentControl Grid.Row="0" Grid.Column="2" Width="64" Height="64"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Amulet" />
+
+                    <!-- Row 1: weapon, body armour, off-hand -->
+                    <ContentControl Grid.Row="1" Grid.Column="0"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Weapon" />
+                    <ContentControl Grid.Row="1" Grid.Column="1"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Body armour" />
+                    <ContentControl Grid.Row="1" Grid.Column="2"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Off-hand" />
+
+                    <!-- Row 2: ring, belt, ring -->
+                    <ContentControl Grid.Row="2" Grid.Column="0" Width="56"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Ring" />
+                    <ContentControl Grid.Row="2" Grid.Column="1"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Belt" />
+                    <ContentControl Grid.Row="2" Grid.Column="2" Width="56"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Ring" />
+
+                    <!-- Row 3: gloves, boots, relic -->
+                    <ContentControl Grid.Row="3" Grid.Column="0"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Gloves" />
+                    <ContentControl Grid.Row="3" Grid.Column="1"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Boots" />
+                    <ContentControl Grid.Row="3" Grid.Column="2"
+                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Relic" />
+                </Grid>
+
+                <!-- ===== Idols + crafting materials ===== -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                    <TextBlock Margin="0,0,0,8"
+                               HorizontalAlignment="Center"
+                               Text="Idols"
+                               Style="{StaticResource SectionHeaderTextStyle}" />
+
+                    <Border Padding="6"
+                            HorizontalAlignment="Center"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <ItemsControl ItemsSource="{Binding IdolCells}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}"
+                                                 Columns="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type inventoryVm:IdolCellViewModel}">
+                                    <Border x:Name="Cell"
+                                            Width="56"
+                                            Height="56"
+                                            Margin="2"
+                                            CornerRadius="4"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                                            Background="{DynamicResource ControlBackgroundBrush}"
+                                            SnapsToDevicePixels="True" />
+                                    <DataTemplate.Triggers>
+                                        <!-- Blocked cells can never hold an idol. -->
+                                        <DataTrigger Binding="{Binding IsBlocked}" Value="True">
+                                            <Setter TargetName="Cell" Property="Background" Value="Transparent" />
+                                            <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                            <Setter TargetName="Cell" Property="Opacity" Value="0.5" />
+                                            <Setter TargetName="Cell" Property="ToolTip" Value="Unavailable" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!-- Crafting materials -->
+                    <Border Margin="0,16,0,0"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <StackPanel>
+                            <Border Padding="12,6"
+                                    CornerRadius="6,6,0,0"
+                                    BorderThickness="0,0,0,1"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    Background="{DynamicResource ControlBackgroundBrush}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Text="Crafting materials"
+                                           Style="{StaticResource SectionHeaderTextStyle}" />
+                            </Border>
+
+                            <ItemsControl Margin="8,10" ItemsSource="{Binding CraftingMaterials}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type inventoryVm:CraftingMaterialViewModel}">
+                                        <StackPanel Margin="4,0" HorizontalAlignment="Center">
+                                            <TextBlock HorizontalAlignment="Center"
+                                                       Text="{Binding Name}"
+                                                       Style="{StaticResource SecondaryTextStyle}" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="16"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding Amount, StringFormat='{}{0:N0}', TargetNullValue='—'}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- ===== Sections (empty until parsed) ===== -->
+            <TabControl Grid.Row="1"
+                        Margin="0,24,0,0"
+                        Padding="0,12,0,0"
+                        Style="{StaticResource PillTabControlStyle}">
+                <TabItem Header="Items">
+                    <Border Style="{StaticResource InventorySectionBorderStyle}">
+                        <TextBlock Text="Items will appear here." Style="{StaticResource EmptyPageTextStyle}" />
+                    </Border>
+                </TabItem>
+
+                <TabItem Header="Resources">
+                    <Border Style="{StaticResource InventorySectionBorderStyle}">
+                        <TextBlock Text="Resources will appear here." Style="{StaticResource EmptyPageTextStyle}" />
+                    </Border>
+                </TabItem>
+
+                <TabItem Header="Woven echoes">
+                    <Border Style="{StaticResource InventorySectionBorderStyle}">
+                        <TextBlock Text="Woven echoes will appear here." Style="{StaticResource EmptyPageTextStyle}" />
+                    </Border>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
