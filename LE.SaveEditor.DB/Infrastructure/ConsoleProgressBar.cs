@@ -6,16 +6,20 @@ namespace LE.SaveEditor.DB.Infrastructure;
 /// <summary>
 /// One-line console progress bar: <c>[██████░░░░░░]  45.0%  Title - detail</c>.
 /// Thread-safe, so parallel workers (icon downloads) can report into the same bar.
+/// In machine mode (<see cref="ToolOutput.IsMachine"/>) the same states are sent to the editor
+/// as <c>bar-start</c> / <c>bar</c> / <c>bar-end</c> JSON events instead of being drawn.
 /// </summary>
 internal sealed class ConsoleProgressBar : IDisposable
 {
     private const int BarWidth = 30;
     private static readonly TimeSpan RenderInterval = TimeSpan.FromMilliseconds(80);
+    private static int _nextId;
 
     private readonly Lock _sync = new();
     private readonly Stopwatch _sinceRender = Stopwatch.StartNew();
     private readonly bool _interactive = !Console.IsOutputRedirected;
     private readonly string _title;
+    private readonly int _id = Interlocked.Increment(ref _nextId);
 
     private double _fraction;
     private string? _detail;
@@ -26,7 +30,12 @@ internal sealed class ConsoleProgressBar : IDisposable
     {
         _title = title;
         lock (_sync)
-            Render(final: false);
+        {
+            if (ToolOutput.IsMachine)
+                ToolOutput.Event(new ToolEvent("bar-start") { Id = _id, Title = _title });
+            else
+                Render(final: false);
+        }
     }
 
     /// <summary>Reports <paramref name="done"/> of <paramref name="total"/> work items.</summary>
@@ -60,7 +69,7 @@ internal sealed class ConsoleProgressBar : IDisposable
             _fraction = 1;
             _detail = detail;
             Render(final: true);
-            Finish();
+            Finish(completed: true);
         }
     }
 
@@ -73,18 +82,43 @@ internal sealed class ConsoleProgressBar : IDisposable
                 return;
 
             Render(final: true);
-            Finish();
+            Finish(completed: false);
         }
     }
 
-    private void Finish()
+    private void Finish(bool completed)
     {
         _finished = true;
+
+        if (ToolOutput.IsMachine)
+        {
+            ToolOutput.Event(new ToolEvent("bar-end")
+            {
+                Id = _id,
+                Fraction = _fraction,
+                Detail = _detail,
+                Completed = completed
+            });
+            return;
+        }
+
         Console.WriteLine();
     }
 
     private void Render(bool final)
     {
+        if (ToolOutput.IsMachine)
+        {
+            // The final state is sent by Finish as "bar-end".
+            if (!final)
+            {
+                ToolOutput.Event(new ToolEvent("bar") { Id = _id, Fraction = _fraction, Detail = _detail });
+                _sinceRender.Restart();
+            }
+
+            return;
+        }
+
         // Redirected output (CI, logs): no carriage-return animation, only the final state.
         if (!_interactive && !final)
             return;

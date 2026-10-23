@@ -3,6 +3,7 @@ using System.IO;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Presentation.ViewModels.Notifications;
+using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
@@ -77,6 +78,37 @@ public partial class MainViewModel(
         // Re-read the folder whenever the user presses Save in the settings dialog.
         if (dialogService.ShowSettings())
             await LoadSavesAsync();
+    }
+
+    /// <summary>
+    /// Title bar database button: asks for confirmation, runs <c>LE.SaveEditor.DB</c> in the progress dialog
+    /// and, once the dialog is closed, reports what the generator printed in the notification center.
+    /// </summary>
+    [RelayCommand]
+    private void GenerateDatabase()
+    {
+        if (!dialogService.Confirm("Database", "Are you sure to generate/update DataBase?"))
+            return;
+
+        var result = dialogService.ShowDatabaseGenerator();
+        if (result is not null)
+            NotifyDatabaseResult(result);
+    }
+
+    private void NotifyDatabaseResult(DatabaseGenerationResult result)
+    {
+        var hasWarnings = result.Messages.Any(m => m.Level == DatabaseGeneratorMessageLevel.Warning);
+
+        var (title, severity) = result.Status switch
+        {
+            DatabaseGenerationStatus.Succeeded when hasWarnings => ("Database updated with warnings", NotificationSeverity.Warning),
+            DatabaseGenerationStatus.Succeeded => ("Database updated", NotificationSeverity.Success),
+            DatabaseGenerationStatus.Cancelled => ("Database update cancelled", NotificationSeverity.Warning),
+            _ => ("Database update failed", NotificationSeverity.Error)
+        };
+
+        var message = string.Join(Environment.NewLine, result.Messages.Select(m => m.Text));
+        notificationService.Notify(title, string.IsNullOrWhiteSpace(message) ? null : message, severity);
     }
 
     [RelayCommand]

@@ -9,28 +9,50 @@ namespace LE.SaveEditor.DB;
 /// <summary>
 /// Generator of <c>%APPDATA%\LE.SaveEditor\base.db</c> and <c>%APPDATA%\LE.SaveEditor\Icons</c>
 /// (the editor's config folder) from maxroll's Last Epoch planner data.
-/// Usage: <c>LE.SaveEditor.DB [--config &lt;folder&gt;]</c>.
+/// Usage: <c>LE.SaveEditor.DB [--config &lt;folder&gt;] [--run build|update] [--machine]</c>.
+/// <list type="bullet">
+/// <item>Without <c>--run</c> it asks what to do (Build / Update / Close) in a loop.</item>
+/// <item><c>--run build|update</c> runs that operation once and exits (0 = succeeded, 1 = failed, 2 = cancelled).</item>
+/// <item><c>--machine</c> prints JSON lines instead of console text; used by the editor (see <see cref="ToolOutput"/>).</item>
+/// </list>
 /// </summary>
 internal static class Program
 {
     /// <summary>Seconds the "Application close in" countdown starts from.</summary>
     private const int CloseTimerSeconds = 5;
 
+    private const string BuildOperation = "Build";
+    private const string UpdateOperation = "Update";
+
     private static CancellationTokenSource? _running;
 
     private static async Task<int> Main(string[] args)
     {
-        Console.OutputEncoding = Encoding.UTF8;
+        if (args.Contains("--machine"))
+            ToolOutput.EnableMachineMode();
+        else
+            Console.OutputEncoding = Encoding.UTF8;
+
+        var runOperation = ParseRunOperation(args, out var runError);
+        if (runError is not null)
+        {
+            ToolOutput.Line(runError, OutputLevel.Error);
+            return (int)RunStatus.Failed;
+        }
 
         // Ctrl+C cancels the running Build/Update and returns to the menu instead of killing the app.
-        Console.CancelKeyPress += (_, e) =>
+        // In machine mode there is no console: the editor stops the process itself.
+        if (!ToolOutput.IsMachine)
         {
-            if (_running is { } running)
+            Console.CancelKeyPress += (_, e) =>
             {
-                e.Cancel = true;
-                running.Cancel();
-            }
-        };
+                if (_running is { } running)
+                {
+                    e.Cancel = true;
+                    running.Cancel();
+                }
+            };
+        }
 
         ConfigPaths paths;
         try
@@ -39,14 +61,23 @@ internal static class Program
         }
         catch (DirectoryNotFoundException ex)
         {
-            WriteLine(ex.Message, ConsoleColor.Red);
+            ToolOutput.Line(ex.Message, OutputLevel.Error);
+            if (runOperation is not null)
+            {
+                ReportDone(runOperation, RunStatus.Failed);
+                return (int)RunStatus.Failed;
+            }
+
             await CloseAsync(CloseTimerSeconds);
             return 1;
         }
 
         using var http = CreateHttpClient();
 
-        Console.WriteLine($"Config folder: {paths.ConfigDirectory}");
+        if (runOperation is not null)
+            return (int)await RunOnceAsync(runOperation, http, paths);
+
+        ToolOutput.Line($"Config folder: {paths.ConfigDirectory}");
 
         while (true)
         {
@@ -58,11 +89,11 @@ internal static class Program
             switch (answer)
             {
                 case "b" or "build":
-                    await RunAsync("Build", ct => BuildAsync(http, paths, ct));
+                    await RunAsync(BuildOperation, ct => BuildAsync(http, paths, ct));
                     break;
 
                 case "u" or "update":
-                    await RunAsync("Update", ct => UpdateAsync(http, paths, ct));
+                    await RunAsync(UpdateOperation, ct => UpdateAsync(http, paths, ct));
                     break;
 
                 // null = end of input stream (Ctrl+Z / closed pipe): close as well.
@@ -71,10 +102,48 @@ internal static class Program
                     return 0;
 
                 default:
-                    WriteLine("Unknown answer. Please type B, U or C.", ConsoleColor.Yellow);
+                    ToolOutput.Line("Unknown answer. Please type B, U or C.", OutputLevel.Warning);
                     break;
             }
         }
+    }
+
+    /// <summary>Non-interactive mode: runs one operation, reports the outcome and exits.</summary>
+    private static async Task<RunStatus> RunOnceAsync(string operation, HttpClient http, ConfigPaths paths)
+    {
+        var status = await RunAsync(operation, ct => operation == BuildOperation
+            ? BuildAsync(http, paths, ct)
+            : UpdateAsync(http, paths, ct));
+
+        ReportDone(operation, status);
+        return status;
+    }
+
+    /// <summary>Reads <c>--run build|update</c>; <c>null</c> when absent (interactive menu).</summary>
+    private static string? ParseRunOperation(string[] args, out string? error)
+    {
+        error = null;
+        var index = Array.FindIndex(args, a => a is "--run" or "-r");
+        if (index < 0)
+            return null;
+
+        var value = index + 1 < args.Length ? args[index + 1].Trim().ToLowerInvariant() : string.Empty;
+        switch (value)
+        {
+            case "b" or "build":
+                return BuildOperation;
+            case "u" or "update":
+                return UpdateOperation;
+            default:
+                error = "--run expects \"build\" or \"update\".";
+                return null;
+        }
+    }
+
+    private static void ReportDone(string operation, RunStatus status)
+    {
+        if (ToolOutput.IsMachine)
+            ToolOutput.Event(new ToolEvent("done") { Operation = operation, Status = status });
     }
 
     private static async Task BuildAsync(HttpClient http, ConfigPaths paths, CancellationToken ct)
@@ -84,7 +153,7 @@ internal static class Program
         {
             var data = await GameDataParser.ParseAsync(dataFile, ct);
             await new DatabaseBuilder(paths).BuildAsync(data, ct);
-            WriteLine($"Database created: {paths.DatabaseFile}", ConsoleColor.Green);
+            ToolOutput.Line($"Database created: {paths.DatabaseFile}", OutputLevel.Success);
 
             var icons = await new IconSynchronizer(http, paths).SyncAsync(data.Icons, changedKeys: null, ct);
             ReportIcons(icons);
@@ -99,7 +168,7 @@ internal static class Program
     {
         if (!File.Exists(paths.DatabaseFile))
         {
-            WriteLine($"{ConfigPaths.DatabaseFileName} was not found, building a new database instead.", ConsoleColor.Yellow);
+            ToolOutput.Line($"{ConfigPaths.DatabaseFileName} was not found, building a new database instead.", OutputLevel.Warning);
             await BuildAsync(http, paths, ct);
             return;
         }
@@ -107,14 +176,14 @@ internal static class Program
         var updater = new DatabaseUpdater(paths);
         if (!await updater.IsSchemaCurrentAsync(ct))
         {
-            WriteLine($"{ConfigPaths.DatabaseFileName} was made by an older generator version, rebuilding it.", ConsoleColor.Yellow);
+            ToolOutput.Line($"{ConfigPaths.DatabaseFileName} was made by an older generator version, rebuilding it.", OutputLevel.Warning);
             await BuildAsync(http, paths, ct);
             return;
         }
 
         var last = await updater.GetLastMigrationAsync(ct);
         if (last is not null)
-            Console.WriteLine($"Current data: {last.Name} (applied {last.AppliedAtUtc.ToLocalTime():g})");
+            ToolOutput.Line($"Current data: {last.Name} (applied {last.AppliedAtUtc.ToLocalTime():g})");
 
         var dataFile = await GameDataSource.DownloadAsync(http, ct);
         try
@@ -124,13 +193,13 @@ internal static class Program
 
             if (result.Applied is { } applied)
             {
-                WriteLine(
+                ToolOutput.Line(
                     $"Migration {applied.Name} applied: +{applied.Added} added, ~{applied.Updated} updated, -{applied.Removed} removed.",
-                    ConsoleColor.Green);
+                    OutputLevel.Success);
             }
             else
             {
-                WriteLine("No differences found, the database is up to date.", ConsoleColor.Green);
+                ToolOutput.Line("No differences found, the database is up to date.", OutputLevel.Success);
             }
 
             // Runs even without data changes, so missing or failed icons from earlier runs are fetched.
@@ -143,23 +212,28 @@ internal static class Program
         }
     }
 
-    private static async Task RunAsync(string operation, Func<CancellationToken, Task> action)
+    private static async Task<RunStatus> RunAsync(string operation, Func<CancellationToken, Task> action)
     {
         using var cts = new CancellationTokenSource();
         _running = cts;
         try
         {
-            Console.WriteLine();
+            if (!ToolOutput.IsMachine)
+                Console.WriteLine();
+
             await action(cts.Token);
-            WriteLine($"{operation} finished.", ConsoleColor.Green);
+            ToolOutput.Line($"{operation} finished.", OutputLevel.Success);
+            return RunStatus.Succeeded;
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
-            WriteLine($"{operation} cancelled.", ConsoleColor.Yellow);
+            ToolOutput.Line($"{operation} cancelled.", OutputLevel.Warning);
+            return RunStatus.Cancelled;
         }
         catch (Exception ex)
         {
-            WriteLine($"{operation} failed: {ex.Message}", ConsoleColor.Red);
+            ToolOutput.Line($"{operation} failed: {ex.Message}", OutputLevel.Error);
+            return RunStatus.Failed;
         }
         finally
         {
@@ -169,24 +243,28 @@ internal static class Program
 
     private static void ReportIcons(IconSyncResult result)
     {
-        Console.WriteLine(
+        ToolOutput.Line(
             $"Icons: {result.Total} in database, {result.Downloaded} downloaded, {result.Converted} converted, {result.Removed} stale files removed.");
 
         if (result.WithoutPath > 0)
-            WriteLine($"{result.WithoutPath} icon names are not valid file names and were skipped.", ConsoleColor.Yellow);
+            ToolOutput.Line($"{result.WithoutPath} icon names are not valid file names and were skipped.", OutputLevel.Warning);
 
         if (result.Failures.Count == 0)
             return;
 
-        WriteLine($"{result.Failures.Count} icons failed (run Update to retry):", ConsoleColor.Yellow);
+        ToolOutput.Line($"{result.Failures.Count} icons failed (run Update to retry):", OutputLevel.Warning);
         foreach (var failure in result.Failures.Take(10))
-            WriteLine($"  {failure}", ConsoleColor.Yellow);
+            ToolOutput.Line($"  {failure}", OutputLevel.Warning);
         if (result.Failures.Count > 10)
-            WriteLine($"  ... and {result.Failures.Count - 10} more", ConsoleColor.Yellow);
+            ToolOutput.Line($"  ... and {result.Failures.Count - 10} more", OutputLevel.Warning);
     }
 
     private static async Task CloseAsync(int seconds)
     {
+        // Nobody reads a countdown when the editor runs the generator.
+        if (ToolOutput.IsMachine)
+            return;
+
         for (var left = seconds; left > 0; left--)
         {
             Console.Write($"\rApplication close in {left} sec ");
@@ -210,13 +288,5 @@ internal static class Program
         var http = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(5) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("LE.SaveEditor.DB/1.0 (+https://github.com/IgorBabayan/le-save-editor)");
         return http;
-    }
-
-    private static void WriteLine(string text, ConsoleColor color)
-    {
-        var previous = Console.ForegroundColor;
-        Console.ForegroundColor = color;
-        Console.WriteLine(text);
-        Console.ForegroundColor = previous;
     }
 }

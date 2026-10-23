@@ -15,6 +15,8 @@ public sealed class IconProvider : IIconProvider
         return path is null ? null : _cache.GetOrAdd(path, Load);
     }
 
+    public void ClearCache() => _cache.Clear();
+
     private static ImageSource? Load(string iconPath)
     {
         var file = Path.Combine(GameDataPaths.IconsDirectory, iconPath.Replace('/', Path.DirectorySeparatorChar) + ".png");

@@ -1,4 +1,7 @@
+using LE.SaveEditor.Presentation.Views.Database;
+using LE.SaveEditor.Presentation.Views.Dialogs;
 using LE.SaveEditor.Presentation.Views.Settings;
+using LE.SaveEditor.Services.GameData;
 
 namespace LE.SaveEditor.Presentation.Services;
 
@@ -9,5 +12,22 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
         var window = services.GetRequiredService<SettingsWindow>();
         window.Owner = WindowHelper.GetActiveWindow();
         return window.ShowDialog() == true;
+    }
+
+    public bool Confirm(string title, string message)
+    {
+        var window = new ConfirmationWindow(title, message)
+        {
+            Owner = WindowHelper.GetActiveWindow()
+        };
+        return window.ShowDialog() == true;
+    }
+
+    public DatabaseGenerationResult? ShowDatabaseGenerator()
+    {
+        var window = services.GetRequiredService<DatabaseGeneratorWindow>();
+        window.Owner = WindowHelper.GetActiveWindow();
+        window.ShowDialog();
+        return window.Result;
     }
 }

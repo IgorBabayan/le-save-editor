@@ -64,6 +64,15 @@
 
                 <!-- Custom buttons placed next to the standard caption buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- Generates the game database, or updates it if it already exists (LE.SaveEditor.DB). -->
+                    <Button x:Name="DatabaseButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Generate / update database"
+                            AutomationProperties.Name="Generate or update database"
+                            Command="{Binding GenerateDatabaseCommand}">
+                        <wpf:MaterialIcon Kind="DatabaseRefreshOutline" Width="18" Height="18" />
+                    </Button>
+
                     <!--
                         Notification center. While the popup is open the toggle is not hit-testable:
                         a click on it then only closes the popup (StaysOpen=False) instead of reopening it.

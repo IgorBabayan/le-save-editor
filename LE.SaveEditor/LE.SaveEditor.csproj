@@ -26,4 +26,36 @@
       </Page>
     </ItemGroup>
 
+    <!--
+        LE.SaveEditor.DB runs as a separate, hidden process from Tools\LE.SaveEditor.DB (see Services\GameData\DatabaseGenerator.cs).
+        Its own folder keeps its dependencies (EF Core, SkiaSharp) apart from the editor's.
+        Local builds copy its build output there; releases publish it there (.github/workflows/release-installer.yml).
+    -->
+    <PropertyGroup>
+        <DatabaseGeneratorProject>$(MSBuildThisFileDirectory)..\LE.SaveEditor.DB\LE.SaveEditor.DB.csproj</DatabaseGeneratorProject>
+        <DatabaseGeneratorOutputDir>Tools\LE.SaveEditor.DB\</DatabaseGeneratorOutputDir>
+    </PropertyGroup>
+
+    <Target Name="CopyDatabaseGenerator"
+            AfterTargets="Build"
+            Condition="'$(_IsPublishing)' != 'true' and '$(DesignTimeBuild)' != 'true' and Exists('$(DatabaseGeneratorProject)')">
+        <MSBuild Projects="$(DatabaseGeneratorProject)"
+                 Targets="Build"
+                 RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained">
+            <Output TaskParameter="TargetOutputs" ItemName="_DatabaseGeneratorTarget" />
+        </MSBuild>
+
+        <PropertyGroup>
+            <_DatabaseGeneratorBuildDir>@(_DatabaseGeneratorTarget->'%(RootDir)%(Directory)'->Distinct())</_DatabaseGeneratorBuildDir>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_DatabaseGeneratorFiles Include="$(_DatabaseGeneratorBuildDir)**\*" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(_DatabaseGeneratorFiles)"
+              DestinationFiles="@(_DatabaseGeneratorFiles->'$(OutDir)$(DatabaseGeneratorOutputDir)%(RecursiveDir)%(Filename)%(Extension)')"
+              SkipUnchangedFiles="true" />
+    </Target>
+
 </Project>

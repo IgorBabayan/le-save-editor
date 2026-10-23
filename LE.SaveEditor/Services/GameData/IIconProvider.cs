@@ -11,4 +11,7 @@ public interface IIconProvider
     /// bound from any thread and shared by any number of controls.
     /// </summary>
     ImageSource? Get(string? iconPath);
+
+    /// <summary>Forgets loaded (and missing) icons, so files written by the generator are picked up.</summary>
+    void ClearCache();
 }

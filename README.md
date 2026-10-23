@@ -42,3 +42,13 @@ with the database by key and hash, applies the differences as one data migration
 re-downloads only new or changed icons. A database made by an older generator version is rebuilt.
 Ctrl+C cancels the running step. The editor loads icons through `IIconProvider`.
 Pass `--config <folder>` to write somewhere else.
+
+`--run build|update` runs one operation without the menu and exits (exit code 0 = succeeded,
+1 = failed, 2 = cancelled). `--machine` prints JSON lines instead of console text: `bar-start` /
+`bar` / `bar-end` for every progress bar, `log` for every text line and a final `done` with the status.
+
+The editor ships the generator in `Tools\LE.SaveEditor.DB` (local builds copy it there, the release
+workflow publishes it there). The database button in the title bar (left of the notification bell)
+asks for confirmation, then runs `LE.SaveEditor.DB --run update --machine` hidden — update builds a
+new database when none exists — and shows the same progress bars in a dialog that cannot be closed
+until the generator has exited. After OK, the generator's result lines appear in the notification center.
