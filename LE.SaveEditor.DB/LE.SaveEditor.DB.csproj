@@ -15,4 +15,9 @@
         <PackageReference Include="SkiaSharp" Version="3.119.1" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Class / mastery icons (4 x 5 grid of 64 px cells), cut into Icons\classes by ClassIconSprite. -->
+        <EmbeddedResource Include="Assets\class-icons.webp" LogicalName="LE.SaveEditor.DB.class-icons.webp" />
+    </ItemGroup>
+
 </Project>

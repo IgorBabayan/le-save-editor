@@ -157,6 +157,7 @@ internal static class Program
 
             var icons = await new IconSynchronizer(http, paths).SyncAsync(data.Icons, changedKeys: null, ct);
             ReportIcons(icons);
+            await ExtractClassIconsAsync(paths, ct);
         }
         finally
         {
@@ -205,6 +206,7 @@ internal static class Program
             // Runs even without data changes, so missing or failed icons from earlier runs are fetched.
             var icons = await new IconSynchronizer(http, paths).SyncAsync(data.Icons, result.Plan.ChangedIconKeys, ct);
             ReportIcons(icons);
+            await ExtractClassIconsAsync(paths, ct);
         }
         finally
         {
@@ -272,6 +274,14 @@ internal static class Program
         }
 
         Console.WriteLine();
+    }
+
+    /// <summary>Class / mastery icons come from a bundled sprite sheet, not from <c>data.json</c>; a failure only warns.</summary>
+    private static async Task ExtractClassIconsAsync(ConfigPaths paths, CancellationToken ct)
+    {
+        var error = await new ClassIconSprite(paths).ExtractAsync(ct);
+        if (error is not null)
+            ToolOutput.Line($"Class icons could not be created: {error}", OutputLevel.Warning);
     }
 
     private static HttpClient CreateHttpClient()
