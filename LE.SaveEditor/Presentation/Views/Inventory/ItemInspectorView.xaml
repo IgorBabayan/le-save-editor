@@ -105,8 +105,9 @@
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
                             </Trigger>
+                            <!-- Nothing to expand (e.g. an empty affix slot): no chevron, the label keeps its place. -->
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Chevron" Property="Opacity" Value="0.3" />
+                                <Setter TargetName="Chevron" Property="Visibility" Value="Hidden" />
                                 <Setter Property="Cursor" Value="Arrow" />
                             </Trigger>
                         </ControlTemplate.Triggers>
