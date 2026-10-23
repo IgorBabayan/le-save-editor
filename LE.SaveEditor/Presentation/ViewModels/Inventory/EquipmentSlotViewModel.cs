@@ -5,7 +5,7 @@ using LE.SaveEditor.Services.GameData.Items;
 
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
-/// <summary>A slot of the equipment grid; clicking it opens the item builder for that slot.</summary>
+/// <summary>A slot of the equipment grid; clicking it opens the item inspector for that slot.</summary>
 public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProvider iconProvider) : ViewModelBase
 {
     public EquipmentSlot Slot { get; } = slot;

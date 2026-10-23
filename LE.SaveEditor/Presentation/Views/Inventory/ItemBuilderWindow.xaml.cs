@@ -3,7 +3,10 @@ using LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 namespace LE.SaveEditor.Presentation.Views.Inventory;
 
-/// <summary>Item builder popup of an equipment slot. <see cref="Result"/> is the built item, or <c>null</c> when cancelled.</summary>
+/// <summary>
+/// Full item builder of an equipment slot (opened from the item inspector, or as a fallback when the inspector cannot
+/// be shown). <see cref="Result"/> is the built item, or <c>null</c> when cancelled.
+/// </summary>
 public partial class ItemBuilderWindow : Window
 {
     private readonly ItemBuilderViewModel _viewModel;

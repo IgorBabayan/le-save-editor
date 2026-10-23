@@ -21,7 +21,8 @@ public enum ItemListKind
 }
 
 /// <summary>
-/// Item builder popup opened from an equipment slot: only items that fit the slot are offered, grouped by the
+/// Item builder of an equipment slot, shown as the compact item inspector next to the slot (or the full builder
+/// window): only items that fit the slot are offered, grouped by the
 /// classes that can equip them (the character's own class first); the rarity tints the preview and picks the list
 /// (bases, uniques or set items), and every implicit / unique modifier of the selection gets a slider.
 /// Affix slots follow the rarity: bases take 2 prefixes, 2 suffixes, a sealed prefix, a sealed suffix and a
@@ -36,10 +37,10 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     private IReadOnlyList<BaseOptionViewModel> _allBases = [];
     private RarityOptionViewModel _selectedRarity;
 
-    /// <param name="confirm">Asks a Yes/No question (title, message); <c>true</c> for Yes.</param>
     /// <summary>Forging potential of the item being edited, kept when it is applied again (the builder does not edit it).</summary>
     private readonly int? _forgingPotential;
 
+    /// <param name="confirm">Asks a Yes/No question (title, message); <c>true</c> for Yes.</param>
     public ItemBuilderViewModel(
         IItemBaseCatalog catalog,
         IIconProvider iconProvider,
@@ -276,6 +277,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(ItemName))]
     [NotifyPropertyChangedFor(nameof(Subtitle))]
     [NotifyPropertyChangedFor(nameof(LevelText))]
+    [NotifyPropertyChangedFor(nameof(HasLevelText))]
     [NotifyPropertyChangedFor(nameof(Icon))]
     [NotifyPropertyChangedFor(nameof(IsSelectedBaseForOtherClass))]
     [NotifyPropertyChangedFor(nameof(ClassWarningText))]
@@ -329,6 +331,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     }
 
     public string LevelText => SelectedBase is { LevelRequirement: > 0 } b ? $"Requires level {b.LevelRequirement}" : string.Empty;
+
+    public bool HasLevelText => SelectedBase is { LevelRequirement: > 0 };
 
     public ImageSource? Icon => _iconProvider.Get(SelectedBase?.IconPath);
 
@@ -401,6 +405,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary>"Affixes", or "Corruption" for set items (they take nothing else).</summary>
     public string AffixesHeader => ListKind == ItemListKind.Sets ? "Corruption" : "Affixes";
 
+    /// <summary>Filled slots out of all slots, e.g. "3 / 7" (value of the inspector's "Affixes" row).</summary>
+    public string AffixSummary => $"{AffixSlots.Count(s => s.HasAffix)} / {AffixSlots.Count}";
+
     /// <summary>Slot being filled from the affix picker; <c>null</c> while the item grid is shown.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsPickingAffix))]
@@ -427,6 +434,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     partial void OnAffixPickerSlotChanged(AffixSlotViewModel? value)
     {
+        foreach (var slot in AffixSlots)
+            slot.IsPicking = slot == value;
+
         AffixSearchText = string.Empty;
         LoadAffixOptions();
     }
@@ -521,6 +531,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasAffixSlots));
         OnPropertyChanged(nameof(HasAnyAffix));
         OnPropertyChanged(nameof(AffixesHeader));
+        OnPropertyChanged(nameof(AffixSummary));
     }
 
     /// <summary>

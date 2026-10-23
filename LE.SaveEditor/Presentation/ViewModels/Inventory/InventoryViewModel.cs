@@ -10,7 +10,7 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
 /// Equipment slots show the items the character wears (read from <c>savedItems</c>); the other sections start
-/// empty. Clicking an equipment slot opens the item builder for it.
+/// empty. Clicking an equipment slot opens the item inspector (a compact item builder) next to it.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
@@ -70,16 +70,16 @@ public sealed partial class InventoryViewModel : ViewModelBase
         new("Runes")
     ];
 
-    /// <summary>Opens the item builder for <paramref name="slot"/>; the built item replaces the one in the slot.</summary>
+    /// <summary>
+    /// Opens the item inspector next to <paramref name="slot"/>; an applied item replaces the one in the slot.
+    /// </summary>
     [RelayCommand]
     private void OpenItemBuilder(EquipmentSlotViewModel? slot)
     {
         if (slot is null)
             return;
 
-        var item = _dialogService.ShowItemBuilder(slot.Slot, Character.CharacterClass, slot.Item);
-        if (item is not null)
-            slot.Item = item;
+        _dialogService.ShowItemInspector(slot, Character.CharacterClass);
     }
 
     /// <summary>

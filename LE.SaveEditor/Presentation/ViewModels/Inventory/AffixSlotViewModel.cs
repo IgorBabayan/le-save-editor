@@ -72,6 +72,10 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
 
     public string AddText => $"Add {Label.ToLowerInvariant()}";
 
+    /// <summary>The builder's affix picker is filling this slot (the item inspector shows the picker under it).</summary>
+    [ObservableProperty]
+    private bool _isPicking;
+
     public int MaxTier => Affix?.Tiers.Count ?? 1;
 
     /// <summary>The affix has more than one tier, so the tier slider is shown.</summary>

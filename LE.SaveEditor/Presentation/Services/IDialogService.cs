@@ -28,4 +28,11 @@ public interface IDialogService
     /// </summary>
     /// <returns>The built item, or <c>null</c> if the user cancelled.</returns>
     BuiltItem? ShowItemBuilder(EquipmentSlot slot, CharacterClass characterClass, BuiltItem? current);
+
+    /// <summary>
+    /// Opens the item inspector, a compact item builder, next to the control showing <paramref name="slot"/>
+    /// (falls back to the modal builder when that control cannot be found). Returns at once; when the user applies
+    /// the item it replaces <see cref="EquipmentSlotViewModel.Item"/>.
+    /// </summary>
+    void ShowItemInspector(EquipmentSlotViewModel slot, CharacterClass characterClass);
 }
