@@ -24,6 +24,15 @@ public interface IItemBaseCatalog
     /// </summary>
     IReadOnlyList<AffixDefinition> GetAffixes(int baseTypeId);
 
+    /// <summary>The plain base with these ids, or <c>null</c> when <c>base.db</c> does not know it.</summary>
+    ItemBase? FindBase(int baseTypeId, int subTypeId);
+
+    /// <summary>The unique / set item with <paramref name="uniqueId"/> (<c>uniqueID</c>), or <c>null</c>.</summary>
+    ItemBase? FindUnique(int uniqueId);
+
+    /// <summary>The equipment affix with <paramref name="affixId"/> (<c>affixId</c>), or <c>null</c>.</summary>
+    AffixDefinition? FindAffix(int affixId);
+
     /// <summary>Forgets what was read, so a database written by the generator is picked up.</summary>
     void ClearCache();
 }

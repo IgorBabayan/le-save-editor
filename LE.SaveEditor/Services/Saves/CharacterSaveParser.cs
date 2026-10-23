@@ -37,9 +37,66 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             Hardcore = dto.Hardcore,
             CharacterClass = (CharacterClass)dto.CharacterClass,
             ChosenMastery = dto.ChosenMastery,
-            LastPlayed = dto.LastPlayed
+            LastPlayed = dto.LastPlayed,
+            SavedItems = ReadSavedItems(dto.SavedItems)
         };
     }
+
+    /// <summary>
+    /// Reads <c>savedItems</c> leniently: an entry the editor does not understand is skipped instead of making
+    /// the whole save unreadable.
+    /// </summary>
+    private static IReadOnlyList<SavedItem> ReadSavedItems(JsonElement savedItems)
+    {
+        if (savedItems.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var result = new List<SavedItem>();
+        foreach (var entry in savedItems.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object
+                || !entry.TryGetProperty("data", out var data)
+                || data.ValueKind != JsonValueKind.Array
+                || ReadBytes(data) is not { } bytes)
+                continue;
+
+            int x = 0, y = 0;
+            if (entry.TryGetProperty("inventoryPosition", out var position) && position.ValueKind == JsonValueKind.Object)
+            {
+                x = GetInt(position, "x");
+                y = GetInt(position, "y");
+            }
+
+            result.Add(new SavedItem(
+                GetInt(entry, "containerID"),
+                x,
+                y,
+                GetInt(entry, "quantity", 1),
+                GetInt(entry, "formatVersion"),
+                bytes));
+        }
+
+        return result;
+    }
+
+    private static byte[]? ReadBytes(JsonElement array)
+    {
+        var bytes = new byte[array.GetArrayLength()];
+        var i = 0;
+        foreach (var value in array.EnumerateArray())
+        {
+            if (value.ValueKind != JsonValueKind.Number || !value.TryGetByte(out var b))
+                return null;
+            bytes[i++] = b;
+        }
+
+        return bytes;
+    }
+
+    private static int GetInt(JsonElement element, string name, int fallback = 0) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number)
+            ? number
+            : fallback;
 
     /// <summary>Removes the leading <c>EPOCH</c> word (and surrounding whitespace / BOM) so the rest is plain JSON.</summary>
     public static string StripEpochPrefix(string content)
@@ -64,5 +121,8 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
         [JsonPropertyName("lastPlayed")]
         [JsonConverter(typeof(LenientDateTimeOffsetConverter))]
         public DateTimeOffset? LastPlayed { get; init; }
+
+        /// <summary>Kept as raw JSON and read by <see cref="ReadSavedItems"/>, so a bad item never fails the save.</summary>
+        [JsonPropertyName("savedItems")] public JsonElement SavedItems { get; init; }
     }
 }

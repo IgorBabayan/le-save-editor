@@ -64,7 +64,7 @@ public partial class MainViewModel(
     public bool ShowSelectCharacterHint => HasCharacters && !HasSelectedCharacter;
 
     partial void OnSelectedCharacterChanged(CharacterSave? value) =>
-        CharacterDetails = value is null ? null : new CharacterViewModel(value, dialogService, iconProvider);
+        CharacterDetails = value is null ? null : new CharacterViewModel(value, dialogService, iconProvider, itemBaseCatalog);
 
     /// <summary>Called once when the main window opens: loads characters if a save folder was selected earlier.</summary>
     public async Task InitializeAsync()

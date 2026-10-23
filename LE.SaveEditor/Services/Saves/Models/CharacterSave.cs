@@ -19,6 +19,9 @@ public sealed record CharacterSave
 
     public DateTimeOffset? LastPlayed { get; init; }
 
+    /// <summary>Everything in <c>savedItems</c>: equipped items, backpack, idols and blessings.</summary>
+    public IReadOnlyList<SavedItem> SavedItems { get; init; } = [];
+
     /// <summary><see cref="LastPlayed"/> in the user's time zone, for display.</summary>
     public DateTime? LastPlayedLocal => LastPlayed?.LocalDateTime;
 

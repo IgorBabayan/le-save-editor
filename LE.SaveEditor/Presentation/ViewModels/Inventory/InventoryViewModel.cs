@@ -1,6 +1,7 @@
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
+using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
@@ -8,8 +9,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <summary>
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
-/// Nothing is parsed from the save yet, so every slot and section starts empty; clicking an equipment slot
-/// opens the item builder for it.
+/// Equipment slots show the items the character wears (read from <c>savedItems</c>); the other sections start
+/// empty. Clicking an equipment slot opens the item builder for it.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
@@ -18,7 +19,11 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     private readonly IDialogService _dialogService;
 
-    public InventoryViewModel(CharacterSave character, IDialogService dialogService, IIconProvider iconProvider)
+    public InventoryViewModel(
+        CharacterSave character,
+        IDialogService dialogService,
+        IIconProvider iconProvider,
+        IItemBaseCatalog itemBaseCatalog)
     {
         Character = character;
         _dialogService = dialogService;
@@ -35,6 +40,8 @@ public sealed partial class InventoryViewModel : ViewModelBase
         Gloves = Create(EquipmentSlot.Gloves);
         Boots = Create(EquipmentSlot.Boots);
         Relic = Create(EquipmentSlot.Relic);
+
+        LoadEquippedItems(itemBaseCatalog);
     }
 
     public CharacterSave Character { get; }
@@ -74,6 +81,39 @@ public sealed partial class InventoryViewModel : ViewModelBase
         if (item is not null)
             slot.Item = item;
     }
+
+    /// <summary>
+    /// Puts the items in the equipment containers of the save into their slots. Items that cannot be decoded or
+    /// whose base is not in <c>base.db</c> (database missing or outdated) leave their slot empty.
+    /// </summary>
+    private void LoadEquippedItems(IItemBaseCatalog catalog)
+    {
+        foreach (var saved in Character.SavedItems)
+        {
+            if (EquipmentSlotExtensions.FromContainerId(saved.ContainerId) is not { } slot
+                || GetSlot(slot) is not { Item: null } target
+                || ItemDataReader.Read(saved.Data) is not { } data)
+                continue;
+
+            target.Item = SavedItemConverter.ToBuiltItem(data, slot, catalog);
+        }
+    }
+
+    private EquipmentSlotViewModel GetSlot(EquipmentSlot slot) => slot switch
+    {
+        EquipmentSlot.Helmet => Helmet,
+        EquipmentSlot.Amulet => Amulet,
+        EquipmentSlot.Weapon => Weapon,
+        EquipmentSlot.BodyArmour => BodyArmour,
+        EquipmentSlot.OffHand => OffHand,
+        EquipmentSlot.LeftRing => LeftRing,
+        EquipmentSlot.RightRing => RightRing,
+        EquipmentSlot.Belt => Belt,
+        EquipmentSlot.Gloves => Gloves,
+        EquipmentSlot.Boots => Boots,
+        EquipmentSlot.Relic => Relic,
+        _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null)
+    };
 
     /// <summary>The idol grid has a blocked plus shape in its middle, as in the game.</summary>
     private static IReadOnlyList<IdolCellViewModel> CreateIdolCells()

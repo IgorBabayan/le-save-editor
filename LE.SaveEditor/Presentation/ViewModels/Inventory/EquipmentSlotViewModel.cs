@@ -12,7 +12,7 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
 
     public string Label => Slot.DisplayName;
 
-    /// <summary>Item made in the builder; <c>null</c> while the slot is empty (items are not parsed from the save yet).</summary>
+    /// <summary>Item read from the save or made in the builder; <c>null</c> while the slot is empty.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasItem))]
     [NotifyPropertyChangedFor(nameof(Icon))]

@@ -77,6 +77,21 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         return catalog.Affixes.Where(a => a.CanRollOnType(baseTypeId)).ToList();
     }
 
+    public ItemBase? FindBase(int baseTypeId, int subTypeId) =>
+        GetCatalog().Bases.FirstOrDefault(b => b.BaseTypeId == baseTypeId && b.SubTypeId == subTypeId);
+
+    public ItemBase? FindUnique(int uniqueId) =>
+        GetCatalog().Uniques.FirstOrDefault(u => u.UniqueId == uniqueId);
+
+    public AffixDefinition? FindAffix(int affixId) =>
+        GetCatalog().Affixes.FirstOrDefault(a => a.Id == affixId);
+
+    private Catalog GetCatalog()
+    {
+        lock (_sync)
+            return _catalog ??= Load();
+    }
+
     public void ClearCache()
     {
         lock (_sync)

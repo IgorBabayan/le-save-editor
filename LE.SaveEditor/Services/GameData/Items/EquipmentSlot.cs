@@ -57,6 +57,26 @@ public static class EquipmentSlotExtensions
         [EquipmentSlot.Relic] = ["relic"]
     };
 
+    /// <summary><c>containerID</c> of each equipment slot in <c>savedItems</c> of a character save.</summary>
+    private static readonly IReadOnlyDictionary<int, EquipmentSlot> SlotsByContainerId = new Dictionary<int, EquipmentSlot>
+    {
+        [2] = EquipmentSlot.Helmet,
+        [3] = EquipmentSlot.BodyArmour,
+        [4] = EquipmentSlot.Weapon,
+        [5] = EquipmentSlot.OffHand,
+        [6] = EquipmentSlot.Gloves,
+        [7] = EquipmentSlot.Belt,
+        [8] = EquipmentSlot.Boots,
+        [9] = EquipmentSlot.LeftRing,
+        [10] = EquipmentSlot.RightRing,
+        [11] = EquipmentSlot.Amulet,
+        [12] = EquipmentSlot.Relic
+    };
+
+    /// <summary>The equipment slot a saved item with <paramref name="containerId"/> is in; <c>null</c> for any other container.</summary>
+    public static EquipmentSlot? FromContainerId(int containerId) =>
+        SlotsByContainerId.TryGetValue(containerId, out var slot) ? slot : null;
+
     extension(EquipmentSlot slot)
     {
         /// <summary>Label shown on the slot and in the item builder title.</summary>
