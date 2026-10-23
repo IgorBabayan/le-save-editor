@@ -9,13 +9,15 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <param name="ImplicitValues">One value per <see cref="ItemBase.Implicits"/>, in the same order.</param>
 /// <param name="ModValues">One value per <see cref="ItemBase.Mods"/>, in the same order (empty for plain bases).</param>
 /// <param name="Affixes">Crafted affixes (prefixes, suffixes, sealed and corruption).</param>
+/// <param name="ForgingPotential">Forging potential read from the save; <c>null</c> when unknown or for uniques.</param>
 public sealed record BuiltItem(
     EquipmentSlot Slot,
     ItemRarity Rarity,
     ItemBase Base,
     IReadOnlyList<double> ImplicitValues,
     IReadOnlyList<double> ModValues,
-    IReadOnlyList<BuiltAffix> Affixes)
+    IReadOnlyList<BuiltAffix> Affixes,
+    int? ForgingPotential = null)
 {
     /// <summary>
     /// Implicit values as the game stores them: one byte per implicit, 0 = minimum, 255 = maximum.

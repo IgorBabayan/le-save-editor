@@ -19,7 +19,7 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
     [NotifyPropertyChangedFor(nameof(HasIcon))]
     [NotifyPropertyChangedFor(nameof(RarityForeground))]
     [NotifyPropertyChangedFor(nameof(RarityBackground))]
-    [NotifyPropertyChangedFor(nameof(ToolTip))]
+    [NotifyPropertyChangedFor(nameof(ItemTooltip))]
     private BuiltItem? _item;
 
     public bool HasItem => Item is not null;
@@ -32,29 +32,14 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
 
     public Brush? RarityBackground => Item is null ? null : RarityPalette.Background(Item.Rarity);
 
-    public string ToolTip
-    {
-        get
-        {
-            if (Item is null)
-                return $"{Label} — click to build an item";
+    /// <summary>Plain tooltip of an empty slot.</summary>
+    public string ToolTip => $"{Label} — click to build an item";
 
-            var lines = new List<string> { Item.Base.Name, $"{Item.Rarity} {Item.Base.TypeName}" };
-            if (Item.Base.BaseName is { } baseName)
-                lines.Add(baseName);
-            lines.AddRange(Item.Base.Implicits.Select((s, i) => ItemStatViewModel.Format(s, Item.ImplicitValues[i])));
-            lines.AddRange(Item.Base.Mods.Select((s, i) => ItemStatViewModel.Format(s, Item.ModValues[i])));
-            foreach (var affix in Item.Affixes)
-            {
-                var tag = affix.Slot switch
-                {
-                    AffixSlotKind.SealedPrefix or AffixSlotKind.SealedSuffix => " (sealed)",
-                    AffixSlotKind.Corrupted => " (corrupted)",
-                    _ => string.Empty
-                };
-                lines.AddRange(affix.Lines.Select(line => $"{line}  [T{affix.Tier}]{tag}"));
-            }
-            return string.Join(Environment.NewLine, lines);
-        }
-    }
+    /// <summary>Game-styled tooltip of the item in the slot; <c>null</c> while the slot is empty.</summary>
+    public ItemTooltipViewModel? ItemTooltip =>
+        Item is null ? null : _itemTooltip ??= new ItemTooltipViewModel(Item, Icon, RarityPalette.Foreground(Item.Rarity));
+
+    private ItemTooltipViewModel? _itemTooltip;
+
+    partial void OnItemChanged(BuiltItem? value) => _itemTooltip = null;
 }

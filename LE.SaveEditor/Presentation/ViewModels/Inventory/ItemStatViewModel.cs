@@ -105,6 +105,14 @@ public sealed partial class ItemStatViewModel : ViewModelBase
         return Compose(implicitStat, $"({FormatPlainNumber(implicitStat, low)}–{FormatPlainNumber(implicitStat, high)}){suffix}", negative);
     }
 
+    /// <summary>
+    /// Both ends of the roll range as the game's "Range:" line writes them: "21% to 26%", "65 to 65".
+    /// </summary>
+    public static string FormatBounds(ItemImplicit implicitStat) =>
+        implicitStat.Template is not null
+            ? $"{FormatTemplateValue(implicitStat, implicitStat.TemplateMin)} to {FormatTemplateValue(implicitStat, implicitStat.TemplateMax)}"
+            : $"{FormatNumber(implicitStat, implicitStat.Min)} to {FormatNumber(implicitStat, implicitStat.Max)}";
+
     /// <summary>Puts an already formatted number into the property's tooltip wording.</summary>
     private static string Compose(ItemImplicit implicitStat, string number, bool negative)
     {

@@ -37,7 +37,7 @@ public static class SavedItemConverter
             affixes.Add(new BuiltAffix(SlotKindOf(affix, stored.IsSealed), affix, tier, values));
         }
 
-        return new BuiltItem(slot, RarityOf(data, affixes), itemBase, implicitValues, modValues, affixes);
+        return new BuiltItem(slot, RarityOf(data, affixes), itemBase, implicitValues, modValues, affixes, data.ForgingPotential);
     }
 
     private static double FromRoll(ItemImplicit stat, IReadOnlyList<byte> rolls, int index) =>

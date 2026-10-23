@@ -774,6 +774,186 @@
         </Setter>
     </Style>
 
+    <!-- ===== Item tooltip (styled like the game's, same dark look in every theme) ===== -->
+
+    <SolidColorBrush x:Key="ItemTooltipBackgroundBrush" Color="#F0141119" />
+    <SolidColorBrush x:Key="ItemTooltipDividerBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="ItemTooltipHeaderBrush" Color="#CDBF8E" />
+    <SolidColorBrush x:Key="ItemTooltipTypeBrush" Color="#B9AD8A" />
+    <SolidColorBrush x:Key="ItemTooltipStatBrush" Color="#E9E4DA" />
+    <SolidColorBrush x:Key="ItemTooltipExaltedBrush" Color="#C08CF5" />
+    <SolidColorBrush x:Key="ItemTooltipInfoBrush" Color="#93A9EC" />
+    <SolidColorBrush x:Key="ItemTooltipUniqueEffectBrush" Color="#F0A35E" />
+    <FontFamily x:Key="ItemTooltipTitleFont">Georgia, Times New Roman</FontFamily>
+
+    <!-- One stat block (ItemTooltipEntry): rolled lines, "Tier: N", then a "Range:" line per stat. -->
+    <DataTemplate x:Key="ItemTooltipEntryTemplate">
+        <StackPanel Margin="0,5">
+            <ItemsControl x:Name="Lines"
+                          ItemsSource="{Binding Lines}"
+                          TextElement.Foreground="{StaticResource ItemTooltipStatBrush}"
+                          TextElement.FontSize="15">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock x:Name="Tier"
+                       Margin="0,2,0,0"
+                       FontSize="13"
+                       Foreground="{StaticResource ItemTooltipInfoBrush}"
+                       Text="{Binding TierText}" />
+            <ItemsControl ItemsSource="{Binding Ranges}"
+                          TextElement.Foreground="{StaticResource ItemTooltipInfoBrush}"
+                          TextElement.FontSize="13">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsExalted}" Value="True">
+                <Setter TargetName="Lines" Property="TextElement.Foreground" Value="{StaticResource ItemTooltipExaltedBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding HasTier}" Value="False">
+                <Setter TargetName="Tier" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- Entry inside a section: a thin line separates it from the entry above. -->
+    <DataTemplate x:Key="ItemTooltipSectionEntryTemplate">
+        <Border x:Name="Divider" BorderThickness="0,1,0,0" BorderBrush="{StaticResource ItemTooltipDividerBrush}">
+            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ItemTooltipEntryTemplate}" />
+        </Border>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                <Setter TargetName="Divider" Property="BorderThickness" Value="0" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- Whole tooltip (ItemTooltipViewModel). -->
+    <DataTemplate x:Key="ItemTooltipTemplate">
+        <StackPanel Width="380">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0"
+                       Width="80"
+                       MaxHeight="120"
+                       Margin="0,0,14,0"
+                       VerticalAlignment="Top"
+                       Stretch="Uniform"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Source="{Binding Icon}"
+                       Visibility="{Binding HasIcon, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <StackPanel Grid.Column="1">
+                    <TextBlock FontFamily="{StaticResource ItemTooltipTitleFont}"
+                               FontSize="19"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Foreground="{Binding RarityBrush}"
+                               Text="{Binding Title}" />
+                    <TextBlock Margin="0,3,0,4"
+                               FontFamily="{StaticResource ItemTooltipTitleFont}"
+                               FontSize="14"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource ItemTooltipTypeBrush}"
+                               Text="{Binding TypeLine}" />
+                    <ItemsControl ItemsSource="{Binding Implicits}" ItemTemplate="{StaticResource ItemTooltipEntryTemplate}" />
+                    <StackPanel Margin="0,4,0,0"
+                                Orientation="Horizontal"
+                                Visibility="{Binding HasForgingPotential, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   FontFamily="{DynamicResource IconFont}"
+                                   FontSize="14"
+                                   Foreground="{StaticResource ItemTooltipHeaderBrush}"
+                                   Text="&#xE90F;" />
+                        <TextBlock VerticalAlignment="Center"
+                                   FontFamily="{StaticResource ItemTooltipTitleFont}"
+                                   FontSize="15"
+                                   Foreground="{StaticResource ItemTooltipStatBrush}"
+                                   Text="{Binding ForgingPotentialText}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Modifiers / prefixes / suffixes / sealed affix / corruption -->
+            <ItemsControl ItemsSource="{Binding Sections}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,12,0,0">
+                            <TextBlock Margin="0,0,0,2"
+                                       FontFamily="{StaticResource ItemTooltipTitleFont}"
+                                       FontSize="15"
+                                       Foreground="{StaticResource ItemTooltipHeaderBrush}"
+                                       Text="{Binding Header}" />
+                            <Border Height="1" Margin="0,2,0,0" Background="{StaticResource ItemTooltipDividerBrush}" />
+                            <ItemsControl ItemsSource="{Binding Entries}" ItemTemplate="{StaticResource ItemTooltipSectionEntryTemplate}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Unique effects that do not roll -->
+            <StackPanel Margin="0,10,0,0" Visibility="{Binding HasEffects, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border Height="1" Margin="0,0,0,6" Background="{StaticResource ItemTooltipDividerBrush}" />
+                <ItemsControl ItemsSource="{Binding Effects}"
+                              TextElement.Foreground="{StaticResource ItemTooltipUniqueEffectBrush}"
+                              TextElement.FontSize="14">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Margin="0,2" FontStyle="Italic" TextWrapping="Wrap" Text="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Requirements -->
+            <StackPanel Margin="0,10,0,0" Visibility="{Binding HasRequirements, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border Height="1" Margin="0,0,0,6" Background="{StaticResource ItemTooltipDividerBrush}" />
+                <ItemsControl ItemsSource="{Binding Requirements}"
+                              TextElement.Foreground="{StaticResource ItemTooltipTypeBrush}"
+                              TextElement.FontSize="13">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock HorizontalAlignment="Center" Text="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- ToolTip chrome around ItemTooltipTemplate: dark card framed in the item's rarity color. -->
+    <Style x:Key="ItemTooltipStyle" TargetType="ToolTip">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="ContentTemplate" Value="{StaticResource ItemTooltipTemplate}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Padding="18,16"
+                            CornerRadius="4"
+                            BorderThickness="1"
+                            Background="{StaticResource ItemTooltipBackgroundBrush}"
+                            BorderBrush="{Binding Content.RarityBrush, RelativeSource={RelativeSource TemplatedParent}}"
+                            SnapsToDevicePixels="True"
+                            TextOptions.TextFormattingMode="Display">
+                        <ContentPresenter />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===== Character inventory ===== -->
 
     <!--
@@ -784,7 +964,6 @@
         <Setter Property="Margin" Value="4" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="ToolTip" Value="{Binding ToolTip}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -793,7 +972,15 @@
                             BorderThickness="1"
                             BorderBrush="{DynamicResource ControlBorderBrush}"
                             Background="{DynamicResource ControlBackgroundBrush}"
-                            SnapsToDevicePixels="True">
+                            SnapsToDevicePixels="True"
+                            ToolTipService.InitialShowDelay="150"
+                            ToolTipService.ShowDuration="600000"
+                            ToolTipService.Placement="Right"
+                            ToolTipService.HorizontalOffset="8">
+                        <!-- Game-styled item tooltip; an empty slot swaps it for a plain hint (trigger below). -->
+                        <Border.ToolTip>
+                            <ToolTip Style="{StaticResource ItemTooltipStyle}" Content="{Binding ItemTooltip}" />
+                        </Border.ToolTip>
                         <Grid>
                             <Image x:Name="ItemIcon"
                                    Margin="6"
@@ -813,6 +1000,11 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding HasItem}" Value="False">
+                            <Setter TargetName="Bd" Property="ToolTip" Value="{Binding ToolTip}" />
+                            <Setter TargetName="Bd" Property="ToolTipService.Placement" Value="Mouse" />
+                            <Setter TargetName="Bd" Property="ToolTipService.HorizontalOffset" Value="0" />
+                        </DataTrigger>
                         <DataTrigger Binding="{Binding HasItem}" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{Binding RarityBackground}" />
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{Binding RarityForeground}" />

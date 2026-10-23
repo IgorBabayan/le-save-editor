@@ -37,6 +37,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     private RarityOptionViewModel _selectedRarity;
 
     /// <param name="confirm">Asks a Yes/No question (title, message); <c>true</c> for Yes.</param>
+    /// <summary>Forging potential of the item being edited, kept when it is applied again (the builder does not edit it).</summary>
+    private readonly int? _forgingPotential;
+
     public ItemBuilderViewModel(
         IItemBaseCatalog catalog,
         IIconProvider iconProvider,
@@ -48,6 +51,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         _catalog = catalog;
         _iconProvider = iconProvider;
         _confirm = confirm;
+        _forgingPotential = current?.ForgingPotential;
         Slot = slot;
         CharacterClass = characterClass;
         IsDatabaseAvailable = catalog.IsAvailable;
@@ -377,7 +381,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             SelectedBase,
             Stats.Select(s => s.Value).ToList(),
             ModStats.Select(s => s.Value).ToList(),
-            AffixSlots.Select(a => a.ToBuiltAffix()).OfType<BuiltAffix>().ToList()));
+            AffixSlots.Select(a => a.ToBuiltAffix()).OfType<BuiltAffix>().ToList(),
+            SelectedBase.IsUnique ? null : _forgingPotential));
     }
 
     [RelayCommand]
