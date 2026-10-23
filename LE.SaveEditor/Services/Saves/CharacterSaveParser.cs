@@ -60,6 +60,9 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
         [JsonPropertyName("hardcore")] public bool Hardcore { get; init; }
         [JsonPropertyName("characterClass")] public int CharacterClass { get; init; }
         [JsonPropertyName("chosenMastery")] public int ChosenMastery { get; init; }
-        [JsonPropertyName("lastPlayed")] public DateTimeOffset? LastPlayed { get; init; }
+        /// <summary>Display only, so a format the game changed must never make the whole save unreadable.</summary>
+        [JsonPropertyName("lastPlayed")]
+        [JsonConverter(typeof(LenientDateTimeOffsetConverter))]
+        public DateTimeOffset? LastPlayed { get; init; }
     }
 }

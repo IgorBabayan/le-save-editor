@@ -19,6 +19,7 @@ concurrency:
 
 env:
   PROJECT: LE.SaveEditor/LE.SaveEditor.csproj
+  DB_PROJECT: LE.SaveEditor.DB/LE.SaveEditor.DB.csproj
   RUNTIME: win-x64
   CONFIGURATION: Release
 
@@ -65,6 +66,17 @@ jobs:
           -p:Version=${{ steps.version.outputs.version }}
           -p:DebugType=none
           -o publish
+
+      # The editor starts the database generator from Tools\LE.SaveEditor.DB (title bar database button).
+      - name: Publish database generator (self-contained)
+        run: >
+          dotnet publish ${{ env.DB_PROJECT }}
+          -c ${{ env.CONFIGURATION }}
+          -r ${{ env.RUNTIME }}
+          --self-contained true
+          -p:Version=${{ steps.version.outputs.version }}
+          -p:DebugType=none
+          -o publish/Tools/LE.SaveEditor.DB
 
       - name: Install Inno Setup
         shell: pwsh
