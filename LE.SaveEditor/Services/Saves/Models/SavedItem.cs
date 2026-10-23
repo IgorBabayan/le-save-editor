@@ -15,4 +15,10 @@ public sealed record SavedItem(int ContainerId, int X, int Y, int Quantity, int 
 {
     /// <summary><see cref="ContainerId"/> of the character's backpack (the "Items" grid of the inventory).</summary>
     public const int BackpackContainerId = 1;
+
+    /// <summary>
+    /// Position of the entry in the file's <c>savedItems</c> array (counting entries the editor skipped), so it can be
+    /// written back in place; -1 for an item made in the editor that is not in the file yet.
+    /// </summary>
+    public int Index { get; init; } = -1;
 }

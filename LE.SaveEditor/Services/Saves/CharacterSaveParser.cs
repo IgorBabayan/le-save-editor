@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LE.SaveEditor.Services.Saves.Models;
@@ -39,9 +41,14 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             CharacterClass = (CharacterClass)dto.CharacterClass,
             ChosenMastery = dto.ChosenMastery,
             LastPlayed = dto.LastPlayed,
-            SavedItems = ReadSavedItems(dto.SavedItems)
+            SavedItems = ReadSavedItems(dto.SavedItems),
+            ContentHash = ComputeContentHash(content)
         };
     }
+
+    /// <summary>Fingerprint of a save file's text, to notice that the game changed the file after it was read.</summary>
+    public static string ComputeContentHash(string content) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
 
     /// <summary>
     /// Reads <c>savedItems</c> leniently: an entry the editor does not understand is skipped instead of making
@@ -53,8 +60,10 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             return [];
 
         var result = new List<SavedItem>();
+        var index = -1;
         foreach (var entry in savedItems.EnumerateArray())
         {
+            index++;
             if (entry.ValueKind != JsonValueKind.Object
                 || !entry.TryGetProperty("data", out var data)
                 || data.ValueKind != JsonValueKind.Array
@@ -74,7 +83,10 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
                 y,
                 GetInt(entry, "quantity", 1),
                 GetInt(entry, "formatVersion"),
-                bytes));
+                bytes)
+            {
+                Index = index
+            });
         }
 
         return result;

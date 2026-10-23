@@ -24,6 +24,12 @@ public sealed partial class BackpackViewModel : ViewModelBase
     private readonly IToastService _toastService;
     private bool _isReverting;
 
+    /// <summary>Items placed when the save was read, including the ones removed since (for <see cref="GetUpdates"/>).</summary>
+    private readonly List<BackpackItemViewModel> _loadedItems = [];
+
+    /// <summary>An item was moved, changed or removed.</summary>
+    public event EventHandler? Changed;
+
     public BackpackViewModel(
         IEnumerable<SavedItem> savedItems,
         IIconProvider iconProvider,
@@ -94,8 +100,31 @@ public sealed partial class BackpackViewModel : ViewModelBase
             }
             else
             {
+                // Not shown, so it is never changed: it stays in the save as it is.
                 SkippedCount++;
             }
+        }
+
+        foreach (var item in Items)
+        {
+            item.MarkLoaded();
+            _loadedItems.Add(item);
+        }
+    }
+
+    /// <summary>
+    /// Changes to write into <c>savedItems</c>: moved and edited items, and items removed from the backpack.
+    /// Items that were not shown (no room, see <see cref="SkippedCount"/>) are left as they are.
+    /// </summary>
+    /// <exception cref="ArgumentException">An edited item cannot be stored.</exception>
+    public IEnumerable<SavedItemUpdate> GetUpdates()
+    {
+        foreach (var item in _loadedItems)
+        {
+            if (!Items.Contains(item))
+                yield return SavedItemUpdate.Remove(item.Source);
+            else if (item.ToSavedItem() is { } replacement)
+                yield return SavedItemUpdate.Replace(item.Source, replacement);
         }
     }
 
@@ -139,6 +168,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
         if (equipment.Item is not { } built)
         {
             Items.Remove(item);
+            Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
 
@@ -178,6 +208,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
         item.Footprint = footprint;
         item.AcceptedItem = built;
         OnPropertyChanged(nameof(Summary));
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -190,8 +221,12 @@ public sealed partial class BackpackViewModel : ViewModelBase
         if (!Items.Contains(item) || !CanPlace(item.Footprint, column, row, item))
             return false;
 
+        if (item.Column == column && item.Row == row)
+            return true;
+
         item.Column = column;
         item.Row = row;
+        Changed?.Invoke(this, EventArgs.Empty);
         return true;
     }
 

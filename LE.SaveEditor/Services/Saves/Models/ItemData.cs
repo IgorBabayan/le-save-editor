@@ -14,6 +14,11 @@ namespace LE.SaveEditor.Services.Saves.Models;
 /// <param name="Affixes">Affixes in the order they are stored.</param>
 /// <param name="FormatVersion">First byte of the data (2 or 6).</param>
 /// <param name="InstanceId">The 4 bytes after the version in format 6 (empty in format 2), kept to write the item back.</param>
+/// <param name="Flags">The byte after the rarity (0 on plain, unique and set items, 128 on legendaries), kept as stored.</param>
+/// <param name="Tail">
+/// The last byte: legendary potential of a unique / set item, 0 after the affixes of other items; <c>null</c> when the
+/// data ends without it.
+/// </param>
 public sealed record ItemData(
     int BaseTypeId,
     int SubTypeId,
@@ -24,7 +29,9 @@ public sealed record ItemData(
     int? ForgingPotential,
     IReadOnlyList<ItemAffixData> Affixes,
     int FormatVersion = 2,
-    IReadOnlyList<byte>? InstanceId = null)
+    IReadOnlyList<byte>? InstanceId = null,
+    int Flags = 0,
+    byte? Tail = null)
 {
     public bool IsUnique => UniqueId is not null;
 }

@@ -117,6 +117,10 @@
         <CommandBinding Command="{x:Static SystemCommands.CloseWindowCommand}" Executed="OnCloseExecuted" />
     </Window.CommandBindings>
 
+    <Window.InputBindings>
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    </Window.InputBindings>
+
     <Border x:Name="RootBorder"
             BorderBrush="{DynamicResource WindowBorderBrush}"
             BorderThickness="1">
@@ -144,6 +148,15 @@
 
                 <!-- Custom buttons placed next to the standard caption buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- Writes the changes of the selected character into its save file; enabled while there are any. -->
+                    <Button x:Name="SaveButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Save changes (Ctrl+S)"
+                            AutomationProperties.Name="Save changes"
+                            Command="{Binding SaveCommand}">
+                        <wpf:MaterialIcon Kind="ContentSaveOutline" Width="18" Height="18" />
+                    </Button>
+
                     <!-- Generates the game database, or updates it if it already exists (LE.SaveEditor.DB). -->
                     <Button x:Name="DatabaseButton"
                             Style="{StaticResource TitleBarToolButtonStyle}"

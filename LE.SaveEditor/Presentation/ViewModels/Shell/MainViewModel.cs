@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Presentation.ViewModels.Characters;
@@ -17,6 +18,7 @@ public partial class MainViewModel(
     IDialogService dialogService,
     ISettingsService settingsService,
     ISaveFolderLoader saveFolderLoader,
+    ICharacterSaveWriter characterSaveWriter,
     INotificationService notificationService,
     IIconProvider iconProvider,
     IItemBaseCatalog itemBaseCatalog,
@@ -36,6 +38,12 @@ public partial class MainViewModel(
 
     /// <summary>Character <see cref="CharacterDetails"/> was created for.</summary>
     private CharacterSave? _detailsCharacter;
+
+    /// <summary>
+    /// Details of every character opened since the folder was read, by file path, so changes that are not saved yet
+    /// survive selecting another character.
+    /// </summary>
+    private readonly Dictionary<string, CharacterViewModel> _openedCharacters = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Bell button and notification popup in the title bar.</summary>
     public NotificationCenterViewModel NotificationCenter { get; } = notificationCenter;
@@ -81,12 +89,22 @@ public partial class MainViewModel(
 
     /// <summary>Details (Blessings / Inventory tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private CharacterViewModel? _characterDetails;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowNoCharacters))]
     [NotifyPropertyChangedFor(nameof(ShowLoading))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isLoading;
+
+    /// <summary>The selected character is being written to its save file.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private bool _isSaving;
+
+    /// <summary>Some opened character has changes that are not saved yet.</summary>
+    public bool HasUnsavedChanges => _openedCharacters.Values.Any(c => c.HasUnsavedChanges);
 
     public bool HasSaveFolder => IsExistingFolder(settingsService.Current.SaveFolderPath);
     public bool ShowNoSaveFolder => !HasSaveFolder;
@@ -129,9 +147,7 @@ public partial class MainViewModel(
         if (!ReferenceEquals(selected, _detailsCharacter))
         {
             _detailsCharacter = selected;
-            CharacterDetails = selected is null
-                ? null
-                : new CharacterViewModel(selected, dialogService, iconProvider, itemBaseCatalog, toastService);
+            CharacterDetails = selected is null ? null : GetDetails(selected);
         }
 
         OnPropertyChanged(nameof(SelectedCharacter));
@@ -165,6 +181,113 @@ public partial class MainViewModel(
         OnPropertyChanged(nameof(HasVisibleSoftcoreCharacters));
         OnPropertyChanged(nameof(HasVisibleHardcoreCharacters));
         UpdateSelectedCharacter();
+    }
+
+    /// <summary>The details of <paramref name="character"/>, with its unsaved changes if it was opened before.</summary>
+    private CharacterViewModel GetDetails(CharacterSave character)
+    {
+        if (_openedCharacters.TryGetValue(character.FilePath, out var opened) && ReferenceEquals(opened.Character, character))
+            return opened;
+
+        var details = new CharacterViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService);
+        details.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(CharacterViewModel.HasUnsavedChanges))
+                return;
+
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+            SaveCommand.NotifyCanExecuteChanged();
+        };
+
+        _openedCharacters[character.FilePath] = details;
+        return details;
+    }
+
+    /// <summary>Forgets opened details whose character is no longer listed (the folder was read again).</summary>
+    private void ForgetClosedCharacters()
+    {
+        foreach (var (path, details) in _openedCharacters.ToList())
+        {
+            if (!Characters.Any(c => ReferenceEquals(c, details.Character)))
+                _openedCharacters.Remove(path);
+        }
+
+        OnPropertyChanged(nameof(HasUnsavedChanges));
+    }
+
+    /// <summary>Asks before something would throw away unsaved changes; <c>true</c> when it may go ahead.</summary>
+    private bool ConfirmDiscardChanges(string action)
+    {
+        if (!HasUnsavedChanges)
+            return true;
+
+        var names = _openedCharacters.Values
+            .Where(c => c.HasUnsavedChanges)
+            .Select(c => c.Character.CharacterName)
+            .ToList();
+        return dialogService.Confirm(
+            "Unsaved changes",
+            $"{string.Join(", ", names)} {(names.Count == 1 ? "has" : "have")} unsaved changes. {action} and discard them?");
+    }
+
+    /// <summary>Called when the main window is about to close; <c>false</c> keeps it open.</summary>
+    public bool ConfirmClose() => ConfirmDiscardChanges("Close the editor");
+
+    private bool CanSave() => !IsSaving && !IsLoading && CharacterDetails?.HasUnsavedChanges == true;
+
+    /// <summary>
+    /// Writes the changes of the selected character into its save file (Ctrl+S). The previous file is kept as a backup,
+    /// and the character is read back from the written file, so what is shown is what the game will load.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSave))]
+    private async Task SaveAsync()
+    {
+        if (CharacterDetails is not { } details)
+            return;
+
+        var character = details.Character;
+        IsSaving = true;
+        try
+        {
+            var updates = details.GetUpdates();
+            if (updates.Count == 0)
+                return;
+
+            var result = await characterSaveWriter.SaveAsync(character, updates);
+            ReplaceCharacter(character, result.Character);
+
+            toastService.Show(
+                $"{character.CharacterName} saved. The previous file was kept as {Path.GetFileName(result.BackupPath)}.",
+                NotificationSeverity.Success);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException)
+        {
+            // SaveFileChangedException is an IOException: the game (or something else) wrote the file meanwhile.
+            notificationService.Notify($"{character.CharacterName} could not be saved", ex.Message, NotificationSeverity.Error);
+            toastService.Show($"{character.CharacterName} could not be saved. See the notifications for details.", NotificationSeverity.Error);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    /// <summary>Puts the character read back from its saved file in place of <paramref name="previous"/> and shows it.</summary>
+    private void ReplaceCharacter(CharacterSave previous, CharacterSave saved)
+    {
+        for (var i = 0; i < Characters.Count; i++)
+        {
+            if (ReferenceEquals(Characters[i], previous))
+            {
+                Characters[i] = saved;
+                break;
+            }
+        }
+
+        // The saved details are rebuilt from the file; the lists select the new instance by its path.
+        _openedCharacters.Remove(previous.FilePath);
+        RefreshCharacterLists();
+        OnPropertyChanged(nameof(HasUnsavedChanges));
     }
 
     private static CharacterSave? FindByPath(IEnumerable<CharacterSave> characters, string? filePath) =>
@@ -232,6 +355,9 @@ public partial class MainViewModel(
     [RelayCommand]
     private async Task LoadSavesAsync()
     {
+        if (!ConfirmDiscardChanges("Read the save folder again"))
+            return;
+
         // A newer load (e.g. Save pressed again) supersedes the running one.
         _loadCts?.Cancel();
         using var cts = new CancellationTokenSource();
@@ -248,6 +374,7 @@ public partial class MainViewModel(
                 return;
 
             Replace(Characters, content.Characters.OrderBy(c => c.Slot));
+            ForgetClosedCharacters();
             Replace(StashFiles, content.StashFiles);
             Replace(LoadErrors, content.Errors);
 
@@ -263,6 +390,7 @@ public partial class MainViewModel(
         {
             // Folder disappeared or is not accessible.
             Characters.Clear();
+            ForgetClosedCharacters();
             StashFiles.Clear();
             LoadErrors.Clear();
             LoadErrors.Add(new SaveFileError(folder, ex.Message));

@@ -77,6 +77,10 @@ public static class EquipmentSlotExtensions
     public static EquipmentSlot? FromContainerId(int containerId) =>
         SlotsByContainerId.TryGetValue(containerId, out var slot) ? slot : null;
 
+    /// <summary><c>containerID</c> of <paramref name="slot"/> in <c>savedItems</c> (inverse of <see cref="FromContainerId"/>).</summary>
+    public static int ToContainerId(EquipmentSlot slot) =>
+        SlotsByContainerId.First(pair => pair.Value == slot).Key;
+
     /// <summary>
     /// The first equipment slot an item of type <paramref name="baseTypeId"/> fits (rings → left ring);
     /// <c>null</c> for items that are not equipment (idols, keys, ...).

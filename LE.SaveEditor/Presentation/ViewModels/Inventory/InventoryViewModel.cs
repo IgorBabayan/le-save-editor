@@ -12,6 +12,7 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
 /// Equipment slots show the items the character wears and the "Items" section the backpack (both read from
 /// <c>savedItems</c>); the other sections start empty. Clicking an equipment slot opens the item inspector (a compact item builder) next to it.
+/// <see cref="GetUpdates"/> collects what changed since the save was read, for saving.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
@@ -19,6 +20,12 @@ public sealed partial class InventoryViewModel : ViewModelBase
     public const int IdolGridSize = 5;
 
     private readonly IDialogService _dialogService;
+
+    /// <summary>The <c>savedItems</c> entry each equipment slot was read from, and the item it showed then.</summary>
+    private readonly Dictionary<EquipmentSlot, (SavedItem Source, BuiltItem? Loaded)> _equipped = [];
+
+    /// <summary>An equipped item or an item in the backpack was changed, moved or removed.</summary>
+    public event EventHandler? Changed;
 
     public InventoryViewModel(
         CharacterSave character,
@@ -45,7 +52,19 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
         LoadEquippedItems(itemBaseCatalog);
         Backpack = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService);
+
+        foreach (var slot in EquipmentSlots)
+            slot.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(EquipmentSlotViewModel.Item))
+                    Changed?.Invoke(this, EventArgs.Empty);
+            };
+        Backpack.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>All equipment slots.</summary>
+    public IEnumerable<EquipmentSlotViewModel> EquipmentSlots =>
+        [Helmet, Amulet, Weapon, BodyArmour, OffHand, LeftRing, Belt, RightRing, Gloves, Boots, Relic];
 
     public CharacterSave Character { get; }
 
@@ -89,6 +108,46 @@ public sealed partial class InventoryViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Changes to write into <c>savedItems</c>: equipped items that were replaced or built in an empty slot, followed
+    /// by the backpack's changes. An item that could not be shown (base not in <c>base.db</c>) stays in the save
+    /// unless another item was built in its slot.
+    /// </summary>
+    /// <exception cref="ArgumentException">An edited item cannot be stored.</exception>
+    public IReadOnlyList<SavedItemUpdate> GetUpdates()
+    {
+        var updates = new List<SavedItemUpdate>();
+
+        foreach (var slot in EquipmentSlots)
+        {
+            var current = slot.Item;
+            if (_equipped.TryGetValue(slot.Slot, out var equipped))
+            {
+                if (ReferenceEquals(current, equipped.Loaded))
+                    continue;
+
+                if (current is null)
+                {
+                    updates.Add(SavedItemUpdate.Remove(equipped.Source));
+                    continue;
+                }
+
+                var data = ItemDataWriter.Write(SavedItemConverter.ToItemData(current, ItemDataReader.Read(equipped.Source.Data)));
+                if (!data.SequenceEqual(equipped.Source.Data))
+                    updates.Add(SavedItemUpdate.Replace(equipped.Source, equipped.Source with { Data = data }));
+            }
+            else if (current is not null)
+            {
+                var data = ItemDataWriter.Write(SavedItemConverter.ToItemData(current, null));
+                updates.Add(SavedItemUpdate.Add(new SavedItem(
+                    EquipmentSlotExtensions.ToContainerId(slot.Slot), 0, 0, 1, ItemDataReader.Version2, data)));
+            }
+        }
+
+        updates.AddRange(Backpack.GetUpdates());
+        return updates;
+    }
+
+    /// <summary>
     /// Puts the items in the equipment containers of the save into their slots. Items that cannot be decoded or
     /// whose base is not in <c>base.db</c> (database missing or outdated) leave their slot empty.
     /// </summary>
@@ -96,12 +155,17 @@ public sealed partial class InventoryViewModel : ViewModelBase
     {
         foreach (var saved in Character.SavedItems)
         {
+            // The first entry of a container is the one shown and written back; anything else is left as it is.
             if (EquipmentSlotExtensions.FromContainerId(saved.ContainerId) is not { } slot
-                || GetSlot(slot) is not { Item: null } target
-                || ItemDataReader.Read(saved.Data) is not { } data)
+                || _equipped.ContainsKey(slot))
                 continue;
 
-            target.Item = SavedItemConverter.ToBuiltItem(data, slot, catalog);
+            var built = ItemDataReader.Read(saved.Data) is { } data
+                ? SavedItemConverter.ToBuiltItem(data, slot, catalog)
+                : null;
+
+            _equipped[slot] = (saved, built);
+            GetSlot(slot).Item = built;
         }
     }
 

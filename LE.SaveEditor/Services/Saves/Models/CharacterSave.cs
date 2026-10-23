@@ -25,6 +25,13 @@ public sealed record CharacterSave
     /// <summary>Everything in <c>savedItems</c>: equipped items, backpack, idols and blessings.</summary>
     public IReadOnlyList<SavedItem> SavedItems { get; init; } = [];
 
+    /// <summary>
+    /// Fingerprint of the file content this character was read from
+    /// (<see cref="LE.SaveEditor.Services.Saves.CharacterSaveParser.ComputeContentHash"/>); saving refuses to overwrite
+    /// a file whose content no longer matches it.
+    /// </summary>
+    public string ContentHash { get; init; } = string.Empty;
+
     /// <summary><see cref="LastPlayed"/> in the user's time zone, for display.</summary>
     public DateTime? LastPlayedLocal => LastPlayed?.LocalDateTime;
 

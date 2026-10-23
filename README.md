@@ -25,6 +25,21 @@ Offline, slow (> 15 s) or failed startup checks are ignored.
 download / countdown / install sequence.
 Copies that were not installed with the installer (e.g. debug builds) are never updated.
 
+## Saving
+The save button in the title bar (or `Ctrl+S`) writes the changes of the selected character —
+equipped items and the backpack (edited, moved or removed items) — into its `1CHARACTERSLOT_*` file.
+It is enabled while the character has changes; changes of several characters are kept while switching
+between them, and closing the editor or reloading the save folder asks before discarding them.
+
+- Only the changed entries of `savedItems` are rewritten. Every other field, unknown properties and the
+  entry order stay as the game wrote them, in the game's layout (`EPOCH` marker, indentation, line endings).
+- Rolls of an item keep their stored byte while their value is unchanged, so an item applied again
+  without edits is written back byte for byte; items the editor cannot show are never touched.
+- The file is written to a temporary file that then replaces the save; the previous file is kept next to it
+  as `<save>.<yyyyMMdd-HHmmss>.bak` (the newest 5 are kept, and `.bak` files are never listed as characters).
+- Saving is refused when the file changed after it was loaded (e.g. Last Epoch saved it): close the game,
+  reload the folder and make the changes again.
+
 ## Game database (`LE.SaveEditor.DB`)
 Console tool that builds the editor's game data from maxroll's planner data
 (`https://assets-ng.maxroll.gg/leplanner/game/data.json`) into the editor's config folder

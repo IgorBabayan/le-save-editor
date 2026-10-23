@@ -1,4 +1,5 @@
 using LE.SaveEditor.Services.GameData.Items;
+using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
@@ -40,6 +41,39 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     /// Item that last fitted in the backpack; restored when the inspector applies an item that has no room.
     /// </summary>
     internal BuiltItem? AcceptedItem { get; set; }
+
+    /// <summary>Item shown when the save was read; a different <see cref="EquipmentSlotViewModel.Item"/> is written back.</summary>
+    private BuiltItem? _loadedItem;
+
+    /// <summary>Where the item was placed when the save was read (it may differ from the stored cell when that had no room).</summary>
+    private (int Column, int Row, ItemFootprint Footprint) _loadedPlacement;
+
+    /// <summary>Remembers the current item and cell as the state read from the save (see <see cref="ToSavedItem"/>).</summary>
+    internal void MarkLoaded()
+    {
+        _loadedItem = Equipment?.Item;
+        _loadedPlacement = (Column, Row, Footprint);
+    }
+
+    /// <summary>
+    /// The entry to write back for this item, or <c>null</c> when neither the item nor its cell changed since the save
+    /// was read. A moved item stores its new bottom-left cell; an edited item its new bytes.
+    /// </summary>
+    /// <exception cref="ArgumentException">The edited item cannot be stored.</exception>
+    internal SavedItem? ToSavedItem()
+    {
+        var data = Source.Data;
+        if (Equipment?.Item is { } current && !ReferenceEquals(current, _loadedItem))
+            data = ItemDataWriter.Write(SavedItemConverter.ToItemData(current, ItemDataReader.Read(Source.Data)));
+
+        var (x, y) = (Column, Row, Footprint) == _loadedPlacement
+            ? (Source.X, Source.Y)
+            : (Column, BackpackViewModel.SavedYFromRow(Row, Footprint));
+
+        return data.SequenceEqual(Source.Data) && x == Source.X && y == Source.Y
+            ? null
+            : Source with { X = x, Y = y, Data = data };
+    }
 
     /// <summary>Left column of the item (0-based).</summary>
     [ObservableProperty]

@@ -23,6 +23,9 @@ public partial class MainWindow : Window
         // Auto-load characters if a save folder was selected in a previous session.
         Loaded += async (_, _) => await viewModel.InitializeAsync();
 
+        // Unsaved changes are lost with the window: ask first.
+        Closing += (_, e) => e.Cancel = !viewModel.ConfirmClose();
+
         StateChanged += (_, _) => UpdateWindowState();
         // Resource references (not brush instances) so the title follows runtime theme changes.
         Activated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "WindowForegroundBrush");

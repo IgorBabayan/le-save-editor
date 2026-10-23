@@ -3,7 +3,8 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Decodes the <c>data</c> bytes of a saved equipment item (format versions 2 and 6).
+/// Decodes the <c>data</c> bytes of a saved equipment item (format versions 2 and 6);
+/// <see cref="ItemDataWriter"/> encodes them back.
 /// </summary>
 /// <remarks>
 /// Version 6 is version 2 with a 4-byte item instance id right after the version byte:
@@ -29,16 +30,16 @@ public static class ItemDataReader
     /// <summary>Current game format: a 4-byte instance id follows the version byte.</summary>
     public const int Version6 = 6;
 
-    private const int InstanceIdLength = 4;
+    internal const int InstanceIdLength = 4;
 
     public const int UniqueRarity = 7;
     public const int SetRarity = 8;
     public const int LegendaryRarity = 9;
 
-    private const int ImplicitCount = 3;
-    private const int UniqueRollCount = 8;
-    private const int SealedFlag = 0x80;
-    private const int AffixCountMask = 0x0F;
+    internal const int ImplicitCount = 3;
+    internal const int UniqueRollCount = 8;
+    internal const int SealedFlag = 0x80;
+    internal const int AffixCountMask = 0x0F;
 
     /// <summary>
     /// Only the item type (<c>baseTypeID</c>) of <paramref name="data"/>, for any item (equipment, idol, key, ...);
@@ -81,6 +82,7 @@ public static class ItemDataReader
         var baseTypeId = data[start];
         var subTypeId = data[start + 1];
         var rarity = data[start + 2];
+        var flags = data[start + 3];
         var implicitRolls = Slice(data, start + 4, ImplicitCount);
         var position = start + 4 + ImplicitCount;
 
@@ -95,21 +97,28 @@ public static class ItemDataReader
             position += UniqueRollCount;
 
             // Uniques and set items end with their legendary potential; only legendaries carry affixes.
-            IReadOnlyList<ItemAffixData>? affixes = rarity == LegendaryRarity ? ReadAffixes(data, position) : [];
+            IReadOnlyList<ItemAffixData>? affixes = rarity == LegendaryRarity ? ReadAffixes(data, ref position) : [];
             return affixes is null
                 ? null
-                : new ItemData(baseTypeId, subTypeId, rarity, implicitRolls, uniqueId, uniqueRolls, null, affixes, version, instanceId);
+                : new ItemData(baseTypeId, subTypeId, rarity, implicitRolls, uniqueId, uniqueRolls, null, affixes, version,
+                    instanceId, flags, TailAt(data, position));
         }
 
         var forgingPotential = data[position++];
-        var plainAffixes = ReadAffixes(data, position);
+        var plainAffixes = ReadAffixes(data, ref position);
         return plainAffixes is null
             ? null
-            : new ItemData(baseTypeId, subTypeId, rarity, implicitRolls, null, [], forgingPotential, plainAffixes, version, instanceId);
+            : new ItemData(baseTypeId, subTypeId, rarity, implicitRolls, null, [], forgingPotential, plainAffixes, version,
+                instanceId, flags, TailAt(data, position));
     }
 
-    /// <summary>Affix count followed by the affixes; <c>null</c> when the data is cut short.</summary>
-    private static IReadOnlyList<ItemAffixData>? ReadAffixes(IReadOnlyList<byte> data, int position)
+    private static byte? TailAt(IReadOnlyList<byte> data, int position) => position < data.Count ? data[position] : null;
+
+    /// <summary>
+    /// Affix count followed by the affixes; <c>null</c> when the data is cut short.
+    /// <paramref name="position"/> is moved past the affixes.
+    /// </summary>
+    private static IReadOnlyList<ItemAffixData>? ReadAffixes(IReadOnlyList<byte> data, ref int position)
     {
         if (data.Count <= position)
             return null;
