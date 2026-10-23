@@ -24,7 +24,9 @@ public enum ItemListKind
 /// Item builder of an equipment slot, shown as the compact item inspector next to the slot (or the full builder
 /// window): only items that fit the slot are offered, grouped by the
 /// classes that can equip them (the character's own class first); the rarity tints the preview and picks the list
-/// (bases, uniques or set items), and every implicit / unique modifier of the selection gets a slider.
+/// (bases, uniques or set items), and every implicit / unique modifier of the selection gets a slider. A search looks
+/// through all three lists of the slot (still limited to the class when "only usable" is on); picking a result from
+/// another list switches the rarity to that list.
 /// Affix slots follow the rarity: bases take 2 prefixes, 2 suffixes, a sealed prefix, a sealed suffix and a
 /// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
 /// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
@@ -34,7 +36,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     private readonly IItemBaseCatalog _catalog;
     private readonly IIconProvider _iconProvider;
     private readonly Func<string, string, bool> _confirm;
-    private IReadOnlyList<BaseOptionViewModel> _allBases = [];
+    /// <summary>Bases, unique and set items of the slot, in group order.</summary>
+    private IReadOnlyList<BaseOptionViewModel> _allOptions = [];
     private RarityOptionViewModel _selectedRarity;
 
     /// <summary>Forging potential of the item being edited, kept when it is applied again (the builder does not edit it).</summary>
@@ -63,13 +66,13 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         _selectedRarity.IsSelected = true;
         ListKind = KindOf(_selectedRarity.Rarity);
 
-        LoadList();
+        LoadOptions();
         BuildAffixSlots();
 
         // Editing an equipped item: select it again and keep its rolls.
         if (current is not null)
         {
-            var match = _allBases.FirstOrDefault(o => o.Base.BaseTypeId == current.Base.BaseTypeId
+            var match = CurrentListOptions.FirstOrDefault(o => o.Base.BaseTypeId == current.Base.BaseTypeId
                                                       && o.Base.SubTypeId == current.Base.SubTypeId
                                                       && o.Base.UniqueId == current.Base.UniqueId);
             if (match is not null)
@@ -159,6 +162,22 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     private void ApplyRarity(RarityOptionViewModel value)
     {
+        SetRarity(value);
+
+        var kind = KindOf(value.Rarity);
+        if (kind == ListKind)
+            return;
+
+        SetListKind(kind);
+        SelectedBaseOption = null;
+        SearchText = string.Empty;
+        ApplyFilter();
+        BuildAffixSlots();
+    }
+
+    /// <summary>Selects the rarity pill and retints the preview (the list is left alone).</summary>
+    private void SetRarity(RarityOptionViewModel value)
+    {
         _selectedRarity.IsSelected = false;
         _selectedRarity = value;
         _selectedRarity.IsSelected = true;
@@ -166,21 +185,46 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         OnPropertyChanged(nameof(RarityForeground));
         OnPropertyChanged(nameof(RarityBackground));
         OnPropertyChanged(nameof(Subtitle));
+        UpdateOptionPresentation();
+    }
 
-        var kind = KindOf(value.Rarity);
-        if (kind == ListKind)
-            return;
-
+    private void SetListKind(ItemListKind kind)
+    {
         ListKind = kind;
-        SelectedBaseOption = null;
-        SearchText = string.Empty;
-        LoadList();
-        BuildAffixSlots();
+        UpdateOptionPresentation();
 
         OnPropertyChanged(nameof(ListKind));
         OnPropertyChanged(nameof(ListHeader));
         OnPropertyChanged(nameof(OnlyUsableText));
         OnPropertyChanged(nameof(ItemName));
+        OnPropertyChanged(nameof(ModStatsHeader));
+        OnPropertyChanged(nameof(EmptyStatsText));
+        OnPropertyChanged(nameof(EmptyBasesText));
+    }
+
+    /// <summary>Rarity a list starts with when a search result from it is picked.</summary>
+    private static ItemRarity DefaultRarityOf(ItemListKind kind) => kind switch
+    {
+        ItemListKind.Uniques => ItemRarity.Unique,
+        ItemListKind.Sets => ItemRarity.Set,
+        _ => ItemRarity.Normal
+    };
+
+    /// <summary>
+    /// A search result from another list was picked: switch to that list (and its rarity) without clearing the
+    /// selection, and keep the affixes the new list still has slots for.
+    /// </summary>
+    private void SwitchListFor(BaseOptionViewModel option)
+    {
+        var affixes = AffixSlots.Select(a => a.ToBuiltAffix())
+            .OfType<BuiltAffix>()
+            .Where(a => a.Affix.CanRollOnType(option.Base.BaseTypeId))
+            .ToList();
+
+        SetRarity(Rarities.First(r => r.Rarity == DefaultRarityOf(option.Kind)));
+        SetListKind(option.Kind);
+        BuildAffixSlots();
+        RestoreAffixes(affixes);
     }
 
     // ===== Item list =====
@@ -204,11 +248,15 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public string EmptyBasesText =>
         !IsDatabaseAvailable ? "The game database was not found. Generate it with the database button in the title bar, then reopen the builder."
-        : !_allBases.Any(o => !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
-        : ShowOnlyUsable && !_allBases.Any(o => o.IsUsable && !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
+        : IsSearching ? "No bases, unique or set items match the search."
+        : !CurrentListOptions.Any(o => !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
+        : ShowOnlyUsable && !CurrentListOptions.Any(o => o.IsUsable && !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
         : $"No {ListNoun} match the search.";
 
-    /// <summary>Items of the list matching <see cref="SearchText"/> (and <see cref="ShowOnlyUsable"/>), in group order.</summary>
+    /// <summary>
+    /// Items matching <see cref="SearchText"/> (and <see cref="ShowOnlyUsable"/>), in group order: the selected
+    /// rarity's list without a search, all three lists of the slot while searching.
+    /// </summary>
     public ObservableCollection<BaseOptionViewModel> Bases { get; } = [];
 
     public bool HasBases => Bases.Count > 0;
@@ -224,24 +272,41 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     partial void OnShowOnlyUsableChanged(bool value) => ApplyFilter();
 
-    private void LoadList()
-    {
-        var items = ListKind switch
-        {
-            ItemListKind.Uniques => _catalog.GetUniques(Slot, sets: false),
-            ItemListKind.Sets => _catalog.GetUniques(Slot, sets: true),
-            _ => _catalog.GetBases(Slot)
-        };
+    /// <summary>A search is typed: the list spans bases, unique and set items.</summary>
+    private bool IsSearching => !string.IsNullOrWhiteSpace(SearchText);
 
-        _allBases = items
-            .Select(b => new BaseOptionViewModel(b, CharacterClass, _iconProvider))
+    /// <summary>Items of the selected rarity's list.</summary>
+    private IEnumerable<BaseOptionViewModel> CurrentListOptions => _allOptions.Where(o => o.Kind == ListKind);
+
+    /// <summary>Loads bases, unique and set items of the slot once; the filter picks what is shown.</summary>
+    private void LoadOptions()
+    {
+        var bases = _catalog.GetBases(Slot).Select(b => (Item: b, Kind: ItemListKind.Bases));
+        var uniques = _catalog.GetUniques(Slot, sets: false).Select(b => (Item: b, Kind: ItemListKind.Uniques));
+        var sets = _catalog.GetUniques(Slot, sets: true).Select(b => (Item: b, Kind: ItemListKind.Sets));
+
+        _allOptions = bases.Concat(uniques).Concat(sets)
+            .Select(x => new BaseOptionViewModel(x.Item, x.Kind, CharacterClass, _iconProvider))
             .OrderBy(o => o.GroupOrder)
             .ThenBy(o => o.GroupName, StringComparer.Ordinal)
             .ThenBy(o => o.Base.LevelRequirement)
             .ThenBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
+        UpdateOptionPresentation();
         ApplyFilter();
+    }
+
+    /// <summary>Title colors and "other list" badges follow the selected rarity.</summary>
+    private void UpdateOptionPresentation()
+    {
+        foreach (var option in _allOptions)
+        {
+            option.IsFromOtherList = option.Kind != ListKind;
+            option.TitleForeground = option.Kind == ListKind
+                ? RarityForeground
+                : RarityPalette.Foreground(DefaultRarityOf(option.Kind));
+        }
     }
 
     private void ApplyFilter()
@@ -249,8 +314,18 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         var selected = SelectedBaseOption;
         var words = SearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+        // Without a search only the selected rarity's list; with one, all lists, the selected rarity's first in each group.
+        var candidates = words.Length == 0
+            ? CurrentListOptions
+            : _allOptions
+                .OrderBy(o => o.GroupOrder)
+                .ThenBy(o => o.GroupName, StringComparer.Ordinal)
+                .ThenBy(o => o.Kind == ListKind ? -1 : (int)o.Kind)
+                .ThenBy(o => o.Base.LevelRequirement)
+                .ThenBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase);
+
         Bases.Clear();
-        foreach (var option in _allBases)
+        foreach (var option in candidates)
         {
             // The current choice always stays listed (the ListBox would clear it otherwise), in its own group;
             // legacy bases (no longer dropped) are hidden otherwise.
@@ -338,6 +413,10 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     partial void OnSelectedBaseOptionChanged(BaseOptionViewModel? value)
     {
+        // A search result from another list switches the rarity (and the affix slots) to that list first.
+        if (value is not null && value.Kind != ListKind)
+            SwitchListFor(value);
+
         FillStats(value?.Base, null, null);
 
         // Affixes depend on the item type (a wand and an axe share the weapon slot but not their affixes).

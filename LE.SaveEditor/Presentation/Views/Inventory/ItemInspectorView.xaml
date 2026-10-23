@@ -520,7 +520,7 @@
                                 <TextBox x:Name="ItemSearch"
                                          Margin="0,0,0,6"
                                          Padding="6,3"
-                                         ToolTip="Filter by name, type or class"
+                                         ToolTip="Search bases, unique and set items by name, type or class"
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                                 <CheckBox Margin="0,0,0,6"
                                           FontSize="12"
@@ -561,20 +561,27 @@
                                                     <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
                                                         <TextBlock FontWeight="SemiBold"
                                                                    TextTrimming="CharacterEllipsis"
-                                                                   Foreground="{Binding DataContext.RarityForeground, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                   Foreground="{Binding TitleForeground}"
                                                                    Text="{Binding Name}" />
                                                         <TextBlock FontSize="10"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    Foreground="{DynamicResource SecondaryForegroundBrush}"
                                                                    Text="{Binding TypeLine}" />
                                                     </StackPanel>
-                                                    <TextBlock Grid.Column="2"
-                                                               Margin="8,0,0,0"
-                                                               VerticalAlignment="Center"
-                                                               FontSize="11"
-                                                               Style="{StaticResource SecondaryTextStyle}"
-                                                               Text="{Binding Base.LevelRequirement, StringFormat='Lv {0}'}"
-                                                               Visibility="{Binding HasLevelRequirement, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                    <StackPanel Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                        <!-- Found by a search in another list than the selected rarity's. -->
+                                                        <TextBlock HorizontalAlignment="Right"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{Binding TitleForeground}"
+                                                                   Text="{Binding KindLabel}"
+                                                                   Visibility="{Binding IsFromOtherList, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                        <TextBlock HorizontalAlignment="Right"
+                                                                   FontSize="11"
+                                                                   Style="{StaticResource SecondaryTextStyle}"
+                                                                   Text="{Binding Base.LevelRequirement, StringFormat='Lv {0}'}"
+                                                                   Visibility="{Binding HasLevelRequirement, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                    </StackPanel>
                                                 </Grid>
                                                 <DataTemplate.Triggers>
                                                     <!-- Other classes' items stay selectable but are dimmed. -->

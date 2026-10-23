@@ -8,16 +8,18 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <summary>
 /// One card in the item builder grid, laid out like the game's item tooltip (icon, name, type, stat ranges,
 /// requirements). Cards are grouped by the classes that can equip them: the character's own class first,
-/// then items for any class, then items of other classes.
+/// then items for any class, then items of other classes. A search lists bases, unique and set items together, so
+/// every card also knows which list it comes from (<see cref="Kind"/>) and carries its own title color.
 /// </summary>
-public sealed class BaseOptionViewModel
+public sealed partial class BaseOptionViewModel : ObservableObject
 {
     private readonly IIconProvider _iconProvider;
     private IReadOnlyList<string>? _statLines;
 
-    public BaseOptionViewModel(ItemBase itemBase, CharacterClass characterClass, IIconProvider iconProvider)
+    public BaseOptionViewModel(ItemBase itemBase, ItemListKind kind, CharacterClass characterClass, IIconProvider iconProvider)
     {
         Base = itemBase;
+        Kind = kind;
         _iconProvider = iconProvider;
         IsUsable = itemBase.IsUsableBy(characterClass);
 
@@ -40,6 +42,25 @@ public sealed class BaseOptionViewModel
     }
 
     public ItemBase Base { get; }
+
+    /// <summary>List the item belongs to: bases, unique items or set items.</summary>
+    public ItemListKind Kind { get; }
+
+    /// <summary>"BASE", "UNIQUE" or "SET": badge shown on cards found in another list than the selected rarity's.</summary>
+    public string KindLabel => Kind switch
+    {
+        ItemListKind.Uniques => "UNIQUE",
+        ItemListKind.Sets => "SET",
+        _ => "BASE"
+    };
+
+    /// <summary>Color of the card title: the selected rarity for its own list, the list's own rarity otherwise.</summary>
+    [ObservableProperty]
+    private Brush? _titleForeground;
+
+    /// <summary>The card comes from another list than the selected rarity's (only while searching).</summary>
+    [ObservableProperty]
+    private bool _isFromOtherList;
 
     public string Name => Base.Name;
 

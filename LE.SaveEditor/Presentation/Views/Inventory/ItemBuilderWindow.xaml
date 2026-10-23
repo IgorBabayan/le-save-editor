@@ -492,7 +492,7 @@
                              Margin="0,0,0,8"
                              Padding="6,4"
                              IsEnabled="{Binding IsDatabaseAvailable}"
-                             ToolTip="Filter by name, type or class"
+                             ToolTip="Search bases, unique and set items by name, type or class"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
 
                     <Border Grid.Row="2"
@@ -556,8 +556,15 @@
                                                 <TextBlock FontSize="14"
                                                            FontWeight="Bold"
                                                            TextWrapping="Wrap"
-                                                           Foreground="{Binding DataContext.RarityForeground, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           Foreground="{Binding TitleForeground}"
                                                            Text="{Binding Title}" />
+                                                <!-- Found by a search in another list than the selected rarity's. -->
+                                                <TextBlock Margin="0,1,0,0"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="{Binding TitleForeground}"
+                                                           Text="{Binding KindLabel}"
+                                                           Visibility="{Binding IsFromOtherList, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                 <TextBlock Margin="0,1,0,6"
                                                            FontSize="11"
                                                            TextWrapping="Wrap"
@@ -577,7 +584,7 @@
                                                                        FontSize="11"
                                                                        FontStyle="Italic"
                                                                        TextWrapping="Wrap"
-                                                                       Foreground="{Binding DataContext.RarityForeground, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                       Foreground="{Binding DataContext.TitleForeground, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                        Text="{Binding}" />
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
