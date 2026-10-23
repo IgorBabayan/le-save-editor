@@ -65,15 +65,18 @@ public sealed partial class BackpackViewModel : ViewModelBase
     {
         var pending = new List<BackpackItemViewModel>();
 
+        // Top rows first (the highest stored y), so the grid fills like the game's.
         foreach (var saved in savedItems
                      .Where(s => s.ContainerId == SavedItem.BackpackContainerId)
-                     .OrderBy(s => s.Y)
+                     .OrderByDescending(s => s.Y)
                      .ThenBy(s => s.X))
         {
             if (ItemDataReader.ReadBaseTypeId(saved.Data) is not { } baseTypeId)
                 continue;
 
-            var item = new BackpackItemViewModel(saved, baseTypeId, saved.X, saved.Y, CreateEquipment(saved, baseTypeId, iconProvider, catalog));
+            var equipment = CreateEquipment(saved, baseTypeId, iconProvider, catalog);
+            var footprint = ItemFootprint.Of(equipment?.Item?.Base.BaseTypeId ?? baseTypeId);
+            var item = new BackpackItemViewModel(saved, baseTypeId, saved.X, RowFromSaved(saved.Y, footprint), equipment);
             if (CanPlace(item.Footprint, item.Column, item.Row, ignore: null))
                 Add(item);
             else
@@ -95,6 +98,15 @@ public sealed partial class BackpackViewModel : ViewModelBase
             }
         }
     }
+
+    /// <summary>
+    /// Top row in the grid of an item stored at <paramref name="savedY"/>. The game counts rows from the bottom of the
+    /// backpack and stores the item's bottom-left cell, while the grid counts rows from the top.
+    /// </summary>
+    public static int RowFromSaved(int savedY, ItemFootprint footprint) => Rows - savedY - footprint.Height;
+
+    /// <summary>The stored y of an item whose top row in the grid is <paramref name="row"/> (inverse of <see cref="RowFromSaved"/>).</summary>
+    public static int SavedYFromRow(int row, ItemFootprint footprint) => Rows - row - footprint.Height;
 
     /// <summary>An equipment slot holding the decoded item; <c>null</c> when it is not an equipment item the editor knows.</summary>
     private static EquipmentSlotViewModel? CreateEquipment(SavedItem saved, int baseTypeId, IIconProvider iconProvider, IItemBaseCatalog catalog)

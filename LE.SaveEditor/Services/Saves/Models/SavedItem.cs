@@ -9,7 +9,7 @@ namespace LE.SaveEditor.Services.Saves.Models;
 /// left ring, right ring, amulet, relic), 29 = idols, 33+ = blessings.
 /// </param>
 /// <param name="X">Column inside the container (backpack and idol grid).</param>
-/// <param name="Y">Row inside the container (backpack and idol grid).</param>
+/// <param name="Y">Row inside the container (backpack and idol grid), counted from the bottom; the item's bottom-left cell.</param>
 /// <param name="Data">The item bytes (<c>data</c>).</param>
 public sealed record SavedItem(int ContainerId, int X, int Y, int Quantity, int FormatVersion, IReadOnlyList<byte> Data)
 {
