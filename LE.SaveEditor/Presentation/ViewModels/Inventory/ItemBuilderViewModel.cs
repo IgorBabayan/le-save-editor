@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Media;
-using System.Windows.Threading;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
@@ -54,6 +52,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
         Rarities = Enum.GetValues<ItemRarity>().Select(r => new RarityOptionViewModel(r)).ToList();
         _selectedRarity = Rarities.First(r => r.Rarity == (current?.Rarity ?? ItemRarity.Normal));
+        _selectedRarity.IsSelected = true;
         ListKind = KindOf(_selectedRarity.Rarity);
 
         LoadList();
@@ -95,29 +94,23 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public IReadOnlyList<RarityOptionViewModel> Rarities { get; }
 
+    /// <summary>Selected rarity; changed only through <see cref="SelectRarityCommand"/>.</summary>
+    public RarityOptionViewModel SelectedRarity => _selectedRarity;
+
     /// <summary>
-    /// Selected rarity. Moving to a rarity with another list (bases ↔ uniques ↔ set items) while an item is selected
-    /// asks first: "No" keeps the previous rarity, "Yes" clears the selection and switches the list.
+    /// A rarity pill was clicked. Moving to a rarity with another list (bases ↔ uniques ↔ set items) while an item
+    /// is selected asks first: "No" leaves everything as it was, "Yes" clears the selection and switches the list.
     /// </summary>
-    public RarityOptionViewModel SelectedRarity
+    [RelayCommand]
+    private void SelectRarity(RarityOptionViewModel? option)
     {
-        get => _selectedRarity;
-        set
-        {
-            if (value is null || value == _selectedRarity)
-                return;
+        if (option is null || option == _selectedRarity)
+            return;
 
-            if (KindOf(value.Rarity) == ListKind || !HasSelectedBase)
-            {
-                ApplyRarity(value);
-                return;
-            }
+        if (KindOf(option.Rarity) != ListKind && HasSelectedBase && !ConfirmListChange(option))
+            return;
 
-            // The rarity picker has already moved; answer after its selection change has finished, so that
-            // "No" can move it back (a revert from inside the binding update would be ignored by the ListBox).
-            var dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
-            dispatcher.InvokeAsync(() => ConfirmListChange(value), DispatcherPriority.Background);
-        }
+        ApplyRarity(option);
     }
 
     /// <summary>List offered for the selected rarity.</summary>
@@ -134,7 +127,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         _ => ItemListKind.Bases
     };
 
-    private void ConfirmListChange(RarityOptionViewModel value)
+    private bool ConfirmListChange(RarityOptionViewModel value)
     {
         var target = KindOf(value.Rarity) switch
         {
@@ -143,20 +136,14 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             _ => "item bases"
         };
 
-        if (_confirm("Change rarity", $"Switching to {value.Name} shows {target} instead and clears the selected item and its stats. Continue?"))
-        {
-            ApplyRarity(value);
-        }
-        else
-        {
-            // Keep the previous rarity: tell the picker to read it back.
-            OnPropertyChanged(nameof(SelectedRarity));
-        }
+        return _confirm("Change rarity", $"Switching to {value.Name} shows {target} instead and clears the selected item and its stats. Continue?");
     }
 
     private void ApplyRarity(RarityOptionViewModel value)
     {
+        _selectedRarity.IsSelected = false;
         _selectedRarity = value;
+        _selectedRarity.IsSelected = true;
         OnPropertyChanged(nameof(SelectedRarity));
         OnPropertyChanged(nameof(RarityForeground));
         OnPropertyChanged(nameof(RarityBackground));

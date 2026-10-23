@@ -911,14 +911,14 @@
         </Setter>
     </Style>
 
-    <!-- ===== Rarity pill (rarity picker of the item builder; DataContext: RarityOptionViewModel) ===== -->
-    <Style x:Key="RarityPillItemStyle" TargetType="ListBoxItem">
+    <!-- ===== Rarity pill button (rarity picker of the item builder; DataContext: RarityOptionViewModel) ===== -->
+    <Style x:Key="RarityPillButtonStyle" TargetType="Button">
         <Setter Property="Margin" Value="0,0,6,6" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
+                <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd"
                             Padding="12,5"
                             CornerRadius="13"
@@ -943,12 +943,16 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
                         </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        </Trigger>
+                        <!-- Declared last so the selected look wins over hover and focus. -->
+                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{Binding Background}" />
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{Binding Foreground}" />
                             <Setter TargetName="Text" Property="Foreground" Value="{Binding Foreground}" />
                             <Setter TargetName="Text" Property="FontWeight" Value="SemiBold" />
-                        </Trigger>
+                        </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
