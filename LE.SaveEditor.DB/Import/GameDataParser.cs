@@ -12,7 +12,7 @@ using LE.SaveEditor.DB.Infrastructure;
 namespace LE.SaveEditor.DB.Import;
 
 /// <summary>
-/// Reads the seven stored nodes out of <c>data.json</c>. Each node may be an object keyed by id
+/// Reads the stored nodes (<see cref="GameNode.All"/>) out of <c>data.json</c>. Each node may be an object keyed by id
 /// or an array; for arrays the key is the first id-like field that is unique over the whole node,
 /// so keys stay stable between data versions and updates diff row by row.
 /// </summary>
@@ -70,7 +70,7 @@ internal static class GameDataParser
         var keyed = element.ValueKind switch
         {
             JsonValueKind.Object => element.EnumerateObject().Select(p => (p.Name, p.Value)).ToList(),
-            JsonValueKind.Array => KeyArray(element),
+            JsonValueKind.Array => KeyArray(element, node.KeyField),
             _ => throw new InvalidDataException(
                 $"data.json: node \"{node.JsonName}\" is {element.ValueKind}, expected an object or an array.")
         };
@@ -123,7 +123,7 @@ internal static class GameDataParser
     }
 
     /// <summary>Picks a key for every array element (see the class remarks).</summary>
-    private static List<(string Key, JsonElement Value)> KeyArray(JsonElement array)
+    private static List<(string Key, JsonElement Value)> KeyArray(JsonElement array, string? preferredField)
     {
         var items = array.EnumerateArray().ToList();
 
@@ -134,7 +134,11 @@ internal static class GameDataParser
                 return strings.Select((s, i) => (s, items[i])).ToList();
         }
 
-        foreach (var field in CandidateKeyFields(items))
+        var fields = CandidateKeyFields(items);
+        if (preferredField is not null)
+            fields = fields.Prepend(preferredField);
+
+        foreach (var field in fields)
         {
             var keys = new List<string>(items.Count);
             var seen = new HashSet<string>(StringComparer.Ordinal);

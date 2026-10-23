@@ -8,7 +8,7 @@ namespace LE.SaveEditor.Services.GameData;
 /// Finds class / mastery icons among the PNGs <c>LE.SaveEditor.DB</c> downloaded into <c>Icons</c>.
 /// </summary>
 /// <remarks>
-/// The editor does not read <c>base.db</c>, and the icon group of classes and masteries is whatever maxroll
+/// Class icons are not linked to anything in <c>base.db</c>, and the icon group of classes and masteries is whatever maxroll
 /// calls it, so the folder is indexed by file name instead: <c>void_knight.png</c>, <c>VoidKnight.png</c> and
 /// <c>void-knight_icon.png</c> all match <see cref="Mastery.VoidKnight"/>. When several files match, one in a
 /// folder named after classes / masteries wins over e.g. an ability icon with the same name.

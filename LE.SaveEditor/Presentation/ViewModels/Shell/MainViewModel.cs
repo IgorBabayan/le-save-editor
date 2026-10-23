@@ -4,6 +4,7 @@ using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.ViewModels.Characters;
 using LE.SaveEditor.Presentation.ViewModels.Notifications;
 using LE.SaveEditor.Services.GameData;
+using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
@@ -16,6 +17,8 @@ public partial class MainViewModel(
     ISettingsService settingsService,
     ISaveFolderLoader saveFolderLoader,
     INotificationService notificationService,
+    IIconProvider iconProvider,
+    IItemBaseCatalog itemBaseCatalog,
     NotificationCenterViewModel notificationCenter) : ViewModelBase
 {
     private CancellationTokenSource? _loadCts;
@@ -61,7 +64,7 @@ public partial class MainViewModel(
     public bool ShowSelectCharacterHint => HasCharacters && !HasSelectedCharacter;
 
     partial void OnSelectedCharacterChanged(CharacterSave? value) =>
-        CharacterDetails = value is null ? null : new CharacterViewModel(value);
+        CharacterDetails = value is null ? null : new CharacterViewModel(value, dialogService, iconProvider);
 
     /// <summary>Called once when the main window opens: loads characters if a save folder was selected earlier.</summary>
     public async Task InitializeAsync()
@@ -96,6 +99,9 @@ public partial class MainViewModel(
             return;
 
         NotifyDatabaseResult(result);
+
+        // The item builder reads base.db: pick up the bases of the new database.
+        itemBaseCatalog.ClearCache();
 
         if (HasSaveFolder)
             await LoadSavesAsync();

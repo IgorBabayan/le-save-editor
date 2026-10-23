@@ -1,7 +1,10 @@
+using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Presentation.Views.Database;
 using LE.SaveEditor.Presentation.Views.Dialogs;
+using LE.SaveEditor.Presentation.Views.Inventory;
 using LE.SaveEditor.Presentation.Views.Settings;
 using LE.SaveEditor.Services.GameData;
+using LE.SaveEditor.Services.GameData.Items;
 
 namespace LE.SaveEditor.Presentation.Services;
 
@@ -27,6 +30,22 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
     {
         var window = services.GetRequiredService<DatabaseGeneratorWindow>();
         window.Owner = WindowHelper.GetActiveWindow();
+        window.ShowDialog();
+        return window.Result;
+    }
+
+    public BuiltItem? ShowItemBuilder(EquipmentSlot slot, BuiltItem? current)
+    {
+        var viewModel = new ItemBuilderViewModel(
+            services.GetRequiredService<IItemBaseCatalog>(),
+            services.GetRequiredService<IIconProvider>(),
+            slot,
+            current);
+
+        var window = new ItemBuilderWindow(viewModel)
+        {
+            Owner = WindowHelper.GetActiveWindow()
+        };
         window.ShowDialog();
         return window.Result;
     }

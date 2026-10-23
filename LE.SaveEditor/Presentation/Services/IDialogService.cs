@@ -1,4 +1,6 @@
+using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData;
+using LE.SaveEditor.Services.GameData.Items;
 
 namespace LE.SaveEditor.Presentation.Services;
 
@@ -18,4 +20,10 @@ public interface IDialogService
     /// </summary>
     /// <returns>The generator's outcome, or <c>null</c> if it did not finish.</returns>
     DatabaseGenerationResult? ShowDatabaseGenerator();
+
+    /// <summary>
+    /// Shows the modal item builder for <paramref name="slot"/>, starting from <paramref name="current"/> when the slot holds an item.
+    /// </summary>
+    /// <returns>The built item, or <c>null</c> if the user cancelled.</returns>
+    BuiltItem? ShowItemBuilder(EquipmentSlot slot, BuiltItem? current);
 }

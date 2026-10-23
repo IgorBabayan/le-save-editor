@@ -23,7 +23,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- ===== Equipment (empty slots until items are parsed) ===== -->
+                <!-- ===== Equipment: click a slot to open the item builder for it ===== -->
                 <Grid Grid.Column="0" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="112" />
@@ -38,34 +38,67 @@
                     </Grid.RowDefinitions>
 
                     <!-- Row 0: helmet, amulet -->
-                    <ContentControl Grid.Row="0" Grid.Column="1" Width="96"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Helmet" />
-                    <ContentControl Grid.Row="0" Grid.Column="2" Width="64" Height="64"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Amulet" />
+                    <Button Grid.Row="0" Grid.Column="1" Width="96"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Helmet}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="0" Grid.Column="2" Width="64" Height="64"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Amulet}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
 
                     <!-- Row 1: weapon, body armour, off-hand -->
-                    <ContentControl Grid.Row="1" Grid.Column="0"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Weapon" />
-                    <ContentControl Grid.Row="1" Grid.Column="1"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Body armour" />
-                    <ContentControl Grid.Row="1" Grid.Column="2"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Off-hand" />
+                    <Button Grid.Row="1" Grid.Column="0"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Weapon}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="1" Grid.Column="1"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding BodyArmour}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="1" Grid.Column="2"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding OffHand}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
 
                     <!-- Row 2: ring, belt, ring -->
-                    <ContentControl Grid.Row="2" Grid.Column="0" Width="56"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Ring" />
-                    <ContentControl Grid.Row="2" Grid.Column="1"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Belt" />
-                    <ContentControl Grid.Row="2" Grid.Column="2" Width="56"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Ring" />
+                    <Button Grid.Row="2" Grid.Column="0" Width="56"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding LeftRing}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="2" Grid.Column="1"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Belt}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="2" Grid.Column="2" Width="56"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding RightRing}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
 
                     <!-- Row 3: gloves, boots, relic -->
-                    <ContentControl Grid.Row="3" Grid.Column="0"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Gloves" />
-                    <ContentControl Grid.Row="3" Grid.Column="1"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Boots" />
-                    <ContentControl Grid.Row="3" Grid.Column="2"
-                                    Style="{StaticResource EquipmentSlotStyle}" Tag="Relic" />
+                    <Button Grid.Row="3" Grid.Column="0"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Gloves}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="3" Grid.Column="1"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Boots}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="3" Grid.Column="2"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Relic}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
                 </Grid>
 
                 <!-- ===== Idols + crafting materials ===== -->

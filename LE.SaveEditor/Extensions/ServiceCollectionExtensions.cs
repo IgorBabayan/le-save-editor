@@ -8,6 +8,7 @@ using LE.SaveEditor.Presentation.Views;
 using LE.SaveEditor.Presentation.Views.Database;
 using LE.SaveEditor.Presentation.Views.Settings;
 using LE.SaveEditor.Services.GameData;
+using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Settings;
@@ -40,6 +41,7 @@ static class ServiceCollectionExtensions
             services.AddSingleton<IIconProvider, IconProvider>();
             services.AddSingleton<ICharacterIconProvider, CharacterIconProvider>();
             services.AddSingleton<IDatabaseGenerator, DatabaseGenerator>();
+            services.AddSingleton<IItemBaseCatalog, ItemBaseCatalog>();
 
             return services;
         }

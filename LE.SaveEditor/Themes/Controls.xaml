@@ -8,6 +8,7 @@
 
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+    <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
     <converters:CharacterIconConverter x:Key="CharacterIconConverter" />
 
     <!-- ===== Text ===== -->
@@ -587,14 +588,18 @@
 
     <!-- ===== Character inventory ===== -->
 
-    <!-- Empty equipment slot: a framed box with the slot name (Tag) shown faintly in the middle. -->
-    <Style x:Key="EquipmentSlotStyle" TargetType="ContentControl">
+    <!--
+        Clickable equipment slot (DataContext: EquipmentSlotViewModel). Empty slots show their name;
+        a slot holding a built item shows its icon (or name) on a background tinted with its rarity.
+    -->
+    <Style x:Key="EquipmentSlotButtonStyle" TargetType="Button">
         <Setter Property="Margin" Value="4" />
-        <Setter Property="Focusable" Value="False" />
-        <Setter Property="ToolTip" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ToolTip" Value="{Binding ToolTip}" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ContentControl">
+                <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd"
                             CornerRadius="6"
                             BorderThickness="1"
@@ -602,7 +607,11 @@
                             Background="{DynamicResource ControlBackgroundBrush}"
                             SnapsToDevicePixels="True">
                         <Grid>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Image x:Name="ItemIcon"
+                                   Margin="6"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="{Binding Icon}" />
                             <TextBlock x:Name="SlotName"
                                        Margin="4"
                                        HorizontalAlignment="Center"
@@ -612,13 +621,145 @@
                                        FontSize="11"
                                        Opacity="0.7"
                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                       Text="{TemplateBinding Tag}" />
+                                       Text="{Binding Label}" />
                         </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding HasItem}" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{Binding RarityBackground}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{Binding RarityForeground}" />
+                            <Setter TargetName="SlotName" Property="Text" Value="{Binding Item.Base.Name}" />
+                            <Setter TargetName="SlotName" Property="Foreground" Value="{Binding RarityForeground}" />
+                            <Setter TargetName="SlotName" Property="Opacity" Value="1" />
+                        </DataTrigger>
+                        <!-- An item with an icon shows only the icon (the name is in the tooltip). -->
+                        <DataTrigger Binding="{Binding HasIcon}" Value="True">
+                            <Setter TargetName="SlotName" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="SlotName" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Slider (implicit rolls in the item builder) ===== -->
+    <Style x:Key="SliderTrackRepeatButtonStyle" TargetType="RepeatButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <!-- Transparent hit area around the thin visible bar. -->
+                    <Border Background="Transparent">
+                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SliderThumbStyle" TargetType="Thumb">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Ellipse x:Name="Knob"
+                             Width="14"
+                             Height="14"
+                             Fill="{DynamicResource AccentBrush}"
+                             Stroke="{DynamicResource WindowBackgroundBrush}"
+                             StrokeThickness="2" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource AccentHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource AccentPressedBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Slider">
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="IsMoveToPointEnabled" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Track x:Name="PART_Track" VerticalAlignment="Center">
+                        <Track.DecreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource SliderTrackRepeatButtonStyle}"
+                                          Background="{DynamicResource AccentBrush}"
+                                          Command="Slider.DecreaseLarge" />
+                        </Track.DecreaseRepeatButton>
+                        <Track.IncreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource SliderTrackRepeatButtonStyle}"
+                                          Background="{DynamicResource ControlBorderBrush}"
+                                          Command="Slider.IncreaseLarge" />
+                        </Track.IncreaseRepeatButton>
+                        <Track.Thumb>
+                            <Thumb Style="{StaticResource SliderThumbStyle}" />
+                        </Track.Thumb>
+                    </Track>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Rarity pill (rarity picker of the item builder; DataContext: RarityOptionViewModel) ===== -->
+    <Style x:Key="RarityPillItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd"
+                            Padding="12,5"
+                            CornerRadius="13"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource ControlBackgroundBrush}"
+                            SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8"
+                                     Height="8"
+                                     Margin="0,0,6,0"
+                                     VerticalAlignment="Center"
+                                     Fill="{Binding Foreground}" />
+                            <TextBlock x:Name="Text"
+                                       VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource WindowForegroundBrush}"
+                                       Text="{Binding Name}" />
+                        </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
-                            <Setter TargetName="SlotName" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{Binding Background}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{Binding Foreground}" />
+                            <Setter TargetName="Text" Property="Foreground" Value="{Binding Foreground}" />
+                            <Setter TargetName="Text" Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

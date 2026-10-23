@@ -45,6 +45,16 @@ public sealed class Unique : GameEntity
 {
 }
 
+/// <summary><c>properties</c>: display name and display rules of each property id (implicit / affix stat names).</summary>
+public sealed class GameProperty : GameEntity
+{
+}
+
+/// <summary><c>ailments</c>: ailment names, referenced by the <c>specialTag</c> of implicits and affixes.</summary>
+public sealed class Ailment : GameEntity
+{
+}
+
 /// <summary><c>stats</c></summary>
 public sealed class Stat : GameEntity
 {

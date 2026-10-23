@@ -16,6 +16,8 @@
       <PackageReference Include="Material.Icons" Version="3.0.3-nightly.0.2" />
       <PackageReference Include="Material.Icons.WPF" Version="3.0.3-nightly.0.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.2.26504.105" />
+      <!-- Read-only access to base.db (item bases for the item builder); same SQLite as LE.SaveEditor.DB. -->
+      <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>
