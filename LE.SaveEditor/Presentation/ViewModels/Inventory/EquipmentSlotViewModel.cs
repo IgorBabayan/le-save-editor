@@ -40,7 +40,10 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
                 return $"{Label} — click to build an item";
 
             var lines = new List<string> { Item.Base.Name, $"{Item.Rarity} {Item.Base.TypeName}" };
+            if (Item.Base.BaseName is { } baseName)
+                lines.Add(baseName);
             lines.AddRange(Item.Base.Implicits.Select((s, i) => ItemStatViewModel.Format(s, Item.ImplicitValues[i])));
+            lines.AddRange(Item.Base.Mods.Select((s, i) => ItemStatViewModel.Format(s, Item.ModValues[i])));
             return string.Join(Environment.NewLine, lines);
         }
     }

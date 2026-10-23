@@ -46,7 +46,12 @@ public sealed class BaseOptionViewModel
 
     public string LevelText => $"Lv {Base.LevelRequirement}";
 
-    public string ToolTip => IsUsable
-        ? Base.TypeName
-        : $"{Base.TypeName} — only {GroupName} can equip this base";
+    public string ToolTip
+    {
+        get
+        {
+            var type = Base.BaseName is { } baseName ? $"{Base.TypeName} · {baseName}" : Base.TypeName;
+            return IsUsable ? type : $"{type} — only {GroupName} can equip this";
+        }
+    }
 }

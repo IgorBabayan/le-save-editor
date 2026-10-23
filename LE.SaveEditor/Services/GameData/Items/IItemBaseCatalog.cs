@@ -15,6 +15,9 @@ public interface IItemBaseCatalog
     /// <summary>Bases that fit <paramref name="slot"/>, ordered by level requirement then name.</summary>
     IReadOnlyList<ItemBase> GetBases(EquipmentSlot slot);
 
+    /// <summary>Unique items (<paramref name="sets"/> = <c>false</c>) or set items that fit <paramref name="slot"/>.</summary>
+    IReadOnlyList<ItemBase> GetUniques(EquipmentSlot slot, bool sets);
+
     /// <summary>Forgets what was read, so a database written by the generator is picked up.</summary>
     void ClearCache();
 }

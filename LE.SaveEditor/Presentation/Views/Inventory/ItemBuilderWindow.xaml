@@ -28,6 +28,37 @@
     </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
+        <!-- One implicit / unique modifier: its tooltip line, its range and a slider over the 0…255 roll. -->
+        <DataTemplate x:Key="StatTemplate" DataType="{x:Type inventoryVm:ItemStatViewModel}">
+            <StackPanel Margin="0,0,0,14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Text="{Binding DisplayText}" />
+                    <TextBlock Grid.Column="1"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding RangeText}" />
+                </Grid>
+                <!-- Fixed 0…255 range (the roll the game stores): no binding order can clamp the value. -->
+                <Slider Margin="0,6,0,0"
+                        Minimum="0"
+                        Maximum="{x:Static inventoryVm:ItemStatViewModel.MaxRoll}"
+                        TickFrequency="1"
+                        SmallChange="1"
+                        LargeChange="16"
+                        IsSnapToTickEnabled="True"
+                        IsEnabled="{Binding IsEditable, Mode=OneTime}"
+                        Value="{Binding Roll}" />
+            </StackPanel>
+        </DataTemplate>
+
         <!-- Bases grouped by the classes that can equip them; the view model already orders them group by group. -->
         <CollectionViewSource x:Key="GroupedBases" Source="{Binding Bases}">
             <CollectionViewSource.GroupDescriptions>
@@ -170,7 +201,7 @@
                         <ScrollViewer Grid.Row="1" Padding="16,12" VerticalScrollBarVisibility="Auto">
                             <Grid>
                                 <TextBlock Style="{StaticResource EmptyPageTextStyle}"
-                                           Text="Select a base to see its stats."
+                                           Text="{Binding EmptyStatsText}"
                                            Visibility="{Binding HasSelectedBase, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
 
                                 <StackPanel Visibility="{Binding HasSelectedBase, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -188,42 +219,36 @@
                                                    Text="Stat names are missing because the game database is out of date. Update it with the database button in the title bar, then reopen the builder." />
                                     </Border>
                                     <TextBlock Style="{StaticResource SecondaryTextStyle}"
-                                               Text="This base has no implicit stats."
+                                               Text="No implicit stats."
                                                Visibility="{Binding HasStats, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
 
-                                    <ItemsControl ItemsSource="{Binding Stats}" Focusable="False">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type inventoryVm:ItemStatViewModel}">
-                                                <StackPanel Margin="0,0,0,14">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Grid.Column="0"
-                                                                   FontWeight="SemiBold"
-                                                                   TextWrapping="Wrap"
-                                                                   Text="{Binding DisplayText}" />
-                                                        <TextBlock Grid.Column="1"
-                                                                   Margin="8,0,0,0"
-                                                                   VerticalAlignment="Center"
-                                                                   Style="{StaticResource SecondaryTextStyle}"
-                                                                   Text="{Binding RangeText}" />
-                                                    </Grid>
-                                                    <!-- Fixed 0…255 range (the roll the game stores): no binding order can clamp the value. -->
-                                                    <Slider Margin="0,6,0,0"
-                                                            Minimum="0"
-                                                            Maximum="{x:Static inventoryVm:ItemStatViewModel.MaxRoll}"
-                                                            TickFrequency="1"
-                                                            SmallChange="1"
-                                                            LargeChange="16"
-                                                            IsSnapToTickEnabled="True"
-                                                            IsEnabled="{Binding IsEditable, Mode=OneTime}"
-                                                            Value="{Binding Roll}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <ItemsControl ItemsSource="{Binding Stats}"
+                                                  ItemTemplate="{StaticResource StatTemplate}"
+                                                  Focusable="False" />
+
+                                    <!-- Modifiers and effect lines of a unique / set item. -->
+                                    <StackPanel Margin="0,8,0,0"
+                                                Visibility="{Binding HasUniqueSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock Margin="0,0,0,8"
+                                                   Foreground="{Binding RarityForeground}"
+                                                   Text="{Binding ModStatsHeader}"
+                                                   Style="{StaticResource SectionHeaderTextStyle}" />
+                                        <ItemsControl ItemsSource="{Binding ModStats}"
+                                                      ItemTemplate="{StaticResource StatTemplate}"
+                                                      Focusable="False" />
+                                        <!-- Effects that do not roll, e.g. "You are immune to Blind and Chill". -->
+                                        <ItemsControl ItemsSource="{Binding Effects}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Margin="0,0,0,6"
+                                                               FontStyle="Italic"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{Binding DataContext.RarityForeground, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                               Text="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </ScrollViewer>
@@ -239,7 +264,7 @@
                     </Grid.RowDefinitions>
 
                     <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
-                        <TextBlock DockPanel.Dock="Left" Text="Base" Style="{StaticResource SectionHeaderTextStyle}" />
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding ListHeader}" Style="{StaticResource SectionHeaderTextStyle}" />
                         <CheckBox DockPanel.Dock="Right"
                                   VerticalAlignment="Center"
                                   FontSize="12"

@@ -40,6 +40,7 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
         var viewModel = new ItemBuilderViewModel(
             services.GetRequiredService<IItemBaseCatalog>(),
             services.GetRequiredService<IIconProvider>(),
+            Confirm,
             slot,
             characterClass,
             current);

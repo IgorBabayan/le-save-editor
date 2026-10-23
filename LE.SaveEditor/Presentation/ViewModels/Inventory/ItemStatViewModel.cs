@@ -39,7 +39,11 @@ public sealed partial class ItemStatViewModel : ViewModelBase
     public string DisplayText => Format(Implicit, Value);
 
     /// <summary>E.g. "(30 – 45)".</summary>
-    public string RangeText => IsFixed ? string.Empty : $"({FormatNumber(Implicit, Implicit.Min)} – {FormatNumber(Implicit, Implicit.Max)})";
+    public string RangeText => IsFixed ? string.Empty
+        : Implicit.Template is not null ? $"({FormatTemplateNumber(Implicit.TemplateMin)} – {FormatTemplateNumber(Implicit.TemplateMax)})"
+        : $"({FormatNumber(Implicit, Implicit.Min)} – {FormatNumber(Implicit, Implicit.Max)})";
+
+    private static string FormatTemplateNumber(double value) => value.ToString("0.#", CultureInfo.CurrentCulture);
 
     partial void OnRollChanged(double value)
     {
@@ -70,6 +74,16 @@ public sealed partial class ItemStatViewModel : ViewModelBase
     /// </summary>
     public static string Format(ItemImplicit implicitStat, double value)
     {
+        // A unique modifier labelled by its tooltip line: the line's own number follows the roll.
+        if (implicitStat.Template is { } template)
+        {
+            var range = implicitStat.Max - implicitStat.Min;
+            var t = range <= double.Epsilon ? 1 : (value - implicitStat.Min) / range;
+            var shown = implicitStat.TemplateMin + (implicitStat.TemplateMax - implicitStat.TemplateMin) * t;
+            var whole = implicitStat.TemplateMin % 1 == 0 && implicitStat.TemplateMax % 1 == 0;
+            return template.Replace("{value}", shown.ToString(whole ? "0" : "0.#", CultureInfo.CurrentCulture));
+        }
+
         var name = implicitStat.Property;
 
         if (implicitStat.Type is ImplicitModifierType.Increased or ImplicitModifierType.More)

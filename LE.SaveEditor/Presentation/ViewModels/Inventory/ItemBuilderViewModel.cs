@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
@@ -7,55 +9,67 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
+/// <summary>Which list the item builder offers; it follows the selected rarity.</summary>
+public enum ItemListKind
+{
+    /// <summary>Plain bases: Normal, Magic, Rare and Exalted.</summary>
+    Bases,
+
+    /// <summary>Unique items: Unique and Legendary share this list.</summary>
+    Uniques,
+
+    /// <summary>Set items.</summary>
+    Sets
+}
+
 /// <summary>
-/// Item builder popup opened from an equipment slot: only bases that fit the slot are offered, grouped by the
-/// classes that can equip them (the character's own class first); the rarity tints the preview and every implicit
-/// of the selected base gets a slider.
+/// Item builder popup opened from an equipment slot: only items that fit the slot are offered, grouped by the
+/// classes that can equip them (the character's own class first); the rarity tints the preview and picks the list
+/// (bases, uniques or set items), and every implicit / unique modifier of the selection gets a slider.
 /// </summary>
 public sealed partial class ItemBuilderViewModel : ViewModelBase
 {
+    private readonly IItemBaseCatalog _catalog;
     private readonly IIconProvider _iconProvider;
-    private readonly IReadOnlyList<BaseOptionViewModel> _allBases;
+    private readonly Func<string, string, bool> _confirm;
+    private IReadOnlyList<BaseOptionViewModel> _allBases = [];
+    private RarityOptionViewModel _selectedRarity;
 
+    /// <param name="confirm">Asks a Yes/No question (title, message); <c>true</c> for Yes.</param>
     public ItemBuilderViewModel(
         IItemBaseCatalog catalog,
         IIconProvider iconProvider,
+        Func<string, string, bool> confirm,
         EquipmentSlot slot,
         CharacterClass characterClass,
         BuiltItem? current)
     {
+        _catalog = catalog;
         _iconProvider = iconProvider;
+        _confirm = confirm;
         Slot = slot;
         CharacterClass = characterClass;
         IsDatabaseAvailable = catalog.IsAvailable;
         IsDatabaseOutdated = catalog.IsOutdated;
 
-        _allBases = catalog.GetBases(slot)
-            .Select(b => new BaseOptionViewModel(b, characterClass))
-            .OrderBy(o => o.GroupOrder)
-            .ThenBy(o => o.GroupName, StringComparer.Ordinal)
-            .ThenBy(o => o.Base.CannotDrop)
-            .ThenBy(o => o.Base.LevelRequirement)
-            .ThenBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
-
         Rarities = Enum.GetValues<ItemRarity>().Select(r => new RarityOptionViewModel(r)).ToList();
         _selectedRarity = Rarities.First(r => r.Rarity == (current?.Rarity ?? ItemRarity.Normal));
+        ListKind = KindOf(_selectedRarity.Rarity);
 
-        ApplyFilter();
+        LoadList();
 
-        // Editing an equipped item: select its base and keep its rolls.
+        // Editing an equipped item: select it again and keep its rolls.
         if (current is not null)
         {
-            var match = _allBases.FirstOrDefault(o => o.Base.BaseTypeId == current.Base.BaseTypeId && o.Base.SubTypeId == current.Base.SubTypeId);
+            var match = _allBases.FirstOrDefault(o => o.Base.BaseTypeId == current.Base.BaseTypeId
+                                                      && o.Base.SubTypeId == current.Base.SubTypeId
+                                                      && o.Base.UniqueId == current.Base.UniqueId);
             if (match is not null)
             {
                 SelectedBaseOption = match;
-                Stats.Clear();
-                for (var i = 0; i < match.Base.Implicits.Count; i++)
-                    Stats.Add(new ItemStatViewModel(match.Base.Implicits[i], i < current.ImplicitValues.Count ? current.ImplicitValues[i] : null));
+                FillStats(match.Base, current.ImplicitValues, current.ModValues);
 
-                // An equipped base of another class stays listed even though the class filter is on.
+                // An equipped item of another class stays listed even though the class filter is on.
                 ApplyFilter();
             }
         }
@@ -68,10 +82,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public string Title => $"Item builder — {Slot.DisplayName}";
 
-    /// <summary>Class of the character whose equipment is edited; its bases are listed first.</summary>
+    /// <summary>Class of the character whose equipment is edited; its items are listed first.</summary>
     public CharacterClass CharacterClass { get; }
-
-    public string OnlyUsableText => $"Only {CharacterClassCatalog.GetDisplayName(CharacterClass)} bases";
 
     /// <summary><c>false</c> when <c>base.db</c> is missing or unreadable: the user has to generate it first.</summary>
     public bool IsDatabaseAvailable { get; }
@@ -79,25 +91,118 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary><c>base.db</c> predates stored stat names, so implicits read "Property 10" until it is updated.</summary>
     public bool IsDatabaseOutdated { get; }
 
-    public string EmptyBasesText =>
-        !IsDatabaseAvailable ? "The game database was not found. Generate it with the database button in the title bar, then reopen the builder."
-        : _allBases.Count == 0 ? $"No {Slot.DisplayName.ToLowerInvariant()} bases were found in the game database."
-        : ShowOnlyUsable && !_allBases.Any(o => o.IsUsable) ? $"No {Slot.DisplayName.ToLowerInvariant()} bases for this class."
-        : "No bases match the search.";
+    // ===== Rarity and list kind =====
 
     public IReadOnlyList<RarityOptionViewModel> Rarities { get; }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RarityForeground))]
-    [NotifyPropertyChangedFor(nameof(RarityBackground))]
-    [NotifyPropertyChangedFor(nameof(Subtitle))]
-    private RarityOptionViewModel _selectedRarity;
+    /// <summary>
+    /// Selected rarity. Moving to a rarity with another list (bases ↔ uniques ↔ set items) while an item is selected
+    /// asks first: "No" keeps the previous rarity, "Yes" clears the selection and switches the list.
+    /// </summary>
+    public RarityOptionViewModel SelectedRarity
+    {
+        get => _selectedRarity;
+        set
+        {
+            if (value is null || value == _selectedRarity)
+                return;
+
+            if (KindOf(value.Rarity) == ListKind || !HasSelectedBase)
+            {
+                ApplyRarity(value);
+                return;
+            }
+
+            // The rarity picker has already moved; answer after its selection change has finished, so that
+            // "No" can move it back (a revert from inside the binding update would be ignored by the ListBox).
+            var dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+            dispatcher.InvokeAsync(() => ConfirmListChange(value), DispatcherPriority.Background);
+        }
+    }
+
+    /// <summary>List offered for the selected rarity.</summary>
+    public ItemListKind ListKind { get; private set; }
 
     public Brush RarityForeground => RarityPalette.Foreground(SelectedRarity.Rarity);
 
     public Brush RarityBackground => RarityPalette.Background(SelectedRarity.Rarity);
 
-    /// <summary>Bases of the slot matching <see cref="SearchText"/> (and <see cref="ShowOnlyUsable"/>), in group order.</summary>
+    private static ItemListKind KindOf(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Unique or ItemRarity.Legendary => ItemListKind.Uniques,
+        ItemRarity.Set => ItemListKind.Sets,
+        _ => ItemListKind.Bases
+    };
+
+    private void ConfirmListChange(RarityOptionViewModel value)
+    {
+        var target = KindOf(value.Rarity) switch
+        {
+            ItemListKind.Uniques => "unique items",
+            ItemListKind.Sets => "set items",
+            _ => "item bases"
+        };
+
+        if (_confirm("Change rarity", $"Switching to {value.Name} shows {target} instead and clears the selected item and its stats. Continue?"))
+        {
+            ApplyRarity(value);
+        }
+        else
+        {
+            // Keep the previous rarity: tell the picker to read it back.
+            OnPropertyChanged(nameof(SelectedRarity));
+        }
+    }
+
+    private void ApplyRarity(RarityOptionViewModel value)
+    {
+        _selectedRarity = value;
+        OnPropertyChanged(nameof(SelectedRarity));
+        OnPropertyChanged(nameof(RarityForeground));
+        OnPropertyChanged(nameof(RarityBackground));
+        OnPropertyChanged(nameof(Subtitle));
+
+        var kind = KindOf(value.Rarity);
+        if (kind == ListKind)
+            return;
+
+        ListKind = kind;
+        SelectedBaseOption = null;
+        SearchText = string.Empty;
+        LoadList();
+
+        OnPropertyChanged(nameof(ListKind));
+        OnPropertyChanged(nameof(ListHeader));
+        OnPropertyChanged(nameof(OnlyUsableText));
+        OnPropertyChanged(nameof(ItemName));
+    }
+
+    // ===== Item list =====
+
+    /// <summary>"Base", "Unique item" or "Set item".</summary>
+    public string ListHeader => ListKind switch
+    {
+        ItemListKind.Uniques => "Unique item",
+        ItemListKind.Sets => "Set item",
+        _ => "Base"
+    };
+
+    private string ListNoun => ListKind switch
+    {
+        ItemListKind.Uniques => "unique items",
+        ItemListKind.Sets => "set items",
+        _ => "bases"
+    };
+
+    public string OnlyUsableText => $"Only {CharacterClassCatalog.GetDisplayName(CharacterClass)} {ListNoun}";
+
+    public string EmptyBasesText =>
+        !IsDatabaseAvailable ? "The game database was not found. Generate it with the database button in the title bar, then reopen the builder."
+        : _allBases.Count == 0 ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
+        : ShowOnlyUsable && !_allBases.Any(o => o.IsUsable) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
+        : $"No {ListNoun} match the search.";
+
+    /// <summary>Items of the list matching <see cref="SearchText"/> (and <see cref="ShowOnlyUsable"/>), in group order.</summary>
     public ObservableCollection<BaseOptionViewModel> Bases { get; } = [];
 
     public bool HasBases => Bases.Count > 0;
@@ -105,60 +210,33 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    /// <summary>Hide bases the character's class cannot equip (on by default).</summary>
+    /// <summary>Hide items the character's class cannot equip (on by default).</summary>
     [ObservableProperty]
     private bool _showOnlyUsable = true;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedBase))]
-    [NotifyPropertyChangedFor(nameof(HasSelectedBase))]
-    [NotifyPropertyChangedFor(nameof(ItemName))]
-    [NotifyPropertyChangedFor(nameof(Subtitle))]
-    [NotifyPropertyChangedFor(nameof(LevelText))]
-    [NotifyPropertyChangedFor(nameof(Icon))]
-    [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
-    private BaseOptionViewModel? _selectedBaseOption;
-
-    public ItemBase? SelectedBase => SelectedBaseOption?.Base;
-
-    /// <summary>The selected base cannot be equipped by the character's class (it can still be built).</summary>
-    public bool IsSelectedBaseForOtherClass => SelectedBaseOption is { IsUsable: false };
-
-    public string ClassWarningText => SelectedBaseOption is { IsUsable: false } o
-        ? $"Only {o.GroupName} can equip this base."
-        : string.Empty;
-
-    public bool HasSelectedBase => SelectedBase is not null;
-
-    /// <summary>Implicits of <see cref="SelectedBase"/>.</summary>
-    public ObservableCollection<ItemStatViewModel> Stats { get; } = [];
-
-    public bool HasStats => Stats.Count > 0;
-
-    public string ItemName => SelectedBase?.Name ?? $"Select a {Slot.DisplayName.ToLowerInvariant()} base";
-
-    public string Subtitle => $"{SelectedRarity.Name} {SelectedBase?.TypeName ?? Slot.DisplayName}";
-
-    public string LevelText => SelectedBase is { LevelRequirement: > 0 } b ? $"Requires level {b.LevelRequirement}" : string.Empty;
-
-    public ImageSource? Icon => _iconProvider.Get(SelectedBase?.IconPath);
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
     partial void OnShowOnlyUsableChanged(bool value) => ApplyFilter();
 
-    partial void OnSelectedBaseOptionChanged(BaseOptionViewModel? value)
+    private void LoadList()
     {
-        Stats.Clear();
-        if (value is not null)
+        var items = ListKind switch
         {
-            foreach (var implicitStat in value.Base.Implicits)
-                Stats.Add(new ItemStatViewModel(implicitStat));
-        }
+            ItemListKind.Uniques => _catalog.GetUniques(Slot, sets: false),
+            ItemListKind.Sets => _catalog.GetUniques(Slot, sets: true),
+            _ => _catalog.GetBases(Slot)
+        };
 
-        OnPropertyChanged(nameof(HasStats));
-        OnPropertyChanged(nameof(IsSelectedBaseForOtherClass));
-        OnPropertyChanged(nameof(ClassWarningText));
+        _allBases = items
+            .Select(b => new BaseOptionViewModel(b, CharacterClass))
+            .OrderBy(o => o.GroupOrder)
+            .ThenBy(o => o.GroupName, StringComparer.Ordinal)
+            .ThenBy(o => o.Base.CannotDrop)
+            .ThenBy(o => o.Base.LevelRequirement)
+            .ThenBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        ApplyFilter();
     }
 
     private void ApplyFilter()
@@ -174,6 +252,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
                           || ((!ShowOnlyUsable || option.IsUsable)
                               && words.All(w => option.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
                                                 || option.Base.TypeName.Contains(w, StringComparison.CurrentCultureIgnoreCase)
+                                                || (option.Base.BaseName?.Contains(w, StringComparison.CurrentCultureIgnoreCase) ?? false)
                                                 || option.GroupName.Contains(w, StringComparison.CurrentCultureIgnoreCase)));
             if (matches)
                 Bases.Add(option);
@@ -183,13 +262,105 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         OnPropertyChanged(nameof(EmptyBasesText));
     }
 
+    // ===== Selection and stats =====
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedBase))]
+    [NotifyPropertyChangedFor(nameof(HasSelectedBase))]
+    [NotifyPropertyChangedFor(nameof(ItemName))]
+    [NotifyPropertyChangedFor(nameof(Subtitle))]
+    [NotifyPropertyChangedFor(nameof(LevelText))]
+    [NotifyPropertyChangedFor(nameof(Icon))]
+    [NotifyPropertyChangedFor(nameof(IsSelectedBaseForOtherClass))]
+    [NotifyPropertyChangedFor(nameof(ClassWarningText))]
+    [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
+    private BaseOptionViewModel? _selectedBaseOption;
+
+    public ItemBase? SelectedBase => SelectedBaseOption?.Base;
+
+    public bool HasSelectedBase => SelectedBase is not null;
+
+    /// <summary>The selected item cannot be equipped by the character's class (it can still be built).</summary>
+    public bool IsSelectedBaseForOtherClass => SelectedBaseOption is { IsUsable: false };
+
+    public string ClassWarningText => SelectedBaseOption is { IsUsable: false } o
+        ? $"Only {o.GroupName} can equip this item."
+        : string.Empty;
+
+    /// <summary>Implicits of the selected base (for a unique: of the base it is built on).</summary>
+    public ObservableCollection<ItemStatViewModel> Stats { get; } = [];
+
+    public bool HasStats => Stats.Count > 0;
+
+    /// <summary>Rolled modifiers of the selected unique / set item.</summary>
+    public ObservableCollection<ItemStatViewModel> ModStats { get; } = [];
+
+    public bool HasModStats => ModStats.Count > 0;
+
+    /// <summary>Tooltip lines of the selected unique / set item that do not roll.</summary>
+    public IReadOnlyList<string> Effects => SelectedBase?.Effects ?? [];
+
+    public bool HasEffects => Effects.Count > 0;
+
+    /// <summary>The unique / set section (modifiers or effect lines) has something to show.</summary>
+    public bool HasUniqueSection => HasModStats || HasEffects;
+
+    public string ModStatsHeader => ListKind == ItemListKind.Sets ? "Set item stats" : "Unique stats";
+
+    public string EmptyStatsText => $"Select {(ListKind == ItemListKind.Bases ? "a base" : ListKind == ItemListKind.Sets ? "a set item" : "a unique item")} to see its stats.";
+
+    public string ItemName => SelectedBase?.Name ?? $"Select a {Slot.DisplayName.ToLowerInvariant()} {ListHeader.ToLowerInvariant()}";
+
+    /// <summary>E.g. "Rare Helmet", or "Unique Helmet · Jewelled Circlet" for a unique.</summary>
+    public string Subtitle
+    {
+        get
+        {
+            var text = $"{SelectedRarity.Name} {(SelectedBase?.TypeName is { Length: > 0 } type ? type : Slot.DisplayName)}";
+            return SelectedBase?.BaseName is { } baseName ? $"{text} · {baseName}" : text;
+        }
+    }
+
+    public string LevelText => SelectedBase is { LevelRequirement: > 0 } b ? $"Requires level {b.LevelRequirement}" : string.Empty;
+
+    public ImageSource? Icon => _iconProvider.Get(SelectedBase?.IconPath);
+
+    partial void OnSelectedBaseOptionChanged(BaseOptionViewModel? value) => FillStats(value?.Base, null, null);
+
+    private void FillStats(ItemBase? item, IReadOnlyList<double>? implicitValues, IReadOnlyList<double>? modValues)
+    {
+        Stats.Clear();
+        ModStats.Clear();
+
+        if (item is not null)
+        {
+            for (var i = 0; i < item.Implicits.Count; i++)
+                Stats.Add(new ItemStatViewModel(item.Implicits[i], implicitValues is not null && i < implicitValues.Count ? implicitValues[i] : null));
+            for (var i = 0; i < item.Mods.Count; i++)
+                ModStats.Add(new ItemStatViewModel(item.Mods[i], modValues is not null && i < modValues.Count ? modValues[i] : null));
+        }
+
+        OnPropertyChanged(nameof(HasStats));
+        OnPropertyChanged(nameof(HasModStats));
+        OnPropertyChanged(nameof(Effects));
+        OnPropertyChanged(nameof(HasEffects));
+        OnPropertyChanged(nameof(HasUniqueSection));
+        OnPropertyChanged(nameof(ModStatsHeader));
+        OnPropertyChanged(nameof(EmptyStatsText));
+    }
+
     [RelayCommand(CanExecute = nameof(HasSelectedBase))]
     private void Apply()
     {
         if (SelectedBase is null)
             return;
 
-        CloseRequested?.Invoke(this, new BuiltItem(Slot, SelectedRarity.Rarity, SelectedBase, Stats.Select(s => s.Value).ToList()));
+        CloseRequested?.Invoke(this, new BuiltItem(
+            Slot,
+            SelectedRarity.Rarity,
+            SelectedBase,
+            Stats.Select(s => s.Value).ToList(),
+            ModStats.Select(s => s.Value).ToList()));
     }
 
     [RelayCommand]

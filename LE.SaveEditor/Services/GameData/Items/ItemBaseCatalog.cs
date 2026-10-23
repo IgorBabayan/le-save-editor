@@ -1,12 +1,13 @@
 using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// Reads the <c>ItemTypes</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>.
+/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>.
 /// </summary>
 /// <remarks>
 /// Every row keeps its element of maxroll's <c>data.json</c> as JSON. An item type looks like
@@ -14,6 +15,9 @@ namespace LE.SaveEditor.Services.GameData.Items;
 /// "levelRequirement":7,"cannotDrop":true,"implicits":[{"property":10,"specialTag":0,"tags":0,"type":0,"implicitValue":5,"implicitMaxValue":5}]}]}</c>.
 /// Implicit names are built like the game does: the property name from <c>properties</c>, prefixed with the
 /// tags (Minion, Spell, Fire, ...) and the ailment from <c>ailments</c> that <c>specialTag</c> refers to.
+/// A unique looks like <c>{"uniqueID":5,"name":"IsadoraRevenge","displayName":"Isadora's Revenge","isSetItem":true,"baseType":0,
+/// "subTypes":[5],"overrideLevelRequirement":false,"levelRequirement":0,"hideFromPlayers":false,
+/// "mods":[{"value":40,"maxValue":82,"property":7,"specialTag":0,"tags":0,"type":0}]}</c>.
 /// Field names are matched case-insensitively, and anything unreadable is skipped.
 /// </remarks>
 public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatalog
@@ -22,8 +26,9 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private Catalog? _catalog;
 
     /// <summary>What was read from base.db.</summary>
+    /// <param name="Uniques">Unique and set items.</param>
     /// <param name="HasStatNames">The <c>Properties</c> table exists (databases made before it show "Property 10" etc.).</param>
-    private sealed record Catalog(IReadOnlyList<ItemBase> Bases, bool HasStatNames);
+    private sealed record Catalog(IReadOnlyList<ItemBase> Bases, IReadOnlyList<ItemBase> Uniques, bool HasStatNames);
 
     public bool IsAvailable => GetAll().Count > 0;
 
@@ -48,6 +53,20 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             .ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
+    public IReadOnlyList<ItemBase> GetUniques(EquipmentSlot slot, bool sets)
+    {
+        Catalog catalog;
+        lock (_sync)
+            catalog = _catalog ??= Load();
+
+        return catalog.Uniques
+            .Where(u => u.IsSet == sets && slot.AcceptsBaseType(u.BaseTypeId))
+            .OrderBy(u => u.BaseTypeId)
+            .ThenBy(u => u.LevelRequirement)
+            .ThenBy(u => u.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
     public void ClearCache()
     {
         lock (_sync)
@@ -64,7 +83,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return new Catalog([], false);
+            return new Catalog([], [], false);
 
         try
         {
@@ -91,12 +110,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                     result.AddRange(ParseItemType(key, name, itemType, names, icons));
             }
 
-            return new Catalog(result, properties.Count > 0);
+            var uniques = ReadUniques(connection, result, names, icons);
+            return new Catalog(result, uniques, properties.Count > 0);
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             // A missing or broken database means an empty builder, never a crash.
-            return new Catalog([], false);
+            return new Catalog([], [], false);
         }
     }
 
@@ -141,41 +161,199 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         return result;
     }
 
-    private static List<ItemImplicit> ParseImplicits(JsonElement subItem, ImplicitNames names)
+    private static List<ItemImplicit> ParseImplicits(JsonElement subItem, ImplicitNames names) =>
+        ParseModifiers(subItem, "implicits", "implicitValue", "implicitMaxValue", names);
+
+    // ===== Uniques / set items =====
+
+    private static List<ItemBase> ReadUniques(SqliteConnection connection, IReadOnlyList<ItemBase> bases, ImplicitNames names, IconIndex icons)
     {
-        var result = new List<ItemImplicit>();
-        if (Find(subItem, "implicits") is not { ValueKind: JsonValueKind.Array } implicits)
-            return result;
+        var result = new List<ItemBase>();
+        var byId = new Dictionary<(int, int), ItemBase>();
+        foreach (var itemBase in bases)
+            byId.TryAdd((itemBase.BaseTypeId, itemBase.SubTypeId), itemBase);
 
-        foreach (var entry in implicits.EnumerateArray())
+        foreach (var (_, rowName, json) in ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM Uniques"))
         {
-            if (entry.ValueKind != JsonValueKind.Object || GetDouble(entry, "implicitValue") is not { } first)
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } unique
+                || GetBool(unique, "hideFromPlayers") == true
+                || GetInt(unique, "uniqueID") is not { } uniqueId
+                || GetInt(unique, "baseType") is not { } baseTypeId)
                 continue;
-            var second = GetDouble(entry, "implicitMaxValue") ?? first;
 
-            var type = GetInt(entry, "type") is { } t && Enum.IsDefined((ImplicitModifierType)t)
-                ? (ImplicitModifierType)t
-                : ImplicitModifierType.Added;
+            // "name" is internal ("IsadoraRevenge"); "displayName" is what the game shows, when set.
+            var internalName = GetString(unique, "name");
+            var name = GetString(unique, "displayName") ?? internalName ?? rowName;
+            if (name is null)
+                continue;
 
-            var property = GetInt(entry, "property") ?? -1;
-            var info = names.GetProperty(property);
-            var name = names.Compose(info, property, GetLong(entry, "tags") ?? 0, GetInt(entry, "specialTag") ?? 0);
+            var subTypeId = Find(unique, "subTypes") is { ValueKind: JsonValueKind.Array } subTypes
+                            && subTypes.EnumerateArray().FirstOrDefault() is { ValueKind: JsonValueKind.Number } first
+                            && first.TryGetInt32(out var sub)
+                ? sub
+                : 0;
+            byId.TryGetValue((baseTypeId, subTypeId), out var itemBase);
 
-            // Increased / more are always percentages; added values only for properties shown that way (resistances, ...).
-            var isPercent = type != ImplicitModifierType.Added || (info?.AddedAsPercentage ?? false);
+            // Most uniques override the level of their base; the rest inherit it.
+            var level = GetBool(unique, "overrideLevelRequirement") == true
+                ? GetInt(unique, "levelRequirement") ?? 0
+                : itemBase?.LevelRequirement ?? GetInt(unique, "levelRequirement") ?? 0;
 
-            result.Add(new ItemImplicit(
+            var effects = new List<string>();
+            var mods = ParseUniqueMods(unique, names, effects);
+
+            result.Add(new ItemBase(
+                baseTypeId,
+                subTypeId,
                 name,
-                type,
-                Math.Min(first, second),
-                Math.Max(first, second),
-                isPercent,
-                PercentScale: info?.AddedAsTenth == true && type == ImplicitModifierType.Added ? 10 : 100,
-                ShowPlus: !(info?.DontDisplayPlus ?? false),
-                NameIncludesModifier: info?.NameIncludesModifier ?? false));
+                itemBase?.TypeName ?? string.Empty,
+                level,
+                itemBase?.ClassRequirement ?? 0,
+                CannotDrop: GetBool(unique, "canDropRandomly") == false,
+                icons.Find("uniques", name, internalName) ?? itemBase?.IconPath,
+                itemBase?.Implicits ?? [],
+                uniqueId,
+                GetBool(unique, "isSetItem") ?? false,
+                itemBase?.Name,
+                mods,
+                effects));
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// <c>[100,150,0]</c> in a unique tooltip: the shown range of the modifier with rollID 0;
+    /// <c>[1,c]</c> / <c>[1,c,5]</c>: a per-level bonus, shown as its first number.
+    /// </summary>
+    private static readonly Regex RollPlaceholder = new(@"\[(-?[\d.]+),(-?[\d.]+),(\d+)\]", RegexOptions.Compiled);
+    private static readonly Regex LevelPlaceholder = new(@"\[(-?[\d.]+),c(?:,\d+)?\]", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Unique modifiers as the game's tooltip shows them: modifiers referenced by a tooltip line take that line as
+    /// their label (the rolled number follows the slider); other shown modifiers use their property name; tooltip
+    /// lines without a roll become <paramref name="effects"/>.
+    /// </summary>
+    private static List<ItemImplicit> ParseUniqueMods(JsonElement unique, ImplicitNames names, List<string> effects)
+    {
+        var result = new List<ItemImplicit>();
+
+        // rollID → tooltip line that describes it.
+        var described = new Dictionary<int, (string Template, double From, double To)>();
+        if (Find(unique, "tooltipDescriptions") is { ValueKind: JsonValueKind.Array } descriptions)
+        {
+            foreach (var entry in descriptions.EnumerateArray())
+            {
+                if (entry.ValueKind != JsonValueKind.Object || GetString(entry, "description") is not { } text)
+                    continue;
+
+                text = LevelPlaceholder.Replace(text, m => m.Groups[1].Value);
+                var matches = RollPlaceholder.Matches(text);
+                if (matches.Count == 0)
+                {
+                    effects.Add(text);
+                    continue;
+                }
+
+                // The first placeholder follows its slider; any others show their range.
+                var first = matches[0];
+                var template = RollPlaceholder.Replace(text, m => m.Index == first.Index ? "{value}" : $"{m.Groups[1].Value}–{m.Groups[2].Value}");
+                var rollId = int.Parse(first.Groups[3].Value, CultureInfo.InvariantCulture);
+                var from = double.Parse(first.Groups[1].Value, CultureInfo.InvariantCulture);
+                var to = double.Parse(first.Groups[2].Value, CultureInfo.InvariantCulture);
+                if (!described.TryAdd(rollId, (template, from, to)))
+                    effects.Add(RollPlaceholder.Replace(text, m => $"{m.Groups[1].Value}–{m.Groups[2].Value}"));
+            }
+        }
+
+        if (Find(unique, "mods") is not { ValueKind: JsonValueKind.Array } mods)
+            return result;
+
+        var usedRolls = new HashSet<int>();
+        foreach (var entry in mods.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object || ParseModifier(entry, "value", "maxValue", names) is not { } mod)
+                continue;
+
+            var rollId = GetInt(entry, "rollID");
+            if (rollId is { } id && described.TryGetValue(id, out var line) && usedRolls.Add(id))
+            {
+                result.Add(mod with { Template = line.Template, TemplateMin = Math.Min(line.From, line.To), TemplateMax = Math.Max(line.From, line.To) });
+                continue;
+            }
+
+            // Hidden modifiers only exist to drive tooltip lines (handled above).
+            if (GetBool(entry, "hideInTooltip") == true)
+                continue;
+
+            // Skill-specific properties have no name in the data: keep the slider when it rolls, drop fixed ones.
+            if (!names.IsNamed(GetInt(entry, "property") ?? -1, GetInt(entry, "specialTag") ?? 0))
+            {
+                if (mod.Max - mod.Min > double.Epsilon)
+                    result.Add(mod with { Property = "Special modifier" });
+                continue;
+            }
+
+            result.Add(mod);
+        }
+
+        // Tooltip lines whose modifier is missing still describe the item.
+        foreach (var (id, line) in described)
+        {
+            if (!usedRolls.Contains(id))
+                effects.Add(line.Template.Replace("{value}", $"{line.From.ToString(CultureInfo.InvariantCulture)}–{line.To.ToString(CultureInfo.InvariantCulture)}"));
+        }
+
+        return result;
+    }
+
+    // ===== Modifiers (implicits and unique mods) =====
+
+    private static List<ItemImplicit> ParseModifiers(JsonElement owner, string arrayField, string valueField, string maxField, ImplicitNames names)
+    {
+        var result = new List<ItemImplicit>();
+        if (Find(owner, arrayField) is not { ValueKind: JsonValueKind.Array } entries)
+            return result;
+
+        foreach (var entry in entries.EnumerateArray())
+        {
+            if (entry.ValueKind == JsonValueKind.Object && ParseModifier(entry, valueField, maxField, names) is { } modifier)
+                result.Add(modifier);
+        }
+
+        return result;
+    }
+
+    /// <summary>One implicit / unique modifier; a maximum of 0 with a non-zero value means the value is fixed.</summary>
+    private static ItemImplicit? ParseModifier(JsonElement entry, string valueField, string maxField, ImplicitNames names)
+    {
+        if (GetDouble(entry, valueField) is not { } first)
+            return null;
+        var second = GetDouble(entry, maxField) ?? first;
+        if (second == 0 && first != 0)
+            second = first;
+
+        var type = GetInt(entry, "type") is { } t && Enum.IsDefined((ImplicitModifierType)t)
+            ? (ImplicitModifierType)t
+            : ImplicitModifierType.Added;
+
+        var property = GetInt(entry, "property") ?? -1;
+        var info = names.GetProperty(property);
+        var name = names.Compose(info, property, GetLong(entry, "tags") ?? 0, GetInt(entry, "specialTag") ?? 0);
+
+        // Increased / more are always percentages; added values only for properties shown that way (resistances, ...).
+        var isPercent = type != ImplicitModifierType.Added || (info?.AddedAsPercentage ?? false);
+
+        return new ItemImplicit(
+            name,
+            type,
+            Math.Min(first, second),
+            Math.Max(first, second),
+            isPercent,
+            PercentScale: info?.AddedAsTenth == true && type == ImplicitModifierType.Added ? 10 : 100,
+            ShowPlus: !(info?.DontDisplayPlus ?? false),
+            NameIncludesModifier: info?.NameIncludesModifier ?? false);
     }
 
     // ===== Implicit names =====
@@ -195,7 +373,20 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
         private const long DamageOverTimeTag = 4096;
 
+        /// <summary>Properties that refer to one specific skill and cannot be named from the data.</summary>
+        private const int DeprecatedSkillProperty = 58;
+        private const int LevelOfSkillsProperty = 88;
+
         public PropertyInfo? GetProperty(int property) => properties.GetValueOrDefault(property);
+
+        /// <summary>
+        /// <c>false</c> for properties without a name and for skill-specific ones (property 58, and "Level of Skills"
+        /// with a special tag, whose tags then select a single skill).
+        /// </summary>
+        public bool IsNamed(int property, int specialTag) =>
+            properties.ContainsKey(property)
+            && property != DeprecatedSkillProperty
+            && !(property == LevelOfSkillsProperty && specialTag != 0);
 
         public string Compose(PropertyInfo? info, int property, long tags, int specialTag)
         {
