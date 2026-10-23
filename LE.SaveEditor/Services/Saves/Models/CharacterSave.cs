@@ -10,6 +10,9 @@ public sealed record CharacterSave
     public required int Level { get; init; }
     public required int Slot { get; init; }
     public required bool Hardcore { get; init; }
+
+    /// <summary>Solo Self-Found character (<c>soloChallenge</c> in the save file).</summary>
+    public bool SoloSelfFound { get; init; }
     public required CharacterClass CharacterClass { get; init; }
 
     /// <summary>Raw <c>chosenMastery</c> value from the file (index within the class).</summary>

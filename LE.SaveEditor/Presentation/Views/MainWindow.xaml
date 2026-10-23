@@ -30,6 +30,86 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
+    <Window.Resources>
+        <!-- One row of the character list (shared by the Softcore and Hardcore tabs). -->
+        <DataTemplate x:Key="CharacterListItemTemplate" DataType="{x:Type models:CharacterSave}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" /> <!-- mastery / class icon -->
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Mastery icon when the character has a mastery, otherwise the class icon. -->
+                <Grid Grid.Column="0"
+                      Width="40"
+                      Height="40"
+                      Margin="0,0,10,0"
+                      VerticalAlignment="Center">
+                    <Grid.ToolTip>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0} · {1}">
+                                    <Binding Path="ClassDisplayName" />
+                                    <Binding Path="MasteryDisplayName" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </Grid.ToolTip>
+
+                    <Image x:Name="CharacterIcon"
+                           Source="{Binding Converter={StaticResource CharacterIconConverter}}"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+
+                    <!-- Placeholder until the database generator has downloaded the icons. -->
+                    <wpf:MaterialIcon x:Name="CharacterIconPlaceholder"
+                                      Kind="AccountCircleOutline"
+                                      Width="32"
+                                      Height="32"
+                                      Visibility="Collapsed"
+                                      Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                </Grid>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <DockPanel LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left"
+                                   Text="{Binding CharacterName}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <Border DockPanel.Dock="Right"
+                                Style="{StaticResource BadgeBorderStyle}"
+                                ToolTip="Solo Self-Found"
+                                Visibility="{Binding SoloSelfFound, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="SSF"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource WarningForegroundBrush}" />
+                        </Border>
+                    </DockPanel>
+                    <TextBlock Margin="0,2,0,0" Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}Level {0} {1} · {2}">
+                                <Binding Path="Level" />
+                                <Binding Path="ClassDisplayName" />
+                                <Binding Path="MasteryDisplayName" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock Margin="0,2,0,0"
+                               FontSize="11"
+                               Style="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding LastPlayedLocal, StringFormat='Last played {0:g}', TargetNullValue='Never played'}" />
+                </StackPanel>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Source, ElementName=CharacterIcon}" Value="{x:Null}">
+                    <Setter TargetName="CharacterIconPlaceholder" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static SystemCommands.MinimizeWindowCommand}" Executed="OnMinimizeExecuted" />
         <CommandBinding Command="{x:Static SystemCommands.MaximizeWindowCommand}" Executed="OnMaximizeExecuted" />
@@ -314,91 +394,70 @@
                                Text="Characters"
                                Style="{StaticResource SectionHeaderTextStyle}" />
 
-                    <ListBox Grid.Row="1"
-                             Style="{StaticResource PlainListBoxStyle}"
-                             ItemContainerStyle="{StaticResource ListRowItemStyle}"
-                             ItemsSource="{Binding Characters}"
-                             SelectedItem="{Binding SelectedCharacter, Mode=TwoWay}"
-                             Visibility="{Binding HasCharacters, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type models:CharacterSave}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" /> <!-- mastery / class icon -->
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
+                    <!-- Softcore / Hardcore tabs; each keeps its own selection and SSF filter. -->
+                    <TabControl Grid.Row="1"
+                                Margin="16,0"
+                                Style="{StaticResource PillTabControlStyle}"
+                                SelectedIndex="{Binding SelectedCharacterTabIndex, Mode=TwoWay}"
+                                Visibility="{Binding HasCharacters, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TabItem Header="Softcore">
+                            <!-- Negative side margins undo the TabControl margin, so the list spans the whole panel. -->
+                            <Grid Margin="-16,10,-16,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
 
-                                    <!-- Mastery icon when the character has a mastery, otherwise the class icon. -->
-                                    <Grid Grid.Column="0"
-                                          Width="40"
-                                          Height="40"
-                                          Margin="0,0,10,0"
-                                          VerticalAlignment="Center">
-                                        <Grid.ToolTip>
-                                            <TextBlock>
-                                                <TextBlock.Text>
-                                                    <MultiBinding StringFormat="{}{0} · {1}">
-                                                        <Binding Path="ClassDisplayName" />
-                                                        <Binding Path="MasteryDisplayName" />
-                                                    </MultiBinding>
-                                                </TextBlock.Text>
-                                            </TextBlock>
-                                        </Grid.ToolTip>
+                                <CheckBox Grid.Row="0"
+                                          Margin="16,0,16,8"
+                                          Content="Show only SSF characters"
+                                          IsChecked="{Binding ShowOnlySsfSoftcore, Mode=TwoWay}" />
 
-                                        <Image x:Name="CharacterIcon"
-                                               Source="{Binding Converter={StaticResource CharacterIconConverter}}"
-                                               Stretch="Uniform"
-                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                                <ListBox Grid.Row="1"
+                                         Style="{StaticResource PlainListBoxStyle}"
+                                         ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                                         ItemTemplate="{StaticResource CharacterListItemTemplate}"
+                                         ItemsSource="{Binding SoftcoreCharacters}"
+                                         SelectedItem="{Binding SelectedSoftcoreCharacter, Mode=TwoWay}"
+                                         Visibility="{Binding HasVisibleSoftcoreCharacters, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                                        <!-- Placeholder until the database generator has downloaded the icons. -->
-                                        <wpf:MaterialIcon x:Name="CharacterIconPlaceholder"
-                                                          Kind="AccountCircleOutline"
-                                                          Width="32"
-                                                          Height="32"
-                                                          Visibility="Collapsed"
-                                                          Foreground="{DynamicResource SecondaryForegroundBrush}" />
-                                    </Grid>
+                                <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                                           Text="No softcore characters to show."
+                                           TextWrapping="Wrap"
+                                           Style="{StaticResource SecondaryTextStyle}"
+                                           Visibility="{Binding HasVisibleSoftcoreCharacters, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                            </Grid>
+                        </TabItem>
 
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <DockPanel LastChildFill="False">
-                                            <TextBlock DockPanel.Dock="Left"
-                                                       Text="{Binding CharacterName}"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <Border DockPanel.Dock="Right"
-                                                    Style="{StaticResource BadgeBorderStyle}"
-                                                    ToolTip="Hardcore"
-                                                    Visibility="{Binding Hardcore, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                <TextBlock Text="HC"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource WarningForegroundBrush}" />
-                                            </Border>
-                                        </DockPanel>
-                                        <TextBlock Margin="0,2,0,0" Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis">
-                                            <TextBlock.Text>
-                                                <MultiBinding StringFormat="{}Level {0} {1} · {2}">
-                                                    <Binding Path="Level" />
-                                                    <Binding Path="ClassDisplayName" />
-                                                    <Binding Path="MasteryDisplayName" />
-                                                </MultiBinding>
-                                            </TextBlock.Text>
-                                        </TextBlock>
-                                        <TextBlock Margin="0,2,0,0"
-                                                   FontSize="11"
-                                                   Style="{StaticResource SecondaryTextStyle}"
-                                                   Text="{Binding LastPlayedLocal, StringFormat='Last played {0:g}', TargetNullValue='Never played'}" />
-                                    </StackPanel>
-                                </Grid>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding Source, ElementName=CharacterIcon}" Value="{x:Null}">
-                                        <Setter TargetName="CharacterIconPlaceholder" Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                        <TabItem Header="Hardcore">
+                            <!-- Negative side margins undo the TabControl margin, so the list spans the whole panel. -->
+                            <Grid Margin="-16,10,-16,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <CheckBox Grid.Row="0"
+                                          Margin="16,0,16,8"
+                                          Content="Show only SSF characters"
+                                          IsChecked="{Binding ShowOnlySsfHardcore, Mode=TwoWay}" />
+
+                                <ListBox Grid.Row="1"
+                                         Style="{StaticResource PlainListBoxStyle}"
+                                         ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                                         ItemTemplate="{StaticResource CharacterListItemTemplate}"
+                                         ItemsSource="{Binding HardcoreCharacters}"
+                                         SelectedItem="{Binding SelectedHardcoreCharacter, Mode=TwoWay}"
+                                         Visibility="{Binding HasVisibleHardcoreCharacters, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                                           Text="No hardcore characters to show."
+                                           TextWrapping="Wrap"
+                                           Style="{StaticResource SecondaryTextStyle}"
+                                           Visibility="{Binding HasVisibleHardcoreCharacters, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
 
                     <!-- Empty / loading states -->
                     <StackPanel Grid.Row="1" Margin="16,8" VerticalAlignment="Top"

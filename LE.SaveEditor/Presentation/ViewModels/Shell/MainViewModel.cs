@@ -21,7 +21,19 @@ public partial class MainViewModel(
     IItemBaseCatalog itemBaseCatalog,
     NotificationCenterViewModel notificationCenter) : ViewModelBase
 {
+    private const int SoftcoreTabIndex = 0;
+    private const int HardcoreTabIndex = 1;
+
     private CancellationTokenSource? _loadCts;
+
+    /// <summary>
+    /// Set while the tab lists are rebuilt: clearing a list makes its ListBox push a <c>null</c> selection,
+    /// which must not close the details of the selected character.
+    /// </summary>
+    private bool _isRefreshingLists;
+
+    /// <summary>Character <see cref="CharacterDetails"/> was created for.</summary>
+    private CharacterSave? _detailsCharacter;
 
     /// <summary>Bell button and notification popup in the title bar.</summary>
     public NotificationCenterViewModel NotificationCenter { get; } = notificationCenter;
@@ -29,16 +41,41 @@ public partial class MainViewModel(
     /// <summary>Characters of the selected save folder, ordered by their save slot.</summary>
     public ObservableCollection<CharacterSave> Characters { get; } = [];
 
+    /// <summary>Softcore characters shown in the Softcore tab (after the SSF filter).</summary>
+    public ObservableCollection<CharacterSave> SoftcoreCharacters { get; } = [];
+
+    /// <summary>Hardcore characters shown in the Hardcore tab (after the SSF filter).</summary>
+    public ObservableCollection<CharacterSave> HardcoreCharacters { get; } = [];
+
     /// <summary>Paths of <c>STASH_*</c> files of the selected save folder (parsed later).</summary>
     public ObservableCollection<string> StashFiles { get; } = [];
 
     /// <summary>Character files that could not be read.</summary>
     public ObservableCollection<SaveFileError> LoadErrors { get; } = [];
 
+    /// <summary>Open tab of the character list: 0 = Softcore, 1 = Hardcore.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedCharacter))]
-    [NotifyPropertyChangedFor(nameof(ShowSelectCharacterHint))]
-    private CharacterSave? _selectedCharacter;
+    private int _selectedCharacterTabIndex = SoftcoreTabIndex;
+
+    /// <summary>Selection of the Softcore tab (kept while the Hardcore tab is open).</summary>
+    [ObservableProperty]
+    private CharacterSave? _selectedSoftcoreCharacter;
+
+    /// <summary>Selection of the Hardcore tab (kept while the Softcore tab is open).</summary>
+    [ObservableProperty]
+    private CharacterSave? _selectedHardcoreCharacter;
+
+    /// <summary>"Show only SSF characters" checkbox of the Softcore tab.</summary>
+    [ObservableProperty]
+    private bool _showOnlySsfSoftcore;
+
+    /// <summary>"Show only SSF characters" checkbox of the Hardcore tab.</summary>
+    [ObservableProperty]
+    private bool _showOnlySsfHardcore;
+
+    /// <summary>Selected character of the open tab; its details are shown on the right.</summary>
+    public CharacterSave? SelectedCharacter =>
+        SelectedCharacterTabIndex == HardcoreTabIndex ? SelectedHardcoreCharacter : SelectedSoftcoreCharacter;
 
     /// <summary>Details (Blessings / Inventory tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
     [ObservableProperty]
@@ -53,6 +90,8 @@ public partial class MainViewModel(
     public bool ShowNoSaveFolder => !HasSaveFolder;
     public bool HasCharacters => Characters.Count > 0;
     public bool HasSelectedCharacter => SelectedCharacter is not null;
+    public bool HasVisibleSoftcoreCharacters => SoftcoreCharacters.Count > 0;
+    public bool HasVisibleHardcoreCharacters => HardcoreCharacters.Count > 0;
     public bool HasLoadErrors => LoadErrors.Count > 0;
 
     /// <summary>A folder is selected and loaded, but it holds no readable characters.</summary>
@@ -63,8 +102,73 @@ public partial class MainViewModel(
 
     public bool ShowSelectCharacterHint => HasCharacters && !HasSelectedCharacter;
 
-    partial void OnSelectedCharacterChanged(CharacterSave? value) =>
-        CharacterDetails = value is null ? null : new CharacterViewModel(value, dialogService, iconProvider, itemBaseCatalog);
+    partial void OnSelectedCharacterTabIndexChanged(int value) => UpdateSelectedCharacter();
+
+    partial void OnSelectedSoftcoreCharacterChanged(CharacterSave? value)
+    {
+        if (!_isRefreshingLists)
+            UpdateSelectedCharacter();
+    }
+
+    partial void OnSelectedHardcoreCharacterChanged(CharacterSave? value)
+    {
+        if (!_isRefreshingLists)
+            UpdateSelectedCharacter();
+    }
+
+    partial void OnShowOnlySsfSoftcoreChanged(bool value) => RefreshCharacterLists();
+
+    partial void OnShowOnlySsfHardcoreChanged(bool value) => RefreshCharacterLists();
+
+    /// <summary>Recreates <see cref="CharacterDetails"/> when the selected character of the open tab changes.</summary>
+    private void UpdateSelectedCharacter()
+    {
+        var selected = SelectedCharacter;
+        if (!ReferenceEquals(selected, _detailsCharacter))
+        {
+            _detailsCharacter = selected;
+            CharacterDetails = selected is null
+                ? null
+                : new CharacterViewModel(selected, dialogService, iconProvider, itemBaseCatalog);
+        }
+
+        OnPropertyChanged(nameof(SelectedCharacter));
+        OnPropertyChanged(nameof(HasSelectedCharacter));
+        OnPropertyChanged(nameof(ShowSelectCharacterHint));
+    }
+
+    /// <summary>
+    /// Splits <see cref="Characters"/> into the Softcore / Hardcore tabs, applying each tab's SSF filter.
+    /// Each tab keeps its selected character if it is still listed, otherwise its first character is selected.
+    /// </summary>
+    private void RefreshCharacterLists()
+    {
+        var previousSoftcore = SelectedSoftcoreCharacter?.FilePath;
+        var previousHardcore = SelectedHardcoreCharacter?.FilePath;
+
+        _isRefreshingLists = true;
+        try
+        {
+            Replace(SoftcoreCharacters, Characters.Where(c => !c.Hardcore && (!ShowOnlySsfSoftcore || c.SoloSelfFound)));
+            Replace(HardcoreCharacters, Characters.Where(c => c.Hardcore && (!ShowOnlySsfHardcore || c.SoloSelfFound)));
+
+            SelectedSoftcoreCharacter = FindByPath(SoftcoreCharacters, previousSoftcore) ?? SoftcoreCharacters.FirstOrDefault();
+            SelectedHardcoreCharacter = FindByPath(HardcoreCharacters, previousHardcore) ?? HardcoreCharacters.FirstOrDefault();
+        }
+        finally
+        {
+            _isRefreshingLists = false;
+        }
+
+        OnPropertyChanged(nameof(HasVisibleSoftcoreCharacters));
+        OnPropertyChanged(nameof(HasVisibleHardcoreCharacters));
+        UpdateSelectedCharacter();
+    }
+
+    private static CharacterSave? FindByPath(IEnumerable<CharacterSave> characters, string? filePath) =>
+        filePath is null
+            ? null
+            : characters.FirstOrDefault(c => string.Equals(c.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Called once when the main window opens: loads characters if a save folder was selected earlier.</summary>
     public async Task InitializeAsync()
@@ -172,10 +276,16 @@ public partial class MainViewModel(
             }
         }
 
-        // Keep the same character selected after a reload, otherwise select the first one.
-        SelectedCharacter = Characters.FirstOrDefault(c =>
-                                string.Equals(c.FilePath, previousSelection, StringComparison.OrdinalIgnoreCase))
-                            ?? Characters.FirstOrDefault();
+        // Each tab keeps its selected character after a reload, otherwise selects its first one.
+        RefreshCharacterLists();
+
+        // Stay on the tab of the previously selected character; otherwise open a tab that has characters.
+        if (FindByPath(Characters, previousSelection) is { } previous)
+            SelectedCharacterTabIndex = previous.Hardcore ? HardcoreTabIndex : SoftcoreTabIndex;
+        else if (SoftcoreCharacters.Count == 0 && HardcoreCharacters.Count > 0)
+            SelectedCharacterTabIndex = HardcoreTabIndex;
+        else if (HardcoreCharacters.Count == 0 && SoftcoreCharacters.Count > 0)
+            SelectedCharacterTabIndex = SoftcoreTabIndex;
 
         NotifyStateChanged();
     }

@@ -35,6 +35,7 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             Level = dto.Level,
             Slot = dto.Slot,
             Hardcore = dto.Hardcore,
+            SoloSelfFound = dto.SoloChallenge,
             CharacterClass = (CharacterClass)dto.CharacterClass,
             ChosenMastery = dto.ChosenMastery,
             LastPlayed = dto.LastPlayed,
@@ -115,6 +116,7 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
         [JsonPropertyName("level")] public int Level { get; init; }
         [JsonPropertyName("slot")] public int Slot { get; init; }
         [JsonPropertyName("hardcore")] public bool Hardcore { get; init; }
+        [JsonPropertyName("soloChallenge")] public bool SoloChallenge { get; init; }
         [JsonPropertyName("characterClass")] public int CharacterClass { get; init; }
         [JsonPropertyName("chosenMastery")] public int ChosenMastery { get; init; }
         /// <summary>Display only, so a format the game changed must never make the whole save unreadable.</summary>
