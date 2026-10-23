@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
-        xmlns:items="clr-namespace:LE.SaveEditor.Services.GameData.Items"
         xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=inventoryVm:ItemBuilderViewModel, IsDesignTimeCreatable=False}"
@@ -27,6 +26,15 @@
                             GlassFrameThickness="0"
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- Bases grouped by the classes that can equip them; the view model already orders them group by group. -->
+        <CollectionViewSource x:Key="GroupedBases" Source="{Binding Bases}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="GroupName" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
 
     <Window.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
@@ -148,6 +156,12 @@
                                     <TextBlock Margin="0,2,0,0"
                                                Style="{StaticResource SecondaryTextStyle}"
                                                Text="{Binding LevelText}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource WarningForegroundBrush}"
+                                               Text="{Binding ClassWarningText}"
+                                               Visibility="{Binding IsSelectedBaseForOtherClass, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -161,6 +175,18 @@
 
                                 <StackPanel Visibility="{Binding HasSelectedBase, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <TextBlock Margin="0,0,0,8" Text="Implicit stats" Style="{StaticResource SectionHeaderTextStyle}" />
+                                    <!-- base.db from before stat names were stored: names read "Property 10". -->
+                                    <Border Margin="0,0,0,12"
+                                            Padding="10,6"
+                                            CornerRadius="4"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource WarningForegroundBrush}"
+                                            Visibility="{Binding IsDatabaseOutdated, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock FontSize="12"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource WarningForegroundBrush}"
+                                                   Text="Stat names are missing because the game database is out of date. Update it with the database button in the title bar, then reopen the builder." />
+                                    </Border>
                                     <TextBlock Style="{StaticResource SecondaryTextStyle}"
                                                Text="This base has no implicit stats."
                                                Visibility="{Binding HasStats, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
@@ -212,7 +238,17 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Margin="0,0,0,8" Text="Base" Style="{StaticResource SectionHeaderTextStyle}" />
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left" Text="Base" Style="{StaticResource SectionHeaderTextStyle}" />
+                        <CheckBox DockPanel.Dock="Right"
+                                  VerticalAlignment="Center"
+                                  FontSize="12"
+                                  Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                  IsEnabled="{Binding IsDatabaseAvailable}"
+                                  Content="{Binding OnlyUsableText}"
+                                  ToolTip="Hide bases this character's class cannot equip"
+                                  IsChecked="{Binding ShowOnlyUsable}" />
+                    </DockPanel>
 
                     <TextBox Grid.Row="1"
                              Margin="0,0,0,8"
@@ -227,36 +263,54 @@
                             BorderBrush="{DynamicResource ControlBorderBrush}"
                             Background="{DynamicResource ControlBackgroundBrush}">
                         <Grid>
-                            <ListBox ItemsSource="{Binding Bases}"
-                                     SelectedItem="{Binding SelectedBase}"
+                            <ListBox ItemsSource="{Binding Source={StaticResource GroupedBases}}"
+                                     SelectedItem="{Binding SelectedBaseOption}"
                                      Style="{StaticResource PlainListBoxStyle}"
                                      ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                                     VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                                      Padding="0,4">
+                                <ListBox.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Margin="12,10,8,4"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                           Text="{Binding Name}" />
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ListBox.GroupStyle>
                                 <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type items:ItemBase}">
-                                        <Grid>
+                                    <DataTemplate DataType="{x:Type inventoryVm:BaseOptionViewModel}">
+                                        <Grid x:Name="Row" ToolTip="{Binding ToolTip}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                                <TextBlock TextTrimming="CharacterEllipsis"
-                                                           Text="{Binding Name}"
-                                                           ToolTip="{Binding TypeName}" />
-                                                <!-- Bases the game no longer drops are listed last. -->
+                                                <TextBlock TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                                                <!-- Bases the game no longer drops are listed last in their group. -->
                                                 <TextBlock Margin="6,0,0,0"
                                                            VerticalAlignment="Center"
                                                            FontSize="10"
                                                            Text="legacy"
                                                            ToolTip="The game no longer drops this base"
                                                            Style="{StaticResource SecondaryTextStyle}"
-                                                           Visibility="{Binding CannotDrop, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                           Visibility="{Binding Base.CannotDrop, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="1"
                                                        Margin="8,0,0,0"
                                                        Style="{StaticResource SecondaryTextStyle}"
-                                                       Text="{Binding LevelRequirement, StringFormat='Lv {0}'}" />
+                                                       Text="{Binding LevelText}" />
                                         </Grid>
+                                        <DataTemplate.Triggers>
+                                            <!-- Other classes' bases stay selectable but are dimmed. -->
+                                            <DataTrigger Binding="{Binding IsUsable}" Value="False">
+                                                <Setter TargetName="Row" Property="Opacity" Value="0.5" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>

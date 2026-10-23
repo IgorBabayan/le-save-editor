@@ -6,6 +6,12 @@ public interface IItemBaseCatalog
     /// <summary><c>true</c> when <c>base.db</c> exists and its item types could be read.</summary>
     bool IsAvailable { get; }
 
+    /// <summary>
+    /// <c>base.db</c> was generated before stat names were stored (no <c>Properties</c> table):
+    /// implicits show as "Property 10" until the database is updated.
+    /// </summary>
+    bool IsOutdated { get; }
+
     /// <summary>Bases that fit <paramref name="slot"/>, ordered by level requirement then name.</summary>
     IReadOnlyList<ItemBase> GetBases(EquipmentSlot slot);
 

@@ -5,6 +5,7 @@ using LE.SaveEditor.Presentation.Views.Inventory;
 using LE.SaveEditor.Presentation.Views.Settings;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
+using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Presentation.Services;
 
@@ -34,12 +35,13 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
         return window.Result;
     }
 
-    public BuiltItem? ShowItemBuilder(EquipmentSlot slot, BuiltItem? current)
+    public BuiltItem? ShowItemBuilder(EquipmentSlot slot, CharacterClass characterClass, BuiltItem? current)
     {
         var viewModel = new ItemBuilderViewModel(
             services.GetRequiredService<IItemBaseCatalog>(),
             services.GetRequiredService<IIconProvider>(),
             slot,
+            characterClass,
             current);
 
         var window = new ItemBuilderWindow(viewModel)

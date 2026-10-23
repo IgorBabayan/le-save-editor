@@ -1,6 +1,7 @@
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
+using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Presentation.Services;
 
@@ -23,7 +24,8 @@ public interface IDialogService
 
     /// <summary>
     /// Shows the modal item builder for <paramref name="slot"/>, starting from <paramref name="current"/> when the slot holds an item.
+    /// Bases of <paramref name="characterClass"/> are listed first.
     /// </summary>
     /// <returns>The built item, or <c>null</c> if the user cancelled.</returns>
-    BuiltItem? ShowItemBuilder(EquipmentSlot slot, BuiltItem? current);
+    BuiltItem? ShowItemBuilder(EquipmentSlot slot, CharacterClass characterClass, BuiltItem? current);
 }

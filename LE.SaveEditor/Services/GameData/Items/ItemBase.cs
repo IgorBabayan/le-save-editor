@@ -32,6 +32,10 @@ public sealed record ItemImplicit(
 /// <param name="BaseTypeId">Item type id, the second byte of an item in a save (helmet = 0).</param>
 /// <param name="SubTypeId">Base id inside its item type, the third byte of an item in a save.</param>
 /// <param name="TypeName">Item type name, e.g. "Helmet".</param>
+/// <param name="ClassRequirement">
+/// Classes that can equip the base as bit flags of their ids (<c>1 &lt;&lt; (int)CharacterClass</c>: 1 Primalist, 2 Mage,
+/// 4 Sentinel, 8 Acolyte, 16 Rogue); 0 = any class.
+/// </param>
 /// <param name="CannotDrop">The game no longer drops this base (legacy bases are kept in the data).</param>
 /// <param name="IconPath">Icon path for <see cref="IIconProvider"/>, or <c>null</c> when none was found.</param>
 public sealed record ItemBase(
@@ -40,6 +44,11 @@ public sealed record ItemBase(
     string Name,
     string TypeName,
     int LevelRequirement,
+    int ClassRequirement,
     bool CannotDrop,
     string? IconPath,
-    IReadOnlyList<ItemImplicit> Implicits);
+    IReadOnlyList<ItemImplicit> Implicits)
+{
+    public bool IsUsableBy(LE.SaveEditor.Services.Saves.Models.CharacterClass characterClass) =>
+        ClassRequirement == 0 || (ClassRequirement & (1 << (int)characterClass)) != 0;
+}

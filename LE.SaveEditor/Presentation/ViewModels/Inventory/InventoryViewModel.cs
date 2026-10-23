@@ -70,7 +70,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         if (slot is null)
             return;
 
-        var item = _dialogService.ShowItemBuilder(slot.Slot, slot.Item);
+        var item = _dialogService.ShowItemBuilder(slot.Slot, Character.CharacterClass, slot.Item);
         if (item is not null)
             slot.Item = item;
     }

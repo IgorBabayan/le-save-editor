@@ -19,9 +19,22 @@ namespace LE.SaveEditor.Services.GameData.Items;
 public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatalog
 {
     private readonly object _sync = new();
-    private IReadOnlyList<ItemBase>? _bases;
+    private Catalog? _catalog;
+
+    /// <summary>What was read from base.db.</summary>
+    /// <param name="HasStatNames">The <c>Properties</c> table exists (databases made before it show "Property 10" etc.).</param>
+    private sealed record Catalog(IReadOnlyList<ItemBase> Bases, bool HasStatNames);
 
     public bool IsAvailable => GetAll().Count > 0;
+
+    public bool IsOutdated
+    {
+        get
+        {
+            lock (_sync)
+                return (_catalog ??= Load()) is { Bases.Count: > 0, HasStatNames: false };
+        }
+    }
 
     public IReadOnlyList<ItemBase> GetBases(EquipmentSlot slot) =>
         GetAll()
@@ -38,20 +51,20 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     public void ClearCache()
     {
         lock (_sync)
-            _bases = null;
+            _catalog = null;
         iconProvider.ClearCache();
     }
 
     private IReadOnlyList<ItemBase> GetAll()
     {
         lock (_sync)
-            return _bases ??= Load();
+            return (_catalog ??= Load()).Bases;
     }
 
-    private static IReadOnlyList<ItemBase> Load()
+    private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return [];
+            return new Catalog([], false);
 
         try
         {
@@ -66,7 +79,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             using var connection = new SqliteConnection(connectionString);
             connection.Open();
 
-            var names = new ImplicitNames(ReadProperties(connection), ReadAilments(connection));
+            var properties = ReadProperties(connection);
+            var names = new ImplicitNames(properties, ReadAilments(connection));
             var icons = ReadIcons(connection);
 
             var result = new List<ItemBase>();
@@ -77,12 +91,12 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                     result.AddRange(ParseItemType(key, name, itemType, names, icons));
             }
 
-            return result;
+            return new Catalog(result, properties.Count > 0);
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            // A missing or outdated database means an empty builder, never a crash.
-            return [];
+            // A missing or broken database means an empty builder, never a crash.
+            return new Catalog([], false);
         }
     }
 
@@ -118,6 +132,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 name,
                 typeName,
                 GetInt(subItem, "levelRequirement") ?? 0,
+                GetInt(subItem, "classRequirement") ?? 0,
                 GetBool(subItem, "cannotDrop") ?? false,
                 icons.Find(typeName, internalName, name),
                 ParseImplicits(subItem, names)));
