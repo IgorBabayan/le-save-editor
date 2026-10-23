@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using LE.SaveEditor.Presentation.Services;
+using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Presentation.ViewModels.Characters;
 using LE.SaveEditor.Presentation.ViewModels.Notifications;
 using LE.SaveEditor.Services.GameData;
@@ -19,6 +20,7 @@ public partial class MainViewModel(
     INotificationService notificationService,
     IIconProvider iconProvider,
     IItemBaseCatalog itemBaseCatalog,
+    IToastService toastService,
     NotificationCenterViewModel notificationCenter) : ViewModelBase
 {
     private const int SoftcoreTabIndex = 0;
@@ -129,7 +131,7 @@ public partial class MainViewModel(
             _detailsCharacter = selected;
             CharacterDetails = selected is null
                 ? null
-                : new CharacterViewModel(selected, dialogService, iconProvider, itemBaseCatalog);
+                : new CharacterViewModel(selected, dialogService, iconProvider, itemBaseCatalog, toastService);
         }
 
         OnPropertyChanged(nameof(SelectedCharacter));

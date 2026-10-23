@@ -189,15 +189,125 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ===== Sections (empty until parsed) ===== -->
+            <!-- ===== Sections: backpack ("Items"); resources and woven echoes are not parsed yet ===== -->
             <TabControl Grid.Row="1"
                         Margin="0,24,0,0"
                         Padding="0,12,0,0"
                         Style="{StaticResource PillTabControlStyle}">
+                <!-- ===== Backpack: 14 × 8 cells; items cover several cells, equipment opens the inspector ===== -->
                 <TabItem Header="Items">
-                    <Border Style="{StaticResource InventorySectionBorderStyle}">
-                        <TextBlock Text="Items will appear here." Style="{StaticResource EmptyPageTextStyle}" />
-                    </Border>
+                    <StackPanel HorizontalAlignment="Left" DataContext="{Binding Backpack}">
+                        <Border Padding="6"
+                                HorizontalAlignment="Left"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource TitleBarBackgroundBrush}">
+                            <Grid>
+                                <!-- Background cells (one 50 px pitch per cell, matching the item layer below). -->
+                                <ItemsControl ItemsSource="{Binding Cells}" Focusable="False" IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="{x:Static inventoryVm:BackpackViewModel.Rows}"
+                                                         Columns="{x:Static inventoryVm:BackpackViewModel.Columns}" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type inventoryVm:BackpackCellViewModel}">
+                                            <Border Width="48"
+                                                    Height="48"
+                                                    Margin="1"
+                                                    CornerRadius="3"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                    Background="{DynamicResource ControlBackgroundBrush}"
+                                                    SnapsToDevicePixels="True" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Items, each spanning the cells of its footprint. -->
+                                <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="50" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                    <RowDefinition Height="50" />
+                                                </Grid.RowDefinitions>
+                                            </Grid>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Grid.Column" Value="{Binding Column}" />
+                                            <Setter Property="Grid.Row" Value="{Binding Row}" />
+                                            <Setter Property="Grid.ColumnSpan" Value="{Binding Width}" />
+                                            <Setter Property="Grid.RowSpan" Value="{Binding Height}" />
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type inventoryVm:BackpackItemViewModel}">
+                                            <Grid>
+                                                <!-- Equipment the editor can decode: same tile as an equipment slot.
+                                                     The wrapper carries the visibility, the button binds to the slot. -->
+                                                <Grid Visibility="{Binding IsEquipment, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <Button Margin="2"
+                                                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                                                            DataContext="{Binding Equipment}"
+                                                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+
+                                                <!-- Idols, keys and items missing from base.db keep their cells taken. -->
+                                                <Border Margin="2"
+                                                        CornerRadius="6"
+                                                        BorderThickness="1"
+                                                        BorderBrush="{DynamicResource WindowBorderBrush}"
+                                                        Background="{DynamicResource ControlBackgroundBrush}"
+                                                        SnapsToDevicePixels="True"
+                                                        ToolTip="{Binding PlaceholderToolTip}"
+                                                        Visibility="{Binding IsEquipment, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                                    <TextBlock HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="11"
+                                                               Opacity="0.7"
+                                                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                               Text="{Binding PlaceholderLabel}" />
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Margin="2,8,0,0"
+                                   Text="{Binding Summary}"
+                                   Style="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
                 </TabItem>
 
                 <TabItem Header="Resources">

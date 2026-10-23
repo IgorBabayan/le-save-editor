@@ -1,4 +1,5 @@
 using LE.SaveEditor.Presentation.Services;
+using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Presentation.ViewModels.Blessings;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData;
@@ -15,7 +16,8 @@ public sealed class CharacterViewModel(
     CharacterSave character,
     IDialogService dialogService,
     IIconProvider iconProvider,
-    IItemBaseCatalog itemBaseCatalog) : ViewModelBase
+    IItemBaseCatalog itemBaseCatalog,
+    IToastService toastService) : ViewModelBase
 {
     public CharacterSave Character { get; } = character;
 
@@ -23,5 +25,5 @@ public sealed class CharacterViewModel(
     public BlessingsViewModel Blessings { get; } = new(character);
 
     /// <summary>"Inventory" tab.</summary>
-    public InventoryViewModel Inventory { get; } = new(character, dialogService, iconProvider, itemBaseCatalog);
+    public InventoryViewModel Inventory { get; } = new(character, dialogService, iconProvider, itemBaseCatalog, toastService);
 }

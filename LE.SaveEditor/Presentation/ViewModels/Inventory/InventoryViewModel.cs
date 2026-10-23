@@ -1,4 +1,5 @@
 using LE.SaveEditor.Presentation.Services;
+using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Saves;
@@ -9,8 +10,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <summary>
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
-/// Equipment slots show the items the character wears (read from <c>savedItems</c>); the other sections start
-/// empty. Clicking an equipment slot opens the item inspector (a compact item builder) next to it.
+/// Equipment slots show the items the character wears and the "Items" section the backpack (both read from
+/// <c>savedItems</c>); the other sections start empty. Clicking an equipment slot opens the item inspector (a compact item builder) next to it.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
 {
@@ -23,7 +24,8 @@ public sealed partial class InventoryViewModel : ViewModelBase
         CharacterSave character,
         IDialogService dialogService,
         IIconProvider iconProvider,
-        IItemBaseCatalog itemBaseCatalog)
+        IItemBaseCatalog itemBaseCatalog,
+        IToastService toastService)
     {
         Character = character;
         _dialogService = dialogService;
@@ -42,6 +44,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         Relic = Create(EquipmentSlot.Relic);
 
         LoadEquippedItems(itemBaseCatalog);
+        Backpack = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService);
     }
 
     public CharacterSave Character { get; }
@@ -58,6 +61,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
     public EquipmentSlotViewModel Gloves { get; }
     public EquipmentSlotViewModel Boots { get; }
     public EquipmentSlotViewModel Relic { get; }
+
+    /// <summary>The "Items" section: the backpack grid with the items the character carries.</summary>
+    public BackpackViewModel Backpack { get; }
 
     /// <summary>Cells of the idol grid, row by row (<see cref="IdolGridSize"/> × <see cref="IdolGridSize"/>).</summary>
     public IReadOnlyList<IdolCellViewModel> IdolCells { get; } = CreateIdolCells();

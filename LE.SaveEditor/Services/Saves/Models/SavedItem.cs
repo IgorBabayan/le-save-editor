@@ -11,4 +11,8 @@ namespace LE.SaveEditor.Services.Saves.Models;
 /// <param name="X">Column inside the container (backpack and idol grid).</param>
 /// <param name="Y">Row inside the container (backpack and idol grid).</param>
 /// <param name="Data">The item bytes (<c>data</c>).</param>
-public sealed record SavedItem(int ContainerId, int X, int Y, int Quantity, int FormatVersion, IReadOnlyList<byte> Data);
+public sealed record SavedItem(int ContainerId, int X, int Y, int Quantity, int FormatVersion, IReadOnlyList<byte> Data)
+{
+    /// <summary><see cref="ContainerId"/> of the character's backpack (the "Items" grid of the inventory).</summary>
+    public const int BackpackContainerId = 1;
+}

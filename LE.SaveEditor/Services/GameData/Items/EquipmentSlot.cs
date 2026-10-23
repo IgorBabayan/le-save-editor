@@ -77,6 +77,21 @@ public static class EquipmentSlotExtensions
     public static EquipmentSlot? FromContainerId(int containerId) =>
         SlotsByContainerId.TryGetValue(containerId, out var slot) ? slot : null;
 
+    /// <summary>
+    /// The first equipment slot an item of type <paramref name="baseTypeId"/> fits (rings → left ring);
+    /// <c>null</c> for items that are not equipment (idols, keys, ...).
+    /// </summary>
+    public static EquipmentSlot? FromBaseTypeId(int baseTypeId)
+    {
+        foreach (var slot in Enum.GetValues<EquipmentSlot>())
+        {
+            if (BaseTypeIds[slot].Contains(baseTypeId))
+                return slot;
+        }
+
+        return null;
+    }
+
     extension(EquipmentSlot slot)
     {
         /// <summary>Label shown on the slot and in the item builder title.</summary>

@@ -40,6 +40,24 @@ public static class ItemDataReader
     private const int SealedFlag = 0x80;
     private const int AffixCountMask = 0x0F;
 
+    /// <summary>
+    /// Only the item type (<c>baseTypeID</c>) of <paramref name="data"/>, for any item (equipment, idol, key, ...);
+    /// <c>null</c> when the format is unknown or the data is cut short.
+    /// </summary>
+    public static int? ReadBaseTypeId(IReadOnlyList<byte> data)
+    {
+        if (data.Count == 0)
+            return null;
+
+        var position = data[0] switch
+        {
+            Version2 => 1,
+            Version6 => 1 + InstanceIdLength,
+            _ => -1
+        };
+        return position >= 0 && position < data.Count ? data[position] : null;
+    }
+
     /// <summary>Decodes <paramref name="data"/>; <c>null</c> when it is not an equipment item in a known format.</summary>
     public static ItemData? Read(IReadOnlyList<byte> data)
     {
