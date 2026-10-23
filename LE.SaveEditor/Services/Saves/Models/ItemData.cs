@@ -12,6 +12,8 @@ namespace LE.SaveEditor.Services.Saves.Models;
 /// <param name="UniqueRolls">Rolls of the unique modifiers, in the order of the unique's mods (empty for plain bases).</param>
 /// <param name="ForgingPotential">Forging potential of a plain base, <c>null</c> for uniques.</param>
 /// <param name="Affixes">Affixes in the order they are stored.</param>
+/// <param name="FormatVersion">First byte of the data (2 or 6).</param>
+/// <param name="InstanceId">The 4 bytes after the version in format 6 (empty in format 2), kept to write the item back.</param>
 public sealed record ItemData(
     int BaseTypeId,
     int SubTypeId,
@@ -20,7 +22,9 @@ public sealed record ItemData(
     int? UniqueId,
     IReadOnlyList<byte> UniqueRolls,
     int? ForgingPotential,
-    IReadOnlyList<ItemAffixData> Affixes)
+    IReadOnlyList<ItemAffixData> Affixes,
+    int FormatVersion = 2,
+    IReadOnlyList<byte>? InstanceId = null)
 {
     public bool IsUnique => UniqueId is not null;
 }
