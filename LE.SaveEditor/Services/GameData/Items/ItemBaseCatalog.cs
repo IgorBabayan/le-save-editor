@@ -210,7 +210,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 itemBase?.TypeName ?? string.Empty,
                 level,
                 itemBase?.ClassRequirement ?? 0,
-                CannotDrop: GetBool(unique, "canDropRandomly") == false,
+                // "canDropRandomly": false marks boss-only uniques (Fractured Crown, ...), not legacy items.
+                CannotDrop: false,
                 icons.Find("uniques", name, internalName) ?? itemBase?.IconPath,
                 itemBase?.Implicits ?? [],
                 uniqueId,

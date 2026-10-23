@@ -185,8 +185,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public string EmptyBasesText =>
         !IsDatabaseAvailable ? "The game database was not found. Generate it with the database button in the title bar, then reopen the builder."
-        : _allBases.Count == 0 ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
-        : ShowOnlyUsable && !_allBases.Any(o => o.IsUsable) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
+        : !_allBases.Any(o => !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
+        : ShowOnlyUsable && !_allBases.Any(o => o.IsUsable && !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
         : $"No {ListNoun} match the search.";
 
     /// <summary>Items of the list matching <see cref="SearchText"/> (and <see cref="ShowOnlyUsable"/>), in group order.</summary>
@@ -215,10 +215,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         };
 
         _allBases = items
-            .Select(b => new BaseOptionViewModel(b, CharacterClass))
+            .Select(b => new BaseOptionViewModel(b, CharacterClass, _iconProvider))
             .OrderBy(o => o.GroupOrder)
             .ThenBy(o => o.GroupName, StringComparer.Ordinal)
-            .ThenBy(o => o.Base.CannotDrop)
             .ThenBy(o => o.Base.LevelRequirement)
             .ThenBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -234,9 +233,11 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         Bases.Clear();
         foreach (var option in _allBases)
         {
-            // The current choice always stays listed (the ListBox would clear it otherwise), in its own group.
+            // The current choice always stays listed (the ListBox would clear it otherwise), in its own group;
+            // legacy bases (no longer dropped) are hidden otherwise.
             var matches = option == selected
-                          || ((!ShowOnlyUsable || option.IsUsable)
+                          || (!option.Base.CannotDrop
+                              && (!ShowOnlyUsable || option.IsUsable)
                               && words.All(w => option.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
                                                 || option.Base.TypeName.Contains(w, StringComparison.CurrentCultureIgnoreCase)
                                                 || (option.Base.BaseName?.Contains(w, StringComparison.CurrentCultureIgnoreCase) ?? false)

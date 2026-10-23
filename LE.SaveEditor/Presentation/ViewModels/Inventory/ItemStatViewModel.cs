@@ -75,34 +75,80 @@ public sealed partial class ItemStatViewModel : ViewModelBase
     public static string Format(ItemImplicit implicitStat, double value)
     {
         // A unique modifier labelled by its tooltip line: the line's own number follows the roll.
-        if (implicitStat.Template is { } template)
+        if (implicitStat.Template is not null)
+            return Compose(implicitStat, FormatTemplateValue(implicitStat, TemplateValue(implicitStat, value)), negative: false);
+
+        return Compose(implicitStat, FormatNumber(implicitStat, Math.Abs(value)), value < 0);
+    }
+
+    /// <summary>
+    /// Tooltip line with the whole roll range, as an item card shows it: "+(1–4) Attunement", "+(10–15)% Fire Resistance";
+    /// a fixed value is shown as it is ("+38 Armor").
+    /// </summary>
+    public static string FormatRange(ItemImplicit implicitStat)
+    {
+        if (implicitStat.Max - implicitStat.Min <= double.Epsilon)
+            return Format(implicitStat, implicitStat.Max);
+
+        if (implicitStat.Template is not null)
         {
-            var range = implicitStat.Max - implicitStat.Min;
-            var t = range <= double.Epsilon ? 1 : (value - implicitStat.Min) / range;
-            var shown = implicitStat.TemplateMin + (implicitStat.TemplateMax - implicitStat.TemplateMin) * t;
-            var whole = implicitStat.TemplateMin % 1 == 0 && implicitStat.TemplateMax % 1 == 0;
-            return template.Replace("{value}", shown.ToString(whole ? "0" : "0.#", CultureInfo.CurrentCulture));
+            var from = FormatTemplateValue(implicitStat, implicitStat.TemplateMin);
+            var to = FormatTemplateValue(implicitStat, implicitStat.TemplateMax);
+            return Compose(implicitStat, $"({from}–{to})", negative: false);
         }
+
+        // Both ends negative: show the sizes ("-(5–10)%") and let the sign / reduced / less wording carry the direction.
+        var negative = implicitStat.Max < 0;
+        var low = negative ? Math.Abs(implicitStat.Max) : implicitStat.Min;
+        var high = negative ? Math.Abs(implicitStat.Min) : implicitStat.Max;
+        var suffix = implicitStat.IsPercent ? "%" : string.Empty;
+        return Compose(implicitStat, $"({FormatPlainNumber(implicitStat, low)}–{FormatPlainNumber(implicitStat, high)}){suffix}", negative);
+    }
+
+    /// <summary>Puts an already formatted number into the property's tooltip wording.</summary>
+    private static string Compose(ItemImplicit implicitStat, string number, bool negative)
+    {
+        if (implicitStat.Template is { } template)
+            return template.Replace("{value}", number);
 
         var name = implicitStat.Property;
 
         if (implicitStat.Type is ImplicitModifierType.Increased or ImplicitModifierType.More)
         {
-            var number = FormatNumber(implicitStat, Math.Abs(value));
             if (implicitStat.NameIncludesModifier)
-                return $"{(value < 0 ? "-" : implicitStat.ShowPlus ? "+" : string.Empty)}{number} {name}";
+                return $"{(negative ? "-" : implicitStat.ShowPlus ? "+" : string.Empty)}{number} {name}";
 
             var word = implicitStat.Type == ImplicitModifierType.Increased
-                ? (value < 0 ? "reduced" : "increased")
-                : (value < 0 ? "less" : "more");
+                ? (negative ? "reduced" : "increased")
+                : (negative ? "less" : "more");
             return implicitStat.Type == ImplicitModifierType.More
                 ? $"{number} {word} {name}"
-                : $"{(value < 0 || !implicitStat.ShowPlus ? string.Empty : "+")}{number} {word} {name}";
+                : $"{(negative || !implicitStat.ShowPlus ? string.Empty : "+")}{number} {word} {name}";
         }
 
-        var sign = value < 0 ? "-" : implicitStat.ShowPlus ? "+" : string.Empty;
-        return $"{sign}{FormatNumber(implicitStat, Math.Abs(value))} {name}";
+        var sign = negative ? "-" : implicitStat.ShowPlus ? "+" : string.Empty;
+        return $"{sign}{number} {name}";
     }
+
+    /// <summary>The number of a template line for <paramref name="value"/> (its own scale, e.g. 100–150 for 1–1.5).</summary>
+    private static double TemplateValue(ItemImplicit implicitStat, double value)
+    {
+        var range = implicitStat.Max - implicitStat.Min;
+        var t = range <= double.Epsilon ? 1 : (value - implicitStat.Min) / range;
+        return implicitStat.TemplateMin + (implicitStat.TemplateMax - implicitStat.TemplateMin) * t;
+    }
+
+    private static string FormatTemplateValue(ItemImplicit implicitStat, double shown)
+    {
+        var whole = implicitStat.TemplateMin % 1 == 0 && implicitStat.TemplateMax % 1 == 0;
+        return shown.ToString(whole ? "0" : "0.#", CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>The number without its "%" sign (the range adds it once after the brackets).</summary>
+    private static string FormatPlainNumber(ItemImplicit implicitStat, double value) =>
+        implicitStat.IsPercent
+            ? (value * implicitStat.PercentScale).ToString("0.#", CultureInfo.CurrentCulture)
+            : value.ToString(IsWholeRange(implicitStat) ? "0" : "0.##", CultureInfo.CurrentCulture);
 
     private static bool IsWholeRange(ItemImplicit implicitStat) =>
         !implicitStat.IsPercent && implicitStat.Min % 1 == 0 && implicitStat.Max % 1 == 0;
