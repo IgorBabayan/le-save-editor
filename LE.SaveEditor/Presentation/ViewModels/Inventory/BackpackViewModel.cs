@@ -181,6 +181,21 @@ public sealed partial class BackpackViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Moves <paramref name="item"/> so its top-left cell is <paramref name="column"/>, <paramref name="row"/>
+    /// (dropped after a drag). Nothing changes when it does not fit there.
+    /// </summary>
+    /// <returns><c>true</c> if the item was moved.</returns>
+    public bool MoveItem(BackpackItemViewModel item, int column, int row)
+    {
+        if (!Items.Contains(item) || !CanPlace(item.Footprint, column, row, item))
+            return false;
+
+        item.Column = column;
+        item.Row = row;
+        return true;
+    }
+
+    /// <summary>
     /// Whether an item of <paramref name="footprint"/> fits with its top-left corner in <paramref name="column"/>,
     /// <paramref name="row"/>: inside the grid and over no other item but <paramref name="ignore"/>.
     /// </summary>

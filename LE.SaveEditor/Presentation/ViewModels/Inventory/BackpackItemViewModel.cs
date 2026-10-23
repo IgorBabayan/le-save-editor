@@ -60,6 +60,10 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     /// <summary>Rows the item covers.</summary>
     public int Height => Footprint.Height;
 
+    /// <summary>The item is being dragged to another spot of the backpack.</summary>
+    [ObservableProperty]
+    private bool _isDragging;
+
     public bool IsIdol => BaseTypeId is >= FirstIdolTypeId and <= LastIdolTypeId;
 
     /// <summary>Short text on a placeholder tile.</summary>

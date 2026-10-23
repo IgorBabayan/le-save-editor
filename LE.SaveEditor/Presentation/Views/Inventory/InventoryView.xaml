@@ -226,8 +226,15 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
-                                <!-- Items, each spanning the cells of its footprint. -->
-                                <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                                <!-- Items, each spanning the cells of its footprint. Items are dragged with the mouse
+                                     inside the grid only (code-behind); a click without moving opens the inspector. -->
+                                <ItemsControl x:Name="BackpackItems"
+                                              ItemsSource="{Binding Items}"
+                                              Focusable="False"
+                                              PreviewMouseLeftButtonDown="BackpackItems_OnPreviewMouseLeftButtonDown"
+                                              PreviewMouseMove="BackpackItems_OnPreviewMouseMove"
+                                              PreviewMouseLeftButtonUp="BackpackItems_OnPreviewMouseLeftButtonUp"
+                                              LostMouseCapture="BackpackItems_OnLostMouseCapture">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <Grid>
@@ -270,7 +277,7 @@
                                     </ItemsControl.ItemContainerStyle>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type inventoryVm:BackpackItemViewModel}">
-                                            <Grid>
+                                            <Grid x:Name="ItemRoot">
                                                 <!-- Equipment the editor can decode: same tile as an equipment slot.
                                                      The wrapper carries the visibility, the button binds to the slot. -->
                                                 <Grid Visibility="{Binding IsEquipment, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -298,9 +305,24 @@
                                                                Text="{Binding PlaceholderLabel}" />
                                                 </Border>
                                             </Grid>
+                                            <DataTemplate.Triggers>
+                                                <!-- The item stays in its cells, dimmed, until it is dropped. -->
+                                                <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                                                    <Setter TargetName="ItemRoot" Property="Opacity" Value="0.4" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+
+                                <!-- Cells the dragged item would take: green when it fits there, red otherwise. -->
+                                <Canvas IsHitTestVisible="False" ClipToBounds="True">
+                                    <Border x:Name="DropPreview"
+                                            Visibility="Collapsed"
+                                            CornerRadius="6"
+                                            BorderThickness="2"
+                                            SnapsToDevicePixels="True" />
+                                </Canvas>
                             </Grid>
                         </Border>
 
