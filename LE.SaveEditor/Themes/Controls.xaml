@@ -8,6 +8,7 @@
 
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+    <converters:CharacterIconConverter x:Key="CharacterIconConverter" />
 
     <!-- ===== Text ===== -->
     <Style x:Key="SectionHeaderTextStyle" TargetType="TextBlock">

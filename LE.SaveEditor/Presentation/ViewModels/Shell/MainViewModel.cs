@@ -83,16 +83,22 @@ public partial class MainViewModel(
     /// <summary>
     /// Title bar database button: asks for confirmation, runs <c>LE.SaveEditor.DB</c> in the progress dialog
     /// and, once the dialog is closed, reports what the generator printed in the notification center.
+    /// Characters are reloaded afterwards, so their class / mastery icons pick up newly downloaded images.
     /// </summary>
     [RelayCommand]
-    private void GenerateDatabase()
+    private async Task GenerateDatabaseAsync()
     {
         if (!dialogService.Confirm("Database", "Are you sure to generate/update DataBase?"))
             return;
 
         var result = dialogService.ShowDatabaseGenerator();
-        if (result is not null)
-            NotifyDatabaseResult(result);
+        if (result is null)
+            return;
+
+        NotifyDatabaseResult(result);
+
+        if (HasSaveFolder)
+            await LoadSavesAsync();
     }
 
     private void NotifyDatabaseResult(DatabaseGenerationResult result)

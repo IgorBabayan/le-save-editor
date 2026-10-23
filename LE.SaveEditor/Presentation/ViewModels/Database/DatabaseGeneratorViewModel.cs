@@ -10,7 +10,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Database;
 /// </summary>
 public sealed partial class DatabaseGeneratorViewModel(
     IDatabaseGenerator generator,
-    IIconProvider iconProvider) : ViewModelBase
+    IIconProvider iconProvider,
+    ICharacterIconProvider characterIconProvider) : ViewModelBase
 {
     private readonly Dictionary<int, DatabaseGeneratorStepViewModel> _stepsById = [];
     private Task? _run;
@@ -62,6 +63,7 @@ public sealed partial class DatabaseGeneratorViewModel(
 
         // New or replaced icons must be read from disk again.
         iconProvider.ClearCache();
+        characterIconProvider.ClearCache();
 
         (StatusText, StatusSeverity) = Result.Status switch
         {

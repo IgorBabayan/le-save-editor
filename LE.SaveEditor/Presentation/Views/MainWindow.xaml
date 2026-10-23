@@ -322,37 +322,80 @@
                              Visibility="{Binding HasCharacters, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type models:CharacterSave}">
-                                <StackPanel>
-                                    <DockPanel LastChildFill="False">
-                                        <TextBlock DockPanel.Dock="Left"
-                                                   Text="{Binding CharacterName}"
-                                                   FontSize="14"
-                                                   FontWeight="SemiBold"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <Border DockPanel.Dock="Right"
-                                                Style="{StaticResource BadgeBorderStyle}"
-                                                ToolTip="Hardcore"
-                                                Visibility="{Binding Hardcore, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="HC"
-                                                       FontSize="10"
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" /> <!-- mastery / class icon -->
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Mastery icon when the character has a mastery, otherwise the class icon. -->
+                                    <Grid Grid.Column="0"
+                                          Width="40"
+                                          Height="40"
+                                          Margin="0,0,10,0"
+                                          VerticalAlignment="Center">
+                                        <Grid.ToolTip>
+                                            <TextBlock>
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="{}{0} · {1}">
+                                                        <Binding Path="ClassDisplayName" />
+                                                        <Binding Path="MasteryDisplayName" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </Grid.ToolTip>
+
+                                        <Image x:Name="CharacterIcon"
+                                               Source="{Binding Converter={StaticResource CharacterIconConverter}}"
+                                               Stretch="Uniform"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                        <!-- Placeholder until the database generator has downloaded the icons. -->
+                                        <wpf:MaterialIcon x:Name="CharacterIconPlaceholder"
+                                                          Kind="AccountCircleOutline"
+                                                          Width="32"
+                                                          Height="32"
+                                                          Visibility="Collapsed"
+                                                          Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                                    </Grid>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <DockPanel LastChildFill="False">
+                                            <TextBlock DockPanel.Dock="Left"
+                                                       Text="{Binding CharacterName}"
+                                                       FontSize="14"
                                                        FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource WarningForegroundBrush}" />
-                                        </Border>
-                                    </DockPanel>
-                                    <TextBlock Margin="0,2,0,0" Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}Level {0} {1} · {2}">
-                                                <Binding Path="Level" />
-                                                <Binding Path="ClassDisplayName" />
-                                                <Binding Path="MasteryDisplayName" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                    <TextBlock Margin="0,2,0,0"
-                                               FontSize="11"
-                                               Style="{StaticResource SecondaryTextStyle}"
-                                               Text="{Binding LastPlayedLocal, StringFormat='Last played {0:g}', TargetNullValue='Never played'}" />
-                                </StackPanel>
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Border DockPanel.Dock="Right"
+                                                    Style="{StaticResource BadgeBorderStyle}"
+                                                    ToolTip="Hardcore"
+                                                    Visibility="{Binding Hardcore, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBlock Text="HC"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource WarningForegroundBrush}" />
+                                            </Border>
+                                        </DockPanel>
+                                        <TextBlock Margin="0,2,0,0" Style="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}Level {0} {1} · {2}">
+                                                    <Binding Path="Level" />
+                                                    <Binding Path="ClassDisplayName" />
+                                                    <Binding Path="MasteryDisplayName" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <TextBlock Margin="0,2,0,0"
+                                                   FontSize="11"
+                                                   Style="{StaticResource SecondaryTextStyle}"
+                                                   Text="{Binding LastPlayedLocal, StringFormat='Last played {0:g}', TargetNullValue='Never played'}" />
+                                    </StackPanel>
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Source, ElementName=CharacterIcon}" Value="{x:Null}">
+                                        <Setter TargetName="CharacterIconPlaceholder" Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
