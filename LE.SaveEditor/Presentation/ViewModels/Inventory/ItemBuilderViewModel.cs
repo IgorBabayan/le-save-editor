@@ -54,6 +54,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
                 Stats.Clear();
                 for (var i = 0; i < match.Base.Implicits.Count; i++)
                     Stats.Add(new ItemStatViewModel(match.Base.Implicits[i], i < current.ImplicitValues.Count ? current.ImplicitValues[i] : null));
+
+                // An equipped base of another class stays listed even though the class filter is on.
+                ApplyFilter();
             }
         }
     }
@@ -102,9 +105,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    /// <summary>Hide bases the character's class cannot equip.</summary>
+    /// <summary>Hide bases the character's class cannot equip (on by default).</summary>
     [ObservableProperty]
-    private bool _showOnlyUsable;
+    private bool _showOnlyUsable = true;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedBase))]
