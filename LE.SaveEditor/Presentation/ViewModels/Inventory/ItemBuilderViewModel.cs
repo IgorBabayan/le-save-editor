@@ -454,7 +454,16 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         AffixPickerSlot = null;
         AffixSlots.Clear();
         foreach (var kind in kinds)
-            AffixSlots.Add(new AffixSlotViewModel(kind, slot => AffixPickerSlot = slot, RemoveAffix));
+        {
+            var slot = new AffixSlotViewModel(kind, s => AffixPickerSlot = s, RemoveAffix);
+            // A tier change can make the item exalted (or not).
+            slot.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(AffixSlotViewModel.TierNumber))
+                    OnAffixesChanged();
+            };
+            AffixSlots.Add(slot);
+        }
 
         OnAffixesChanged();
     }
@@ -487,15 +496,44 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         OnAffixesChanged();
     }
 
+    /// <summary>Lowest tier that makes an affix exalted (T6–T8).</summary>
+    private const int ExaltedTier = 6;
+
     private void OnAffixesChanged()
     {
         // A unique with any affix is a legendary.
         if (SelectedRarity.Rarity == ItemRarity.Unique && HasAnyAffix)
             ApplyRarity(Rarities.First(r => r.Rarity == ItemRarity.Legendary));
 
+        // Plain bases take their rarity from their affixes, like in the game (set / unique / legendary keep theirs).
+        if (ListKind == ItemListKind.Bases && HasSelectedBase)
+        {
+            var rarity = RarityFromAffixes();
+            if (rarity != SelectedRarity.Rarity)
+                ApplyRarity(Rarities.First(r => r.Rarity == rarity));
+        }
+
         OnPropertyChanged(nameof(HasAffixSlots));
         OnPropertyChanged(nameof(HasAnyAffix));
         OnPropertyChanged(nameof(AffixesHeader));
+    }
+
+    /// <summary>
+    /// Normal without affixes, Magic with 1–2, Rare with 3–4, Exalted as soon as one affix is tier 6 or higher.
+    /// Prefixes, suffixes and sealed affixes count; the corruption does not change the rarity.
+    /// </summary>
+    private ItemRarity RarityFromAffixes()
+    {
+        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted).ToList();
+        if (affixes.Any(s => s.TierNumber >= ExaltedTier))
+            return ItemRarity.Exalted;
+
+        return affixes.Count switch
+        {
+            0 => ItemRarity.Normal,
+            <= 2 => ItemRarity.Magic,
+            _ => ItemRarity.Rare
+        };
     }
 
     private void LoadAffixOptions()
