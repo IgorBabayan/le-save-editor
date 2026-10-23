@@ -98,6 +98,86 @@
             </Setter>
         </Style>
 
+        <!-- Affix picker entries grouped by category ("Melee", "Set", "Corrupted", ...). -->
+        <CollectionViewSource x:Key="GroupedAffixes" Source="{Binding AffixOptions}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="GroupName" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
+        <!-- One affix slot: "Add prefix" when empty; otherwise the affix, its tier and a slider per stat. -->
+        <DataTemplate x:Key="AffixSlotTemplate" DataType="{x:Type inventoryVm:AffixSlotViewModel}">
+            <Border x:Name="Box"
+                    Margin="0,0,0,8"
+                    Padding="10,8"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                    Background="{DynamicResource TitleBarBackgroundBrush}">
+                <StackPanel>
+                    <DockPanel LastChildFill="False">
+                        <TextBlock x:Name="SlotLabel"
+                                   DockPanel.Dock="Left"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                   Text="{Binding Label}" />
+                        <Button DockPanel.Dock="Right"
+                                Margin="8,0,0,0"
+                                Style="{StaticResource TextLinkButtonStyle}"
+                                Content="Remove"
+                                Command="{Binding RemoveCommand}"
+                                Visibility="{Binding HasAffix, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <Button DockPanel.Dock="Right"
+                                Style="{StaticResource TextLinkButtonStyle}"
+                                Content="Change"
+                                Command="{Binding ChooseCommand}"
+                                Visibility="{Binding HasAffix, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <Button DockPanel.Dock="Right"
+                                Style="{StaticResource TextLinkButtonStyle}"
+                                Content="{Binding AddText}"
+                                Command="{Binding ChooseCommand}"
+                                Visibility="{Binding HasAffix, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                    </DockPanel>
+
+                    <StackPanel Margin="0,6,0,0" Visibility="{Binding HasAffix, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Name}" />
+
+                        <!-- Tier 1 … highest tier of the affix. -->
+                        <Grid Margin="0,6,0,8" Visibility="{Binding HasTiers, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}" Text="{Binding TierText}" />
+                            <Slider Grid.Column="1"
+                                    Minimum="1"
+                                    Maximum="{Binding MaxTier}"
+                                    TickFrequency="1"
+                                    SmallChange="1"
+                                    LargeChange="1"
+                                    IsSnapToTickEnabled="True"
+                                    Value="{Binding TierNumber}" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding Stats}"
+                                      ItemTemplate="{StaticResource StatTemplate}"
+                                      Focusable="False" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsSealed}" Value="True">
+                    <Setter TargetName="SlotLabel" Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsCorrupted}" Value="True">
+                    <Setter TargetName="SlotLabel" Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                    <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource ErrorForegroundBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <!-- Bases grouped by the classes that can equip them; the view model already orders them group by group. -->
         <CollectionViewSource x:Key="GroupedBases" Source="{Binding Bases}">
             <CollectionViewSource.GroupDescriptions>
@@ -292,14 +372,104 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
                                     </StackPanel>
+
+                                    <!-- Crafted affixes: one box per slot of the current rarity. -->
+                                    <StackPanel Margin="0,12,0,0"
+                                                Visibility="{Binding HasAffixSlots, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock Margin="0,0,0,8" Text="{Binding AffixesHeader}" Style="{StaticResource SectionHeaderTextStyle}" />
+                                        <ItemsControl ItemsSource="{Binding AffixSlots}"
+                                                      ItemTemplate="{StaticResource AffixSlotTemplate}"
+                                                      Focusable="False" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </ScrollViewer>
                     </Grid>
                 </Border>
 
+                <!-- Affix picker: replaces the item grid while a slot is being filled. -->
+                <Grid Grid.Column="2"
+                      Visibility="{Binding IsPickingAffix, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding AffixPickerTitle}" Style="{StaticResource SectionHeaderTextStyle}" />
+                        <Button DockPanel.Dock="Right"
+                                Style="{StaticResource TextLinkButtonStyle}"
+                                Content="Back to items"
+                                Command="{Binding CloseAffixPickerCommand}" />
+                    </DockPanel>
+
+                    <TextBox Grid.Row="1"
+                             Margin="0,0,0,8"
+                             Padding="6,4"
+                             ToolTip="Filter affixes by name, title or category"
+                             Text="{Binding AffixSearchText, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Border Grid.Row="2"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource ControlBackgroundBrush}">
+                        <Grid>
+                            <ListBox ItemsSource="{Binding Source={StaticResource GroupedAffixes}}"
+                                     SelectedItem="{Binding SelectedAffixOption}"
+                                     Style="{StaticResource PlainListBoxStyle}"
+                                     ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                                     VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                     Padding="0,4">
+                                <ListBox.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Margin="12,10,8,4"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                           Text="{Binding Name}" />
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ListBox.GroupStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type inventoryVm:AffixOptionViewModel}">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Margin="12,0,0,0"
+                                                           Style="{StaticResource SecondaryTextStyle}"
+                                                           Text="{Binding Details}" />
+                                            </Grid>
+                                            <TextBlock Margin="0,2,0,0"
+                                                       Style="{StaticResource SecondaryTextStyle}"
+                                                       Text="{Binding TopTierText}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <TextBlock Margin="12"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Style="{StaticResource EmptyPageTextStyle}"
+                                       Text="No affixes of this kind can be crafted on this item."
+                                       Visibility="{Binding HasAffixOptions, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                        </Grid>
+                    </Border>
+                </Grid>
+
                 <!-- Bases of the slot -->
-                <Grid Grid.Column="2">
+                <Grid Grid.Column="2"
+                      Visibility="{Binding IsPickingAffix, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />

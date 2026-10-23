@@ -24,6 +24,9 @@ public enum ItemListKind
 /// Item builder popup opened from an equipment slot: only items that fit the slot are offered, grouped by the
 /// classes that can equip them (the character's own class first); the rarity tints the preview and picks the list
 /// (bases, uniques or set items), and every implicit / unique modifier of the selection gets a slider.
+/// Affix slots follow the rarity: bases take 2 prefixes, 2 suffixes, a sealed prefix, a sealed suffix and a
+/// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
+/// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
 /// </summary>
 public sealed partial class ItemBuilderViewModel : ViewModelBase
 {
@@ -56,6 +59,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         ListKind = KindOf(_selectedRarity.Rarity);
 
         LoadList();
+        BuildAffixSlots();
 
         // Editing an equipped item: select it again and keep its rolls.
         if (current is not null)
@@ -67,6 +71,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             {
                 SelectedBaseOption = match;
                 FillStats(match.Base, current.ImplicitValues, current.ModValues);
+                RestoreAffixes(current.Affixes);
 
                 // An equipped item of another class stays listed even though the class filter is on.
                 ApplyFilter();
@@ -109,6 +114,14 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
         if (KindOf(option.Rarity) != ListKind && HasSelectedBase && !ConfirmListChange(option))
             return;
+
+        // A unique has no affixes: going back from legendary removes them (after asking).
+        if (option.Rarity == ItemRarity.Unique && HasAnyAffix)
+        {
+            if (!_confirm("Change rarity", "A unique item has no affixes. Switching to Unique removes its prefixes, suffixes and corruption. Continue?"))
+                return;
+            ClearAffixes();
+        }
 
         ApplyRarity(option);
     }
@@ -157,6 +170,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         SelectedBaseOption = null;
         SearchText = string.Empty;
         LoadList();
+        BuildAffixSlots();
 
         OnPropertyChanged(nameof(ListKind));
         OnPropertyChanged(nameof(ListHeader));
@@ -261,6 +275,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(Icon))]
     [NotifyPropertyChangedFor(nameof(IsSelectedBaseForOtherClass))]
     [NotifyPropertyChangedFor(nameof(ClassWarningText))]
+    [NotifyPropertyChangedFor(nameof(HasAffixSlots))]
     [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
     private BaseOptionViewModel? _selectedBaseOption;
 
@@ -313,7 +328,20 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public ImageSource? Icon => _iconProvider.Get(SelectedBase?.IconPath);
 
-    partial void OnSelectedBaseOptionChanged(BaseOptionViewModel? value) => FillStats(value?.Base, null, null);
+    partial void OnSelectedBaseOptionChanged(BaseOptionViewModel? value)
+    {
+        FillStats(value?.Base, null, null);
+
+        // Affixes depend on the item type (a wand and an axe share the weapon slot but not their affixes).
+        foreach (var slot in AffixSlots)
+        {
+            if (slot.Affix is { } affix && (value is null || !affix.CanRollOnType(value.Base.BaseTypeId)))
+                slot.Clear();
+        }
+
+        AffixPickerSlot = null;
+        OnAffixesChanged();
+    }
 
     private void FillStats(ItemBase? item, IReadOnlyList<double>? implicitValues, IReadOnlyList<double>? modValues)
     {
@@ -348,9 +376,158 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             SelectedRarity.Rarity,
             SelectedBase,
             Stats.Select(s => s.Value).ToList(),
-            ModStats.Select(s => s.Value).ToList()));
+            ModStats.Select(s => s.Value).ToList(),
+            AffixSlots.Select(a => a.ToBuiltAffix()).OfType<BuiltAffix>().ToList()));
     }
 
     [RelayCommand]
     private void Cancel() => CloseRequested?.Invoke(this, null);
+
+    // ===== Affixes =====
+
+    /// <summary>Affix slots of the current rarity (empty until an item is selected, see <see cref="HasAffixSlots"/>).</summary>
+    public ObservableCollection<AffixSlotViewModel> AffixSlots { get; } = [];
+
+    /// <summary>An item is selected and its rarity takes affixes.</summary>
+    public bool HasAffixSlots => HasSelectedBase && AffixSlots.Count > 0;
+
+    public bool HasAnyAffix => AffixSlots.Any(s => s.HasAffix);
+
+    /// <summary>"Affixes", or "Corruption" for set items (they take nothing else).</summary>
+    public string AffixesHeader => ListKind == ItemListKind.Sets ? "Corruption" : "Affixes";
+
+    /// <summary>Slot being filled from the affix picker; <c>null</c> while the item grid is shown.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPickingAffix))]
+    [NotifyPropertyChangedFor(nameof(AffixPickerTitle))]
+    private AffixSlotViewModel? _affixPickerSlot;
+
+    public bool IsPickingAffix => AffixPickerSlot is not null;
+
+    public string AffixPickerTitle => AffixPickerSlot is { } slot ? $"Choose {slot.Label.ToLowerInvariant()}" : string.Empty;
+
+    /// <summary>Affixes for <see cref="AffixPickerSlot"/> matching <see cref="AffixSearchText"/>, in group order.</summary>
+    public ObservableCollection<AffixOptionViewModel> AffixOptions { get; } = [];
+
+    public bool HasAffixOptions => AffixOptions.Count > 0;
+
+    [ObservableProperty]
+    private string _affixSearchText = string.Empty;
+
+    /// <summary>Picking an affix in the picker puts it in <see cref="AffixPickerSlot"/> and closes the picker.</summary>
+    [ObservableProperty]
+    private AffixOptionViewModel? _selectedAffixOption;
+
+    partial void OnAffixSearchTextChanged(string value) => LoadAffixOptions();
+
+    partial void OnAffixPickerSlotChanged(AffixSlotViewModel? value)
+    {
+        AffixSearchText = string.Empty;
+        LoadAffixOptions();
+    }
+
+    partial void OnSelectedAffixOptionChanged(AffixOptionViewModel? value)
+    {
+        if (value is null || AffixPickerSlot is not { } slot)
+            return;
+
+        slot.Set(value.Affix);
+        AffixPickerSlot = null;
+        SelectedAffixOption = null;
+        OnAffixesChanged();
+    }
+
+    [RelayCommand]
+    private void CloseAffixPicker() => AffixPickerSlot = null;
+
+    /// <summary>Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets corruption.</summary>
+    private void BuildAffixSlots()
+    {
+        AffixSlotKind[] kinds = ListKind switch
+        {
+            ItemListKind.Sets => [AffixSlotKind.Corrupted],
+            ItemListKind.Uniques => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
+            _ => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix,
+                  AffixSlotKind.SealedPrefix, AffixSlotKind.SealedSuffix, AffixSlotKind.Corrupted]
+        };
+
+        AffixPickerSlot = null;
+        AffixSlots.Clear();
+        foreach (var kind in kinds)
+            AffixSlots.Add(new AffixSlotViewModel(kind, slot => AffixPickerSlot = slot, RemoveAffix));
+
+        OnAffixesChanged();
+    }
+
+    /// <summary>Puts the affixes of an equipped item back into slots of the same kind, in order.</summary>
+    private void RestoreAffixes(IReadOnlyList<BuiltAffix> affixes)
+    {
+        foreach (var affix in affixes)
+        {
+            var slot = AffixSlots.FirstOrDefault(s => s.Kind == affix.Slot && !s.HasAffix);
+            slot?.Set(affix.Affix, affix.Tier, affix.Values);
+        }
+
+        OnAffixesChanged();
+    }
+
+    private void RemoveAffix(AffixSlotViewModel slot)
+    {
+        slot.Clear();
+        if (AffixPickerSlot == slot)
+            AffixPickerSlot = null;
+        OnAffixesChanged();
+    }
+
+    private void ClearAffixes()
+    {
+        foreach (var slot in AffixSlots)
+            slot.Clear();
+        AffixPickerSlot = null;
+        OnAffixesChanged();
+    }
+
+    private void OnAffixesChanged()
+    {
+        // A unique with any affix is a legendary.
+        if (SelectedRarity.Rarity == ItemRarity.Unique && HasAnyAffix)
+            ApplyRarity(Rarities.First(r => r.Rarity == ItemRarity.Legendary));
+
+        OnPropertyChanged(nameof(HasAffixSlots));
+        OnPropertyChanged(nameof(HasAnyAffix));
+        OnPropertyChanged(nameof(AffixesHeader));
+    }
+
+    private void LoadAffixOptions()
+    {
+        AffixOptions.Clear();
+        if (AffixPickerSlot is not { } slot || SelectedBase is not { } item)
+        {
+            OnPropertyChanged(nameof(HasAffixOptions));
+            return;
+        }
+
+        var className = CharacterClassCatalog.GetDisplayName(CharacterClass);
+        // The same affix cannot be on an item twice.
+        var used = AffixSlots.Where(s => s != slot && s.Affix is not null).Select(s => s.Affix!.Id).ToHashSet();
+        var words = AffixSearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var options = _catalog.GetAffixes(item.BaseTypeId)
+            .Where(a => slot.Accepts(a)
+                        && !used.Contains(a.Id)
+                        // Class affixes only for the character's own class.
+                        && (a.ClassName is null || string.Equals(a.ClassName, className, StringComparison.OrdinalIgnoreCase))
+                        && words.All(w => a.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
+                                          || (a.Title?.Contains(w, StringComparison.CurrentCultureIgnoreCase) ?? false)
+                                          || a.GroupName.Contains(w, StringComparison.CurrentCultureIgnoreCase)))
+            // Normal affixes first, then experimental / personal / set / variant; by category, then name.
+            .OrderBy(a => a.Category == AffixCategory.Normal ? 0 : 1)
+            .ThenBy(a => a.GroupName, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase);
+
+        foreach (var affix in options)
+            AffixOptions.Add(new AffixOptionViewModel(affix));
+
+        OnPropertyChanged(nameof(HasAffixOptions));
+    }
 }

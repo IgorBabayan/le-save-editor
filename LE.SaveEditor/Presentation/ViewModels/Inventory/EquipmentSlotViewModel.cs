@@ -44,6 +44,16 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
                 lines.Add(baseName);
             lines.AddRange(Item.Base.Implicits.Select((s, i) => ItemStatViewModel.Format(s, Item.ImplicitValues[i])));
             lines.AddRange(Item.Base.Mods.Select((s, i) => ItemStatViewModel.Format(s, Item.ModValues[i])));
+            foreach (var affix in Item.Affixes)
+            {
+                var tag = affix.Slot switch
+                {
+                    AffixSlotKind.SealedPrefix or AffixSlotKind.SealedSuffix => " (sealed)",
+                    AffixSlotKind.Corrupted => " (corrupted)",
+                    _ => string.Empty
+                };
+                lines.AddRange(affix.Lines.Select(line => $"{line}  [T{affix.Tier}]{tag}"));
+            }
             return string.Join(Environment.NewLine, lines);
         }
     }

@@ -18,6 +18,12 @@ public interface IItemBaseCatalog
     /// <summary>Unique items (<paramref name="sets"/> = <c>false</c>) or set items that fit <paramref name="slot"/>.</summary>
     IReadOnlyList<ItemBase> GetUniques(EquipmentSlot slot, bool sets);
 
+    /// <summary>
+    /// Equipment affixes that can be crafted on item type <paramref name="baseTypeId"/> (prefixes, suffixes,
+    /// experimental, personal, set, variant and corrupted affixes; idol affixes are left out).
+    /// </summary>
+    IReadOnlyList<AffixDefinition> GetAffixes(int baseTypeId);
+
     /// <summary>Forgets what was read, so a database written by the generator is picked up.</summary>
     void ClearCache();
 }

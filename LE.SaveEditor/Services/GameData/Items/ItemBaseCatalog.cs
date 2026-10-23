@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>.
+/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>.
 /// </summary>
 /// <remarks>
 /// Every row keeps its element of maxroll's <c>data.json</c> as JSON. An item type looks like
@@ -28,7 +28,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <summary>What was read from base.db.</summary>
     /// <param name="Uniques">Unique and set items.</param>
     /// <param name="HasStatNames">The <c>Properties</c> table exists (databases made before it show "Property 10" etc.).</param>
-    private sealed record Catalog(IReadOnlyList<ItemBase> Bases, IReadOnlyList<ItemBase> Uniques, bool HasStatNames);
+    /// <param name="Affixes">Equipment affixes.</param>
+    private sealed record Catalog(IReadOnlyList<ItemBase> Bases, IReadOnlyList<ItemBase> Uniques, IReadOnlyList<AffixDefinition> Affixes, bool HasStatNames);
 
     public bool IsAvailable => GetAll().Count > 0;
 
@@ -67,6 +68,15 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             .ToList();
     }
 
+    public IReadOnlyList<AffixDefinition> GetAffixes(int baseTypeId)
+    {
+        Catalog catalog;
+        lock (_sync)
+            catalog = _catalog ??= Load();
+
+        return catalog.Affixes.Where(a => a.CanRollOnType(baseTypeId)).ToList();
+    }
+
     public void ClearCache()
     {
         lock (_sync)
@@ -83,7 +93,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return new Catalog([], [], false);
+            return new Catalog([], [], [], false);
 
         try
         {
@@ -111,12 +121,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             }
 
             var uniques = ReadUniques(connection, result, names, icons);
-            return new Catalog(result, uniques, properties.Count > 0);
+            var affixes = ReadAffixes(connection, names);
+            return new Catalog(result, uniques, affixes, properties.Count > 0);
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             // A missing or broken database means an empty builder, never a crash.
-            return new Catalog([], [], false);
+            return new Catalog([], [], [], false);
         }
     }
 
@@ -309,6 +320,141 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         return result;
     }
 
+    // ===== Affixes =====
+
+    /// <summary>Display categories that belong to one class (affixes of other classes are not offered).</summary>
+    private static readonly string[] ClassCategories = ["Acolyte", "Mage", "Primalist", "Sentinel", "Rogue"];
+
+    /// <summary>
+    /// Equipment affixes (<c>rollsOn</c> 0) of the craftable kinds. An affix has one stat (<c>property</c>, <c>tags</c>,
+    /// <c>modifierType</c> on the affix) or several (<c>affixProperties</c>); each tier gives the range of the first stat
+    /// in <c>minRoll</c> / <c>maxRoll</c> and of the others in <c>extraRolls</c>.
+    /// </summary>
+    private static List<AffixDefinition> ReadAffixes(SqliteConnection connection, ImplicitNames names)
+    {
+        var result = new List<AffixDefinition>();
+
+        foreach (var (_, rowName, json) in ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM Affixes"))
+        {
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } affix
+                || GetInt(affix, "rollsOn") is not (null or 0)
+                || GetInt(affix, "affixId") is not { } id
+                || GetInt(affix, "specialAffixType") is not { } special
+                || !Enum.IsDefined((AffixCategory)special))
+                continue;
+
+            var name = GetString(affix, "affixDisplayName") ?? GetString(affix, "affixName") ?? rowName;
+            if (name is null)
+                continue;
+
+            var canRollOn = new HashSet<int>();
+            if (Find(affix, "canRollOn") is { ValueKind: JsonValueKind.Array } types)
+            {
+                foreach (var type in types.EnumerateArray())
+                {
+                    if (type.ValueKind == JsonValueKind.Number && type.TryGetInt32(out var typeId))
+                        canRollOn.Add(typeId);
+                }
+            }
+
+            if (canRollOn.Count == 0)
+                continue;
+
+            var groupName = GetInt(affix, "displayCategory") is { } category && AffixCategoryNames.TryGetValue(category, out var categoryName)
+                ? categoryName
+                : ((AffixCategory)special).ToString();
+
+            var tiers = ParseAffixTiers(affix, name, names);
+            if (tiers.Count == 0)
+                continue;
+
+            result.Add(new AffixDefinition(
+                id,
+                name,
+                GetString(affix, "affixTitle"),
+                GetInt(affix, "type") == 1 ? AffixType.Suffix : AffixType.Prefix,
+                (AffixCategory)special,
+                groupName,
+                ClassCategories.FirstOrDefault(c => string.Equals(c, groupName, StringComparison.OrdinalIgnoreCase)),
+                GetInt(affix, "levelRequirement") ?? 0,
+                canRollOn,
+                tiers));
+        }
+
+        return result;
+    }
+
+    private static List<AffixTier> ParseAffixTiers(JsonElement affix, string affixName, ImplicitNames names)
+    {
+        // The stats of the affix: its own fields, or the list in affixProperties.
+        var stats = new List<(int Property, int SpecialTag, long Tags, int ModifierType)>();
+        if (Find(affix, "affixProperties") is { ValueKind: JsonValueKind.Array } properties && properties.GetArrayLength() > 0)
+        {
+            foreach (var property in properties.EnumerateArray())
+            {
+                if (property.ValueKind == JsonValueKind.Object)
+                    stats.Add((GetInt(property, "property") ?? -1, GetInt(property, "specialTag") ?? 0, GetLong(property, "tags") ?? 0, GetInt(property, "modifierType") ?? 0));
+            }
+        }
+        else
+        {
+            stats.Add((GetInt(affix, "property") ?? -1, GetInt(affix, "specialTag") ?? 0, GetLong(affix, "tags") ?? 0, GetInt(affix, "modifierType") ?? 0));
+        }
+
+        var result = new List<AffixTier>();
+        if (Find(affix, "tiers") is not { ValueKind: JsonValueKind.Array } tiers)
+            return result;
+
+        var number = 0;
+        foreach (var tier in tiers.EnumerateArray())
+        {
+            number++;
+            if (tier.ValueKind != JsonValueKind.Object)
+                continue;
+
+            var ranges = new List<(double Min, double Max)> { (GetDouble(tier, "minRoll") ?? 0, GetDouble(tier, "maxRoll") ?? 0) };
+            if (Find(tier, "extraRolls") is { ValueKind: JsonValueKind.Array } extra)
+            {
+                foreach (var roll in extra.EnumerateArray())
+                {
+                    if (roll.ValueKind == JsonValueKind.Object)
+                        ranges.Add((GetDouble(roll, "minRoll") ?? 0, GetDouble(roll, "maxRoll") ?? 0));
+                }
+            }
+
+            var tierStats = new List<ItemImplicit>();
+            for (var i = 0; i < stats.Count && i < ranges.Count; i++)
+            {
+                var (property, specialTag, tags, modifierType) = stats[i];
+                var (min, max) = ranges[i];
+                var modifier = BuildModifier(property, specialTag, tags, modifierType, min, max, names);
+
+                // Skill-specific properties have no name in the data: the affix name says what they do.
+                if (!names.IsNamed(property, specialTag))
+                    modifier = modifier with { Property = affixName };
+
+                tierStats.Add(modifier);
+            }
+
+            if (tierStats.Count > 0)
+                result.Add(new AffixTier(number, tierStats));
+        }
+
+        return result;
+    }
+
+    /// <summary>Names of the affix display categories (the <c>affixDisplayCategories</c> list is not stored, so they are fixed here).</summary>
+    private static readonly Dictionary<int, string> AffixCategoryNames = new()
+    {
+        [0] = "Attributes", [1] = "Melee", [2] = "Spell", [3] = "Damage Type", [4] = "General", [5] = "Throwing",
+        [6] = "Health", [7] = "Block", [8] = "Resistance and Armor", [9] = "Potion", [10] = "Dodge", [11] = "Glancing Blow",
+        [12] = "Health Recovery", [13] = "Ward", [14] = "Stun", [15] = "Critical Strike Avoidance", [16] = "Damage Dealt to Mana",
+        [17] = "Leech", [18] = "Movement", [19] = "Cooldown", [20] = "Reflect", [21] = "Mana", [22] = "Minion", [23] = "Ailments",
+        [24] = "Acolyte", [25] = "Mage", [26] = "Primalist", [27] = "Sentinel", [28] = "Rogue", [35] = "Bow",
+        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [42] = "Corrupted", [44] = "Variant"
+    };
+
     // ===== Modifiers (implicits and unique mods) =====
 
     private static List<ItemImplicit> ParseModifiers(JsonElement owner, string arrayField, string valueField, string maxField, ImplicitNames names)
@@ -335,13 +481,22 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         if (second == 0 && first != 0)
             second = first;
 
-        var type = GetInt(entry, "type") is { } t && Enum.IsDefined((ImplicitModifierType)t)
-            ? (ImplicitModifierType)t
-            : ImplicitModifierType.Added;
+        return BuildModifier(
+            GetInt(entry, "property") ?? -1,
+            GetInt(entry, "specialTag") ?? 0,
+            GetLong(entry, "tags") ?? 0,
+            GetInt(entry, "type") ?? 0,
+            first,
+            second,
+            names);
+    }
 
-        var property = GetInt(entry, "property") ?? -1;
+    /// <summary>A modifier with the game's wording rules for its property, tags and special tag.</summary>
+    private static ItemImplicit BuildModifier(int property, int specialTag, long tags, int modifierType, double first, double second, ImplicitNames names)
+    {
+        var type = Enum.IsDefined((ImplicitModifierType)modifierType) ? (ImplicitModifierType)modifierType : ImplicitModifierType.Added;
         var info = names.GetProperty(property);
-        var name = names.Compose(info, property, GetLong(entry, "tags") ?? 0, GetInt(entry, "specialTag") ?? 0);
+        var name = names.Compose(info, property, tags, specialTag);
 
         // Increased / more are always percentages; added values only for properties shown that way (resistances, ...).
         var isPercent = type != ImplicitModifierType.Added || (info?.AddedAsPercentage ?? false);
