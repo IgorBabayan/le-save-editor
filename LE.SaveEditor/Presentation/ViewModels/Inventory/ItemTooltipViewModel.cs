@@ -44,7 +44,8 @@ public sealed class ItemTooltipViewModel
             .Select((stat, i) => StatEntry(stat, item.ImplicitValues[i]))
             .ToList();
 
-        if (item.ForgingPotential is { } forgingPotential)
+        // Idols cannot be forged: their stored byte is not shown.
+        if (item.ForgingPotential is { } forgingPotential && !item.Slot.IsIdol)
             ForgingPotentialText = $"{forgingPotential} Forging Potential";
 
         var sections = new List<ItemTooltipSection>();

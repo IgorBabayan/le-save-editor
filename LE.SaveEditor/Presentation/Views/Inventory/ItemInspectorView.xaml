@@ -500,12 +500,14 @@
                             </ItemsControl>
                         </Border>
 
-                        <!-- Item: the value is the selected base / unique / set item; expanding shows the searchable list. -->
+                        <!-- Item: the value is the selected base / unique / set item; expanding shows the searchable list
+                             with the search box focused. -->
                         <Grid>
                             <ToggleButton x:Name="ItemToggle"
                                           Style="{StaticResource InspectorExpanderStyle}"
                                           Content="{Binding ListHeader}"
-                                          IsEnabled="{Binding IsDatabaseAvailable}" />
+                                          IsEnabled="{Binding IsDatabaseAvailable}"
+                                          Checked="OnItemToggleChecked" />
                             <TextBlock Margin="{StaticResource InspectorValueMargin}"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"

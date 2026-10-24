@@ -5,19 +5,28 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// An item in the backpack grid: its top-left cell and the cells it covers.
-/// Equipment items the editor can decode carry an <see cref="Equipment"/> slot, so they show their icon and tooltip
-/// and open the item inspector like an equipped item. Anything else (idols, keys, items whose base is not in
+/// An item in a grid (backpack or idol grid): its top-left cell and the cells it covers.
+/// Equipment items and idols the editor can decode carry an <see cref="Equipment"/> slot, so they show their icon and
+/// tooltip and open the item inspector like an equipped item. Anything else (keys, items whose base is not in
 /// <c>base.db</c>) is shown as a placeholder that keeps its cells taken.
 /// </summary>
 public sealed partial class BackpackItemViewModel : ViewModelBase
 {
-    private const int FirstIdolTypeId = 25;
-    private const int LastIdolTypeId = 33;
+    /// <summary>Number of rows of the grid the item is in (stored rows count from its bottom).</summary>
+    private readonly int _gridRows;
 
     /// <param name="isNew">The item was made in the editor and is not in the save yet.</param>
-    public BackpackItemViewModel(SavedItem source, int baseTypeId, int column, int row, EquipmentSlotViewModel? equipment, bool isNew = false)
+    /// <param name="gridRows">Number of rows of the grid the item is in.</param>
+    public BackpackItemViewModel(
+        SavedItem source,
+        int baseTypeId,
+        int column,
+        int row,
+        EquipmentSlotViewModel? equipment,
+        bool isNew = false,
+        int gridRows = BackpackViewModel.Rows)
     {
+        _gridRows = gridRows;
         Source = source;
         IsNew = isNew;
         BaseTypeId = baseTypeId;
@@ -73,7 +82,7 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
 
         var (x, y) = (Column, Row, Footprint) == _loadedPlacement
             ? (Source.X, Source.Y)
-            : (Column, BackpackViewModel.SavedYFromRow(Row, Footprint));
+            : (Column, BackpackViewModel.SavedYFromRow(Row, Footprint, _gridRows));
 
         return data.SequenceEqual(Source.Data) && x == Source.X && y == Source.Y
             ? null
@@ -90,7 +99,7 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
             ? ItemDataWriter.Write(SavedItemConverter.ToItemData(current, null))
             : Source.Data;
 
-        return Source with { X = Column, Y = BackpackViewModel.SavedYFromRow(Row, Footprint), Data = data };
+        return Source with { X = Column, Y = BackpackViewModel.SavedYFromRow(Row, Footprint, _gridRows), Data = data };
     }
 
     /// <summary>Left column of the item (0-based).</summary>
@@ -116,7 +125,7 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isDragging;
 
-    public bool IsIdol => BaseTypeId is >= FirstIdolTypeId and <= LastIdolTypeId;
+    public bool IsIdol => EquipmentSlot.Idol.AcceptsBaseType(BaseTypeId);
 
     /// <summary>Short text on a placeholder tile.</summary>
     public string PlaceholderLabel => IsIdol ? "Idol" : "?";
@@ -127,7 +136,7 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
         get
         {
             if (IsIdol)
-                return "Idol — idols cannot be edited yet";
+                return "Idol — its base is not in the game database (generate or update it with the database button in the title bar)";
 
             return EquipmentSlotExtensions.FromBaseTypeId(BaseTypeId) is { } slot
                 ? $"{slot.DisplayName} — its base is not in the game database (generate or update it in Settings)"

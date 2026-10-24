@@ -50,6 +50,21 @@ public partial class ItemInspectorView : UserControl
 
     private void OnExpandClick(object sender, RoutedEventArgs e) => ExpandRequested?.Invoke(this, EventArgs.Empty);
 
+    /// <summary>The item list was expanded: type to search right away (the search text is selected to replace it).</summary>
+    private void OnItemToggleChecked(object sender, RoutedEventArgs e)
+    {
+        // After the list became visible: a collapsed text box cannot take the focus.
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (ItemToggle.IsChecked != true || !ItemSearch.IsVisible || !ItemSearch.IsEnabled)
+                return;
+
+            ItemSearch.Focus();
+            Keyboard.Focus(ItemSearch);
+            ItemSearch.SelectAll();
+        }, DispatcherPriority.Input);
+    }
+
     /// <summary>A rarity was picked: fold the pills away like a closed drop-down.</summary>
     private void OnRarityPillClick(object sender, RoutedEventArgs e) => RarityToggle.IsChecked = false;
 

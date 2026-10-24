@@ -31,7 +31,7 @@ public static class SavedItemConverter
         var affixes = new List<BuiltAffix>(data.Affixes.Count);
         foreach (var stored in data.Affixes)
         {
-            if (catalog.FindAffix(stored.AffixId) is not { Tiers.Count: > 0 } affix)
+            if (catalog.FindAffix(stored.AffixId, data.BaseTypeId) is not { Tiers.Count: > 0 } affix)
                 continue;
 
             var tier = Math.Clamp(stored.Tier, 1, affix.Tiers.Count);
@@ -40,7 +40,7 @@ public static class SavedItemConverter
             affixes.Add(new BuiltAffix(SlotKindOf(affix, stored.IsSealed), affix, tier, values));
         }
 
-        return new BuiltItem(slot, RarityOf(data, affixes), itemBase, implicitValues, modValues, affixes, data.ForgingPotential);
+        return new BuiltItem(slot, RarityOf(data, affixes, slot.IsIdol), itemBase, implicitValues, modValues, affixes, data.ForgingPotential);
     }
 
     private static double FromRoll(ItemImplicit stat, IReadOnlyList<byte> rolls, int index) =>
@@ -56,8 +56,9 @@ public static class SavedItemConverter
     /// <summary>
     /// Unique, set and legendary keep the stored rarity; plain bases take theirs from the affixes like the item builder:
     /// Normal without affixes, Magic with 1–2, Rare with 3+, Exalted as soon as one affix is tier 6 or higher.
+    /// Idols are Normal without affixes and Magic with any.
     /// </summary>
-    private static ItemRarity RarityOf(ItemData data, IReadOnlyList<BuiltAffix> affixes)
+    private static ItemRarity RarityOf(ItemData data, IReadOnlyList<BuiltAffix> affixes, bool isIdol)
     {
         switch (data.RarityCode)
         {
@@ -70,6 +71,9 @@ public static class SavedItemConverter
         }
 
         var counted = affixes.Where(a => a.Slot != AffixSlotKind.Corrupted).ToList();
+        if (isIdol)
+            return counted.Count == 0 ? ItemRarity.Normal : ItemRarity.Magic;
+
         if (counted.Any(a => a.Tier >= ExaltedTier))
             return ItemRarity.Exalted;
 

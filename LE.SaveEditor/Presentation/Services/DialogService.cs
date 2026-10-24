@@ -44,7 +44,8 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
 
     public void ShowItemInspector(EquipmentSlotViewModel slot, CharacterClass characterClass)
     {
-        var viewModel = CreateItemBuilder(slot.Slot, characterClass, slot.Item);
+        // Items kept in a grid search the extra slots too (a backpack weapon search finds off-hands).
+        var viewModel = CreateItemBuilder(slot.Slot, characterClass, slot.Item, slot.IsInGrid ? slot.Slot.ExtraSearchSlots : null);
 
         if (FindSlotControl(slot) is { } anchor
             && ItemInspectorAdorner.TryShow(anchor, viewModel, item => slot.Item = item, vm => ShowItemBuilderWindow(vm)))
@@ -56,7 +57,8 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
 
     public void ShowItemInspector(EquipmentSlot slot, CharacterClass characterClass, object? anchor, Action<BuiltItem> applied)
     {
-        var viewModel = CreateItemBuilder(slot, characterClass, null);
+        // New items are only built in grids (backpack, idol grid).
+        var viewModel = CreateItemBuilder(slot, characterClass, null, slot.ExtraSearchSlots);
 
         if (anchor is FrameworkElement element
             && ItemInspectorAdorner.TryShow(element, viewModel, applied, vm => ShowItemBuilderWindow(vm)))
@@ -66,13 +68,18 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
             applied(built);
     }
 
-    private ItemBuilderViewModel CreateItemBuilder(EquipmentSlot slot, CharacterClass characterClass, BuiltItem? current) =>
+    private ItemBuilderViewModel CreateItemBuilder(
+        EquipmentSlot slot,
+        CharacterClass characterClass,
+        BuiltItem? current,
+        IReadOnlyList<EquipmentSlot>? extraSearchSlots = null) =>
         new(services.GetRequiredService<IItemBaseCatalog>(),
             services.GetRequiredService<IIconProvider>(),
             Confirm,
             slot,
             characterClass,
-            current);
+            current,
+            extraSearchSlots);
 
     private static BuiltItem? ShowItemBuilderWindow(ItemBuilderViewModel viewModel)
     {

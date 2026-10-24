@@ -12,6 +12,12 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
 
     public string Label => Slot.DisplayName;
 
+    /// <summary>
+    /// The item is kept in a grid (backpack, idol grid) rather than worn: its item builder searches the slot's extra
+    /// search slots too (a weapon search finds off-hands).
+    /// </summary>
+    public bool IsInGrid { get; init; }
+
     /// <summary>Item read from the save or made in the builder; <c>null</c> while the slot is empty.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasItem))]

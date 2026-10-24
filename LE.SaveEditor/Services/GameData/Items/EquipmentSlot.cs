@@ -1,6 +1,9 @@
 namespace LE.SaveEditor.Services.GameData.Items;
 
-/// <summary>A slot of the equipment grid in the "Inventory" tab.</summary>
+/// <summary>
+/// A slot of the equipment grid in the "Inventory" tab, or <see cref="Idol"/>: the item kind of the idol grid
+/// (it is not an equipment container, so it has no <c>containerID</c> of its own).
+/// </summary>
 public enum EquipmentSlot
 {
     Helmet,
@@ -13,7 +16,8 @@ public enum EquipmentSlot
     Belt,
     Gloves,
     Boots,
-    Relic
+    Relic,
+    Idol
 }
 
 public static class EquipmentSlotExtensions
@@ -36,7 +40,9 @@ public static class EquipmentSlotExtensions
         [EquipmentSlot.Amulet] = [20],
         [EquipmentSlot.LeftRing] = [21],
         [EquipmentSlot.RightRing] = [21],
-        [EquipmentSlot.Relic] = [22]
+        [EquipmentSlot.Relic] = [22],
+        // small, minor, humble, stout, grand, large, ornate, huge, adorned
+        [EquipmentSlot.Idol] = [25, 26, 27, 28, 29, 30, 31, 32, 33]
     };
 
     /// <summary>
@@ -54,7 +60,8 @@ public static class EquipmentSlotExtensions
         [EquipmentSlot.Amulet] = ["amulet"],
         [EquipmentSlot.LeftRing] = ["ring"],
         [EquipmentSlot.RightRing] = ["ring"],
-        [EquipmentSlot.Relic] = ["relic"]
+        [EquipmentSlot.Relic] = ["relic"],
+        [EquipmentSlot.Idol] = ["idol"]
     };
 
     /// <summary><c>containerID</c> of each equipment slot in <c>savedItems</c> of a character save.</summary>
@@ -82,8 +89,8 @@ public static class EquipmentSlotExtensions
         SlotsByContainerId.First(pair => pair.Value == slot).Key;
 
     /// <summary>
-    /// The first equipment slot an item of type <paramref name="baseTypeId"/> fits (rings → left ring);
-    /// <c>null</c> for items that are not equipment (idols, keys, ...).
+    /// The first slot an item of type <paramref name="baseTypeId"/> fits (rings → left ring, idols →
+    /// <see cref="EquipmentSlot.Idol"/>); <c>null</c> for anything else (keys, blessings, ...).
     /// </summary>
     public static EquipmentSlot? FromBaseTypeId(int baseTypeId)
     {
@@ -111,6 +118,19 @@ public static class EquipmentSlotExtensions
 
         /// <summary><c>baseTypeID</c>s of the item types that fit the slot.</summary>
         public IReadOnlyList<int> BaseTypes => BaseTypeIds[slot];
+
+        /// <summary>The slot is the idol grid's item kind rather than an equipment slot.</summary>
+        public bool IsIdol => slot == EquipmentSlot.Idol;
+
+        /// <summary>
+        /// Slots whose items a search in the item builder also lists for an item kept in a grid (backpack): a weapon
+        /// search finds off-hands too. Equipped slots search only their own items.
+        /// </summary>
+        public IReadOnlyList<EquipmentSlot> ExtraSearchSlots => slot switch
+        {
+            EquipmentSlot.Weapon => [EquipmentSlot.OffHand],
+            _ => []
+        };
 
         /// <summary>Fallback for item types without an id: matches the normalized type name.</summary>
         public bool AcceptsTypeName(string normalizedTypeName) =>

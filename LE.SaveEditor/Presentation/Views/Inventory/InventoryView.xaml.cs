@@ -10,12 +10,13 @@ using LE.SaveEditor.Services.GameData.Items;
 namespace LE.SaveEditor.Presentation.Views.Inventory;
 
 /// <summary>
-/// "Inventory" tab of the character view. Items of the backpack are dragged with the mouse inside the backpack grid:
-/// pressing an item and moving it past the system drag distance starts a drag, a highlight shows the cells it would
-/// take (green when it fits, red otherwise), and releasing the button over a free spot moves it there. Releasing
-/// over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click without moving
-/// still opens the item inspector. Double-clicking an empty cell offers the item types to build there and opens the
-/// item inspector for a new item of the chosen type next to that cell.
+/// "Inventory" tab of the character view. Items of the backpack and idols of the idol grid are dragged with the mouse
+/// inside their own grid: pressing an item and moving it past the system drag distance starts a drag, a highlight shows
+/// the cells it would take (green when it fits, red otherwise), and releasing the button over a free spot moves it
+/// there. Releasing over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click
+/// without moving still opens the item inspector. Right-clicking an empty backpack cell offers the item types to build
+/// there and opens the item inspector for a new item of the chosen type next to that cell; right-clicking an empty
+/// idol cell opens it for a new idol right away.
 /// </summary>
 public partial class InventoryView : UserControl
 {
@@ -37,9 +38,22 @@ public partial class InventoryView : UserControl
         EquipmentSlot.OffHand,
         EquipmentSlot.Amulet,
         EquipmentSlot.LeftRing,
-        EquipmentSlot.Relic
+        EquipmentSlot.Relic,
+        EquipmentSlot.Idol
     ];
 
+    /// <summary>The controls of one grid: its item layer, its background cells and its drop highlight.</summary>
+    private sealed record GridParts(ItemsControl Items, ItemsControl Cells, Border Preview)
+    {
+        public BackpackViewModel? Grid => Items.DataContext as BackpackViewModel;
+
+        public double CellWidth => Grid is { ColumnCount: > 0 } grid ? Items.ActualWidth / grid.ColumnCount : 0;
+
+        public double CellHeight => Grid is { RowCount: > 0 } grid ? Items.ActualHeight / grid.RowCount : 0;
+    }
+
+    /// <summary>Grid of the pressed / dragged item.</summary>
+    private GridParts? _parts;
     private BackpackItemViewModel? _pressedItem;
     private Point _pressPoint;
     private int _grabColumn;
@@ -55,36 +69,32 @@ public partial class InventoryView : UserControl
         PreviewKeyDown += OnPreviewKeyDown;
     }
 
-    private BackpackViewModel? Backpack => BackpackItems.DataContext as BackpackViewModel;
+    private GridParts? PartsOf(object sender) =>
+        ReferenceEquals(sender, BackpackItems) ? new GridParts(BackpackItems, BackpackCells, DropPreview)
+        : ReferenceEquals(sender, IdolItems) ? new GridParts(IdolItems, IdolCells, IdolDropPreview)
+        : null;
 
-    private double CellWidth => BackpackItems.ActualWidth / BackpackViewModel.Columns;
-
-    private double CellHeight => BackpackItems.ActualHeight / BackpackViewModel.Rows;
-
-    private void BackpackItems_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void GridItems_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (CellWidth <= 0 || CellHeight <= 0)
+        if (_isDragging || PartsOf(sender) is not { CellWidth: > 0, CellHeight: > 0 } parts)
             return;
 
-        if (FindItem(e.OriginalSource as DependencyObject) is not { } item)
-        {
-            if (e.ClickCount == 2 && ShowNewItemMenu(e.GetPosition(BackpackItems)))
-                e.Handled = true;
+        if (FindItem(e.OriginalSource as DependencyObject, parts.Items) is not { } item)
             return;
-        }
 
         // Not handled: a plain click must still reach the item's button.
+        _parts = parts;
         _pressedItem = item;
-        _pressPoint = e.GetPosition(BackpackItems);
+        _pressPoint = e.GetPosition(parts.Items);
 
         // The cell of the item under the mouse stays under the mouse while dragging.
-        _grabColumn = Math.Clamp((int)(_pressPoint.X / CellWidth) - item.Column, 0, item.Width - 1);
-        _grabRow = Math.Clamp((int)(_pressPoint.Y / CellHeight) - item.Row, 0, item.Height - 1);
+        _grabColumn = Math.Clamp((int)(_pressPoint.X / parts.CellWidth) - item.Column, 0, item.Width - 1);
+        _grabRow = Math.Clamp((int)(_pressPoint.Y / parts.CellHeight) - item.Row, 0, item.Height - 1);
     }
 
-    private void BackpackItems_OnPreviewMouseMove(object sender, MouseEventArgs e)
+    private void GridItems_OnPreviewMouseMove(object sender, MouseEventArgs e)
     {
-        if (_pressedItem is null)
+        if (_pressedItem is null || _parts is not { } parts || !ReferenceEquals(sender, parts.Items))
             return;
 
         if (e.LeftButton != MouseButtonState.Pressed)
@@ -93,31 +103,32 @@ public partial class InventoryView : UserControl
             return;
         }
 
-        var position = e.GetPosition(BackpackItems);
+        var position = e.GetPosition(parts.Items);
         if (!_isDragging)
         {
             if (Math.Abs(position.X - _pressPoint.X) < SystemParameters.MinimumHorizontalDragDistance
                 && Math.Abs(position.Y - _pressPoint.Y) < SystemParameters.MinimumVerticalDragDistance)
                 return;
 
-            StartDrag(_pressedItem);
+            StartDrag(parts, _pressedItem);
         }
 
-        UpdateTarget(_pressedItem, position);
+        UpdateTarget(parts, _pressedItem, position);
         e.Handled = true;
     }
 
-    private void BackpackItems_OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void GridItems_OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (!_isDragging)
         {
             // A click: the button opens the inspector.
             _pressedItem = null;
+            _parts = null;
             return;
         }
 
         if (_pressedItem is { } item && _canDrop)
-            Backpack?.MoveItem(item, _targetColumn, _targetRow);
+            _parts?.Grid?.MoveItem(item, _targetColumn, _targetRow);
 
         EndDrag();
 
@@ -125,11 +136,41 @@ public partial class InventoryView : UserControl
         e.Handled = true;
     }
 
-    private void BackpackItems_OnLostMouseCapture(object sender, MouseEventArgs e)
+    private void GridItems_OnLostMouseCapture(object sender, MouseEventArgs e)
     {
         // The item's button losing the mouse to the drag bubbles here too; only our own capture ends a drag.
-        if (_isDragging && ReferenceEquals(e.OriginalSource, BackpackItems))
+        if (_isDragging && _parts is { } parts && ReferenceEquals(e.OriginalSource, parts.Items))
             EndDrag();
+    }
+
+    /// <summary>
+    /// A right-click on an empty cell builds a new item there: the backpack offers the item types, the idol grid opens
+    /// the inspector for a new idol at once.
+    /// </summary>
+    private void GridItems_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isDragging || PartsOf(sender) is not { CellWidth: > 0, CellHeight: > 0 } parts
+            || FindItem(e.OriginalSource as DependencyObject, parts.Items) is not null)
+            return;
+
+        var position = e.GetPosition(parts.Items);
+        var column = (int)Math.Floor(position.X / parts.CellWidth);
+        var row = (int)Math.Floor(position.Y / parts.CellHeight);
+        if (parts.Grid is not { } grid || !grid.IsCellFree(column, row))
+            return;
+
+        if (grid.Layout.OnlySlot is { } onlySlot)
+        {
+            var anchor = CellAt(parts, grid, column, row) ?? parts.Items;
+            // After the click is done, so the inspector keeps the focus it takes.
+            Dispatcher.InvokeAsync(() => BuildNewItem(onlySlot, grid, column, row, anchor), DispatcherPriority.Background);
+        }
+        else
+        {
+            ShowNewItemMenu(parts, grid, column, row);
+        }
+
+        e.Handled = true;
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -141,37 +182,43 @@ public partial class InventoryView : UserControl
         e.Handled = true;
     }
 
-    private void StartDrag(BackpackItemViewModel item)
+    private void StartDrag(GridParts parts, BackpackItemViewModel item)
     {
         _isDragging = true;
         item.IsDragging = true;
-        DropPreview.Visibility = Visibility.Visible;
+        parts.Preview.Visibility = Visibility.Visible;
         Mouse.OverrideCursor = Cursors.SizeAll;
 
         // Keeps the mouse events coming while the pointer is over other items or outside of the grid.
-        BackpackItems.CaptureMouse();
+        parts.Items.CaptureMouse();
     }
 
     /// <summary>
     /// Puts the item's top-left cell where the grabbed cell is under the mouse, kept inside the grid,
     /// and shows whether it fits there.
     /// </summary>
-    private void UpdateTarget(BackpackItemViewModel item, Point position)
+    private void UpdateTarget(GridParts parts, BackpackItemViewModel item, Point position)
     {
-        var column = (int)Math.Floor(position.X / CellWidth) - _grabColumn;
-        var row = (int)Math.Floor(position.Y / CellHeight) - _grabRow;
-        _targetColumn = Math.Clamp(column, 0, BackpackViewModel.Columns - item.Width);
-        _targetRow = Math.Clamp(row, 0, BackpackViewModel.Rows - item.Height);
-        _canDrop = Backpack?.CanPlace(item.Footprint, _targetColumn, _targetRow, item) == true;
+        if (parts.Grid is not { } grid)
+            return;
 
-        Canvas.SetLeft(DropPreview, _targetColumn * CellWidth + 1);
-        Canvas.SetTop(DropPreview, _targetRow * CellHeight + 1);
-        DropPreview.Width = Math.Max(0, item.Width * CellWidth - 2);
-        DropPreview.Height = Math.Max(0, item.Height * CellHeight - 2);
+        var cellWidth = parts.CellWidth;
+        var cellHeight = parts.CellHeight;
+        var column = (int)Math.Floor(position.X / cellWidth) - _grabColumn;
+        var row = (int)Math.Floor(position.Y / cellHeight) - _grabRow;
+        _targetColumn = Math.Clamp(column, 0, Math.Max(0, grid.ColumnCount - item.Width));
+        _targetRow = Math.Clamp(row, 0, Math.Max(0, grid.RowCount - item.Height));
+        _canDrop = grid.CanPlace(item.Footprint, _targetColumn, _targetRow, item);
+
+        var preview = parts.Preview;
+        Canvas.SetLeft(preview, _targetColumn * cellWidth + 1);
+        Canvas.SetTop(preview, _targetRow * cellHeight + 1);
+        preview.Width = Math.Max(0, item.Width * cellWidth - 2);
+        preview.Height = Math.Max(0, item.Height * cellHeight - 2);
 
         var brushKey = _canDrop ? ValidDropBrushKey : InvalidDropBrushKey;
-        DropPreview.SetResourceReference(Border.BorderBrushProperty, brushKey);
-        DropPreview.Background = TryFindResource(brushKey) is SolidColorBrush brush
+        preview.SetResourceReference(Border.BorderBrushProperty, brushKey);
+        preview.Background = TryFindResource(brushKey) is SolidColorBrush brush
             ? new SolidColorBrush(brush.Color) { Opacity = DropFillOpacity }
             : null;
     }
@@ -180,40 +227,40 @@ public partial class InventoryView : UserControl
     private void EndDrag()
     {
         var wasDragging = _isDragging;
+        var parts = _parts;
         _isDragging = false;
         _canDrop = false;
+        _parts = null;
 
         if (_pressedItem is { } item)
             item.IsDragging = false;
         _pressedItem = null;
 
-        if (!wasDragging)
+        if (!wasDragging || parts is null)
             return;
 
-        DropPreview.Visibility = Visibility.Collapsed;
+        parts.Preview.Visibility = Visibility.Collapsed;
         Mouse.OverrideCursor = null;
 
         // Releasing raises LostMouseCapture; _isDragging is already false, so it is ignored.
-        if (BackpackItems.IsMouseCaptured)
-            BackpackItems.ReleaseMouseCapture();
+        if (parts.Items.IsMouseCaptured)
+            parts.Items.ReleaseMouseCapture();
     }
 
-    /// <summary>
-    /// Offers the item types that can be built in the empty cell under <paramref name="position"/>; types with no
-    /// room left anywhere in the backpack are disabled.
-    /// </summary>
-    /// <returns><c>false</c> when the position is not over an empty cell (nothing was shown).</returns>
-    private bool ShowNewItemMenu(Point position)
-    {
-        var column = (int)Math.Floor(position.X / CellWidth);
-        var row = (int)Math.Floor(position.Y / CellHeight);
-        if (Backpack is not { } backpack || !backpack.IsCellFree(column, row))
-            return false;
+    /// <summary>The background cell of <paramref name="grid"/> at <paramref name="column"/>, <paramref name="row"/>.</summary>
+    private static FrameworkElement? CellAt(GridParts parts, BackpackViewModel grid, int column, int row) =>
+        parts.Cells.ItemContainerGenerator.ContainerFromIndex(row * grid.ColumnCount + column) as FrameworkElement;
 
-        var anchor = BackpackCells.ItemContainerGenerator.ContainerFromIndex(row * BackpackViewModel.Columns + column) as FrameworkElement;
+    /// <summary>
+    /// Offers the item types that can be built in the empty cell <paramref name="column"/>, <paramref name="row"/>;
+    /// types with no room left anywhere in the grid are disabled.
+    /// </summary>
+    private void ShowNewItemMenu(GridParts parts, BackpackViewModel grid, int column, int row)
+    {
+        var anchor = CellAt(parts, grid, column, row);
         var menu = new ContextMenu
         {
-            PlacementTarget = BackpackItems,
+            PlacementTarget = parts.Items,
             Placement = PlacementMode.MousePoint
         };
         if (TryFindResource("ThemedContextMenuStyle") is Style menuStyle)
@@ -237,42 +284,41 @@ public partial class InventoryView : UserControl
         });
         foreach (var slot in NewItemSlots)
         {
-            var hasRoom = backpack.HasRoomFor(slot);
+            var hasRoom = grid.HasRoomFor(slot);
             var menuItem = new MenuItem
             {
                 Header = slot.DisplayName,
                 IsEnabled = hasRoom,
                 Style = itemStyle,
-                ToolTip = hasRoom ? null : "No room left in the backpack for this item type"
+                ToolTip = hasRoom ? null : $"No room left in the {grid.Layout.Name} for this item type"
             };
             ToolTipService.SetShowOnDisabled(menuItem, true);
 
             var chosen = slot;
             // After the menu has closed, so the inspector keeps the focus it takes.
             menuItem.Click += (_, _) => Dispatcher.InvokeAsync(
-                () => BuildNewItem(chosen, column, row, anchor),
+                () => BuildNewItem(chosen, grid, column, row, anchor ?? parts.Items),
                 DispatcherPriority.Background);
             menu.Items.Add(menuItem);
         }
 
         menu.IsOpen = true;
-        return true;
     }
 
-    private void BuildNewItem(EquipmentSlot slot, int column, int row, FrameworkElement? anchor)
+    private void BuildNewItem(EquipmentSlot slot, BackpackViewModel grid, int column, int row, FrameworkElement? anchor)
     {
         if (DataContext is not InventoryViewModel inventory)
             return;
 
-        var request = new NewBackpackItemRequest(slot, column, row, anchor ?? BackpackItems);
+        var request = new NewBackpackItemRequest(slot, column, row, anchor, grid);
         if (inventory.BuildBackpackItemCommand.CanExecute(request))
             inventory.BuildBackpackItemCommand.Execute(request);
     }
 
-    /// <summary>The backpack item shown by <paramref name="source"/> or one of its ancestors inside the item layer.</summary>
-    private BackpackItemViewModel? FindItem(DependencyObject? source)
+    /// <summary>The grid item shown by <paramref name="source"/> or one of its ancestors inside the item layer <paramref name="items"/>.</summary>
+    private static BackpackItemViewModel? FindItem(DependencyObject? source, ItemsControl items)
     {
-        for (var node = source; node is not null && !ReferenceEquals(node, BackpackItems);
+        for (var node = source; node is not null && !ReferenceEquals(node, items);
              node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node))
         {
             if (node is FrameworkElement { DataContext: BackpackItemViewModel item })

@@ -58,6 +58,12 @@ public sealed partial class BaseOptionViewModel : ObservableObject
     [ObservableProperty]
     private Brush? _titleForeground;
 
+    /// <summary>
+    /// The item belongs to one of the builder's extra search slots (an off-hand in a backpack weapon builder): it is
+    /// only listed while searching.
+    /// </summary>
+    public bool IsFromExtraSlot { get; init; }
+
     /// <summary>The card comes from another list than the selected rarity's (only while searching).</summary>
     [ObservableProperty]
     private bool _isFromOtherList;
