@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>LE.SaveEditor.DB</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- SQLite through EF Core: base.db is a single file the editor reads next to its exe. -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+        <!-- WPF has no built-in WebP decoder, so icons are converted to PNG (MIT licensed). -->
+        <PackageReference Include="SkiaSharp" Version="3.119.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Class / mastery icons (4 x 5 grid of 64 px cells), cut into Icons\classes by ClassIconSprite. -->
+        <EmbeddedResource Include="Assets\class-icons.webp" LogicalName="LE.SaveEditor.DB.class-icons.webp" />
+    </ItemGroup>
+
+</Project>

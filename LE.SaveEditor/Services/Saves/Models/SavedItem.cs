@@ -1,0 +1,24 @@
+namespace LE.SaveEditor.Services.Saves.Models;
+
+/// <summary>
+/// One entry of <c>savedItems</c> in a character save, kept as the game wrote it.
+/// <see cref="Data"/> is decoded with <see cref="LE.SaveEditor.Services.Saves.ItemDataReader"/>.
+/// </summary>
+/// <param name="ContainerId">
+/// Where the item is: 1 = backpack, 2–12 = equipment slots (helmet, body armour, weapon, off-hand, gloves, belt, boots,
+/// left ring, right ring, amulet, relic), 29 = idols, 33+ = blessings.
+/// </param>
+/// <param name="X">Column inside the container (backpack and idol grid).</param>
+/// <param name="Y">Row inside the container (backpack and idol grid), counted from the bottom; the item's bottom-left cell.</param>
+/// <param name="Data">The item bytes (<c>data</c>).</param>
+public sealed record SavedItem(int ContainerId, int X, int Y, int Quantity, int FormatVersion, IReadOnlyList<byte> Data)
+{
+    /// <summary><see cref="ContainerId"/> of the character's backpack (the "Items" grid of the inventory).</summary>
+    public const int BackpackContainerId = 1;
+
+    /// <summary>
+    /// Position of the entry in the file's <c>savedItems</c> array (counting entries the editor skipped), so it can be
+    /// written back in place; -1 for an item made in the editor that is not in the file yet.
+    /// </summary>
+    public int Index { get; init; } = -1;
+}
