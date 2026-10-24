@@ -32,6 +32,9 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
+- The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. A normal
+  affix used as the corruption is stored after the other affixes; reading it back, a prefix or suffix beyond the
+  two of its kind is shown as the corruption (so an item with one prefix and a prefix corruption reads as two prefixes).
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).

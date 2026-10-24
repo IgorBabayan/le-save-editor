@@ -708,8 +708,11 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
                         && words.All(w => a.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
                                           || (a.Title?.Contains(w, StringComparison.CurrentCultureIgnoreCase) ?? false)
                                           || a.GroupName.Contains(w, StringComparison.CurrentCultureIgnoreCase)))
-            // Normal affixes first, then experimental / personal / set / variant; by category, then name.
-            .OrderBy(a => a.Category == AffixCategory.Normal ? 0 : 1)
+            // Normal affixes first, then experimental / personal / set / variant (for the corruption slot the
+            // corruption-only affixes first, then normal ones); by category, then name.
+            .OrderBy(a => slot.IsCorrupted
+                ? a.Category == AffixCategory.Corrupted ? 0 : 1
+                : a.Category == AffixCategory.Normal ? 0 : 1)
             .ThenBy(a => a.GroupName, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase);
 

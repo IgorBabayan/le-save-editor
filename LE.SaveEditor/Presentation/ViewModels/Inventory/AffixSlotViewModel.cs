@@ -52,10 +52,14 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
 
     public bool IsCorrupted => Kind == AffixSlotKind.Corrupted;
 
-    /// <summary><c>true</c> when <paramref name="affix"/> may go into this slot (type and corrupted / not corrupted).</summary>
+    /// <summary>
+    /// <c>true</c> when <paramref name="affix"/> may go into this slot: prefixes / suffixes take affixes of their type
+    /// that are not corruption-only; the corruption slot takes corruption-only affixes and normal prefixes / suffixes
+    /// (a corruption can also be an ordinary affix, e.g. Cold Penetration on an amulet).
+    /// </summary>
     public bool Accepts(AffixDefinition affix) =>
         IsCorrupted
-            ? affix.Category == AffixCategory.Corrupted
+            ? affix.Category is AffixCategory.Corrupted or AffixCategory.Normal
             : affix.Category != AffixCategory.Corrupted && affix.Type == AcceptedType;
 
     [ObservableProperty]

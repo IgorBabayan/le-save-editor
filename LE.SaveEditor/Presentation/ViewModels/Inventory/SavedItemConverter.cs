@@ -29,6 +29,7 @@ public static class SavedItemConverter
         var modValues = itemBase.Mods.Select((mod, i) => FromRoll(mod, data.UniqueRolls, i)).ToList();
 
         var affixes = new List<BuiltAffix>(data.Affixes.Count);
+        var counts = new Dictionary<AffixSlotKind, int>();
         foreach (var stored in data.Affixes)
         {
             if (catalog.FindAffix(stored.AffixId, data.BaseTypeId) is not { Tiers.Count: > 0 } affix)
@@ -37,11 +38,24 @@ public static class SavedItemConverter
             var tier = Math.Clamp(stored.Tier, 1, affix.Tiers.Count);
             // The game keeps one roll per affix; every stat of the tier follows it.
             var values = affix.Tiers[tier - 1].Stats.Select(stat => ItemStatViewModel.FromRoll(stat, stored.Roll)).ToList();
-            affixes.Add(new BuiltAffix(SlotKindOf(affix, stored.IsSealed), affix, tier, values));
+            var kind = SlotKindOf(affix, stored.IsSealed);
+
+            // A normal affix as the corruption is written after the others (see ToItemData): a prefix / suffix that
+            // no longer fits its two slots is the corruption, as long as the item has none yet.
+            if (kind is AffixSlotKind.Prefix or AffixSlotKind.Suffix
+                && counts.GetValueOrDefault(kind) >= MaxAffixesPerType
+                && counts.GetValueOrDefault(AffixSlotKind.Corrupted) == 0)
+                kind = AffixSlotKind.Corrupted;
+
+            counts[kind] = counts.GetValueOrDefault(kind) + 1;
+            affixes.Add(new BuiltAffix(kind, affix, tier, values));
         }
 
         return new BuiltItem(slot, RarityOf(data, affixes, slot.IsIdol), itemBase, implicitValues, modValues, affixes, data.ForgingPotential);
     }
+
+    /// <summary>Prefixes (and suffixes) an item can have besides its sealed affix and corruption.</summary>
+    private const int MaxAffixesPerType = 2;
 
     private static double FromRoll(ItemImplicit stat, IReadOnlyList<byte> rolls, int index) =>
         ItemStatViewModel.FromRoll(stat, index < rolls.Count ? rolls[index] : ItemStatViewModel.MaxRoll);
@@ -128,9 +142,14 @@ public static class SavedItemConverter
             }
         }
 
+        // The corruption goes last (the sealed affix is put first by the writer), so a normal affix used as the
+        // corruption is read back into the corruption slot.
         IReadOnlyList<ItemAffixData> affixes = item.Rarity is ItemRarity.Unique or ItemRarity.Set
             ? []
-            : item.Affixes.Select(a => ToAffixData(a, original)).ToList();
+            : item.Affixes
+                .OrderBy(a => a.Slot == AffixSlotKind.Corrupted ? 1 : 0)
+                .Select(a => ToAffixData(a, original))
+                .ToList();
 
         var rarityCode = item.Rarity switch
         {
