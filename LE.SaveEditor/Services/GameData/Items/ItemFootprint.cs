@@ -37,7 +37,7 @@ public readonly record struct ItemFootprint(int Width, int Height)
         [19] = new(1, 2), // catalyst
         [20] = new(1, 1), // amulet
         [21] = new(1, 1), // ring
-        [22] = new(1, 2), // relic
+        [22] = new(2, 2), // relic
         [23] = new(2, 4), // bow
         [24] = new(2, 4), // crossbow
         [25] = new(1, 1), // small idol
