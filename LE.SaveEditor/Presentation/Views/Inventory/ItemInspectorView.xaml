@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
              xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
+             xmlns:behaviors="clr-namespace:LE.SaveEditor.Presentation.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=inventoryVm:ItemBuilderViewModel, IsDesignTimeCreatable=False}"
              Width="460"
@@ -207,6 +208,7 @@
                     <Grid>
                         <ListBox MaxHeight="260"
                                  ItemsSource="{Binding Source={StaticResource GroupedAffixes}}"
+                                 behaviors:SelectOnClick.IsEnabled="True"
                                  SelectedItem="{Binding DataContext.SelectedAffixOption, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                  IsSynchronizedWithCurrentItem="False"
                                  Style="{StaticResource PlainListBoxStyle}"
@@ -440,6 +442,12 @@
                                 <wpf:MaterialIcon Width="16" Height="16" Kind="ArrowExpand" />
                             </Button>
                             <Button Style="{StaticResource SubtleIconButtonStyle}"
+                                    ToolTip="Remove this item from the character"
+                                    Command="{Binding RemoveCommand}"
+                                    Visibility="{Binding CanRemove, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <wpf:MaterialIcon Width="16" Height="16" Kind="DeleteOutline" />
+                            </Button>
+                            <Button Style="{StaticResource SubtleIconButtonStyle}"
                                     ToolTip="Close (Esc)"
                                     Command="{Binding CancelCommand}">
                                 <wpf:MaterialIcon Width="16" Height="16" Kind="Close" />
@@ -535,6 +543,7 @@
                                              MaxHeight="300"
                                              ItemsSource="{Binding Source={StaticResource GroupedBases}}"
                                              SelectedItem="{Binding SelectedBaseOption}"
+                                             behaviors:SelectOnClick.IsEnabled="True"
                                              IsSynchronizedWithCurrentItem="False"
                                              Style="{StaticResource PlainListBoxStyle}"
                                              ItemContainerStyle="{StaticResource ListRowItemStyle}"

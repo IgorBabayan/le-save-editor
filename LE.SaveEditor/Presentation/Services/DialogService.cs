@@ -46,6 +46,8 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
     {
         // Items kept in a grid search the extra slots too (a backpack weapon search finds off-hands).
         var viewModel = CreateItemBuilder(slot.Slot, characterClass, slot.Item, slot.IsInGrid ? slot.Slot.ExtraSearchSlots : null);
+        // Removing empties the slot; a backpack / idol grid item then leaves its grid.
+        viewModel.RemoveRequested += (_, _) => slot.Item = null;
 
         if (FindSlotControl(slot) is { } anchor
             && ItemInspectorAdorner.TryShow(anchor, viewModel, item => slot.Item = item, vm => ShowItemBuilderWindow(vm)))

@@ -70,8 +70,11 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- ===== Equipment: click a slot to open the item builder for it ===== -->
-                <Grid Grid.Column="0" VerticalAlignment="Top">
+                <!-- ===== Equipment: click a slot to open the item builder for it, right-click to edit or remove its item ===== -->
+                <Grid Grid.Column="0"
+                      VerticalAlignment="Top"
+                      Background="Transparent"
+                      MouseRightButtonUp="EquipmentGrid_OnMouseRightButtonUp">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="112" />
                         <ColumnDefinition Width="144" />
@@ -249,7 +252,7 @@
                                Style="{StaticResource SecondaryTextStyle}" />
                     <TextBlock HorizontalAlignment="Center"
                                Opacity="0.7"
-                               Text="Right-click an empty cell to build an idol."
+                               Text="Right-click an empty cell to build an idol, or an idol to remove it."
                                Style="{StaticResource SecondaryTextStyle}" />
 
                     <!-- Crafting materials -->
@@ -396,7 +399,7 @@
                                    Style="{StaticResource SecondaryTextStyle}" />
                         <TextBlock Margin="2,2,0,0"
                                    Opacity="0.7"
-                                   Text="Right-click an empty cell to build a new item there."
+                                   Text="Right-click an empty cell to build a new item there, or an item to edit or remove it."
                                    Style="{StaticResource SecondaryTextStyle}" />
                     </StackPanel>
                 </TabItem>

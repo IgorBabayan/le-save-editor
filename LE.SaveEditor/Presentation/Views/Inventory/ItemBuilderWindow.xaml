@@ -6,6 +6,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
         xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
+        xmlns:behaviors="clr-namespace:LE.SaveEditor.Presentation.Behaviors"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=inventoryVm:ItemBuilderViewModel, IsDesignTimeCreatable=False}"
         Title="{Binding Title}"
@@ -418,6 +419,7 @@
                         <Grid>
                             <ListBox ItemsSource="{Binding Source={StaticResource GroupedAffixes}}"
                                      SelectedItem="{Binding SelectedAffixOption}"
+                                     behaviors:SelectOnClick.IsEnabled="True"
                                      Style="{StaticResource PlainListBoxStyle}"
                                      ItemContainerStyle="{StaticResource ListRowItemStyle}"
                                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
@@ -504,6 +506,7 @@
                             <!-- Item cards, grouped by class and wrapping into as many columns as fit. -->
                             <ListBox ItemsSource="{Binding Source={StaticResource GroupedBases}}"
                                      SelectedItem="{Binding SelectedBaseOption}"
+                                     behaviors:SelectOnClick.IsEnabled="True"
                                      Style="{StaticResource PlainListBoxStyle}"
                                      ItemContainerStyle="{StaticResource ItemCardStyle}"
                                      Padding="6,2,6,6">
@@ -633,6 +636,12 @@
                     BorderBrush="{DynamicResource WindowBorderBrush}"
                     BorderThickness="0,1,0,0">
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button Margin="0,0,24,0"
+                            Style="{StaticResource DialogButtonStyle}"
+                            Content="_Remove item"
+                            ToolTip="Remove this item from the character"
+                            Command="{Binding RemoveCommand}"
+                            Visibility="{Binding CanRemove, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <Button Style="{StaticResource AccentButtonStyle}"
                             Content="_Apply"
                             IsDefault="True"

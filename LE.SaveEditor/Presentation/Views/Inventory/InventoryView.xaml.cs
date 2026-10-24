@@ -16,7 +16,8 @@ namespace LE.SaveEditor.Presentation.Views.Inventory;
 /// there. Releasing over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click
 /// without moving still opens the item inspector. Right-clicking an empty backpack cell offers the item types to build
 /// there and opens the item inspector for a new item of the chosen type next to that cell; right-clicking an empty
-/// idol cell opens it for a new idol right away.
+/// idol cell opens it for a new idol right away. Right-clicking an equipped item, a backpack item or an idol offers to
+/// edit or remove it.
 /// </summary>
 public partial class InventoryView : UserControl
 {
@@ -145,13 +146,19 @@ public partial class InventoryView : UserControl
 
     /// <summary>
     /// A right-click on an empty cell builds a new item there: the backpack offers the item types, the idol grid opens
-    /// the inspector for a new idol at once.
+    /// the inspector for a new idol at once. A right-click on an item offers to edit or remove it.
     /// </summary>
     private void GridItems_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (_isDragging || PartsOf(sender) is not { CellWidth: > 0, CellHeight: > 0 } parts
-            || FindItem(e.OriginalSource as DependencyObject, parts.Items) is not null)
+        if (_isDragging || PartsOf(sender) is not { CellWidth: > 0, CellHeight: > 0 } parts)
             return;
+
+        if (FindItem(e.OriginalSource as DependencyObject, parts.Items) is { } item)
+        {
+            ShowItemMenu(parts.Items, item.Equipment, () => ExecuteInventory(i => i.RemoveGridItemCommand, item));
+            e.Handled = true;
+            return;
+        }
 
         var position = e.GetPosition(parts.Items);
         var column = (int)Math.Floor(position.X / parts.CellWidth);
@@ -171,6 +178,85 @@ public partial class InventoryView : UserControl
         }
 
         e.Handled = true;
+    }
+
+    /// <summary>A right-click on an equipment slot that holds an item offers to edit or remove it.</summary>
+    private void EquipmentGrid_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        for (var node = e.OriginalSource as DependencyObject; node is not null && !ReferenceEquals(node, sender);
+             node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node))
+        {
+            if (node is not ButtonBase { DataContext: EquipmentSlotViewModel slot } button)
+                continue;
+
+            if (slot.HasItem)
+            {
+                ShowItemMenu(button, slot, () => ExecuteInventory(i => i.RemoveEquippedItemCommand, slot));
+                e.Handled = true;
+            }
+
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Context menu of an item: "Edit…" (when the editor can show it, <paramref name="slot"/> is set) and "Remove".
+    /// </summary>
+    private void ShowItemMenu(UIElement target, EquipmentSlotViewModel? slot, Action remove)
+    {
+        var menu = new ContextMenu
+        {
+            PlacementTarget = target,
+            Placement = PlacementMode.MousePoint
+        };
+        if (TryFindResource("ThemedContextMenuStyle") is Style menuStyle)
+            menu.Style = menuStyle;
+
+        var itemStyle = TryFindResource("ThemedMenuItemStyle") as Style;
+        menu.ItemContainerStyle = itemStyle;
+
+        if (slot is not null)
+        {
+            var edit = new MenuItem { Header = "Edit…", Style = itemStyle };
+            // Through the slot's own button, so the inspector opens next to it.
+            edit.Click += (_, _) => Dispatcher.InvokeAsync(() =>
+            {
+                if (FindSlotButton(target, slot) is { } button)
+                {
+                    button.Focus();
+                    button.Command?.Execute(button.CommandParameter);
+                }
+            }, DispatcherPriority.Background);
+            menu.Items.Add(edit);
+        }
+
+        var removeItem = new MenuItem { Header = "Remove", Style = itemStyle };
+        // After the menu has closed: removing asks for confirmation first.
+        removeItem.Click += (_, _) => Dispatcher.InvokeAsync(remove, DispatcherPriority.Background);
+        menu.Items.Add(removeItem);
+
+        menu.IsOpen = true;
+    }
+
+    /// <summary>The button bound to <paramref name="slot"/> at or under <paramref name="root"/>.</summary>
+    private static ButtonBase? FindSlotButton(DependencyObject root, EquipmentSlotViewModel slot)
+    {
+        if (root is ButtonBase { DataContext: var context } self && ReferenceEquals(context, slot))
+            return self;
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            if (FindSlotButton(VisualTreeHelper.GetChild(root, i), slot) is { } found)
+                return found;
+        }
+
+        return null;
+    }
+
+    private void ExecuteInventory(Func<InventoryViewModel, System.Windows.Input.ICommand> command, object parameter)
+    {
+        if (DataContext is InventoryViewModel inventory && command(inventory) is { } c && c.CanExecute(parameter))
+            c.Execute(parameter);
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)

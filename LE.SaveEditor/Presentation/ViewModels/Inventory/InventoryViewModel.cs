@@ -111,6 +111,38 @@ public sealed partial class InventoryViewModel : ViewModelBase
         _dialogService.ShowItemInspector(slot, Character.CharacterClass);
     }
 
+    /// <summary>Removes the item worn in <paramref name="slot"/> after asking; it is deleted from the save on the next save.</summary>
+    [RelayCommand]
+    private void RemoveEquippedItem(EquipmentSlotViewModel? slot)
+    {
+        if (slot?.Item is not { } item
+            || !_dialogService.Confirm("Remove item", $"Remove {item.Base.Name} from the {slot.Label.ToLowerInvariant()} slot? It is deleted from the save when you save."))
+            return;
+
+        slot.Item = null;
+    }
+
+    /// <summary>
+    /// Removes <paramref name="item"/> from the backpack or the idol grid after asking; an item read from the save is
+    /// deleted from it on the next save.
+    /// </summary>
+    [RelayCommand]
+    private void RemoveGridItem(BackpackItemViewModel? item)
+    {
+        if (item is null)
+            return;
+
+        var grid = Idols.Items.Contains(item) ? Idols : Backpack;
+        if (!grid.Items.Contains(item))
+            return;
+
+        var name = item.Equipment?.Item?.Base.Name ?? (item.IsIdol ? "this idol" : "this item");
+        if (!_dialogService.Confirm("Remove item", $"Remove {name} from the {grid.Layout.Name}? It is deleted from the save when you save."))
+            return;
+
+        grid.RemoveItem(item);
+    }
+
     /// <summary>
     /// An empty cell of the backpack (or the idol grid) was right-clicked and an item type picked: opens the item
     /// inspector for a new item of that type next to the cell; an applied item is put into that grid at that cell (or

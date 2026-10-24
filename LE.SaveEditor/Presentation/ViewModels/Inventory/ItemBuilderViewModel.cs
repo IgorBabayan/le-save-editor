@@ -70,6 +70,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         _iconProvider = iconProvider;
         _confirm = confirm;
         _forgingPotential = current?.ForgingPotential;
+        CanRemove = current is not null;
         _extraSearchSlots = extraSearchSlots?.Where(s => s != slot).Distinct().ToList() ?? [];
         Slot = slot;
         CharacterClass = characterClass;
@@ -306,7 +307,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             var isExtra = slot != Slot;
             var bases = _catalog.GetBases(slot).Select(b => (Item: b, Kind: ItemListKind.Bases, IsExtra: isExtra));
             var uniques = _catalog.GetUniques(slot, sets: false).Select(b => (Item: b, Kind: ItemListKind.Uniques, IsExtra: isExtra));
-            var sets = _catalog.GetUniques(slot, sets: true).Select(b => (Item: b, Kind: ItemListKind.Sets, IsExtra: isExtra));
+            // Idols have no set rarity, so set idols (if the data has any) would have no list to switch to.
+            var sets = (slot.IsIdol ? [] : _catalog.GetUniques(slot, sets: true))
+                .Select(b => (Item: b, Kind: ItemListKind.Sets, IsExtra: isExtra));
             return bases.Concat(uniques).Concat(sets);
         });
 
@@ -495,6 +498,23 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     [RelayCommand]
     private void Cancel() => CloseRequested?.Invoke(this, null);
+
+    /// <summary>Raised when the user confirmed removing the item being edited; the dialog closes right after.</summary>
+    public event EventHandler? RemoveRequested;
+
+    /// <summary>The builder edits an existing item (equipped, in the backpack or in the idol grid), which can be removed.</summary>
+    public bool CanRemove { get; }
+
+    /// <summary>Removes the edited item from the character after asking, then closes like Cancel.</summary>
+    [RelayCommand(CanExecute = nameof(CanRemove))]
+    private void Remove()
+    {
+        if (!_confirm("Remove item", "Remove this item from the character? It is deleted from the save when you save."))
+            return;
+
+        RemoveRequested?.Invoke(this, EventArgs.Empty);
+        CloseRequested?.Invoke(this, null);
+    }
 
     // ===== Affixes =====
 

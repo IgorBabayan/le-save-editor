@@ -371,6 +371,20 @@ public sealed partial class BackpackViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Takes <paramref name="item"/> out of the grid (any item, also placeholders the editor cannot show in detail).
+    /// An item read from the save is deleted from it on the next save; a new item is simply dropped.
+    /// </summary>
+    /// <returns><c>true</c> if the item was in the grid.</returns>
+    public bool RemoveItem(BackpackItemViewModel item)
+    {
+        if (!Items.Remove(item))
+            return false;
+
+        Changed?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    /// <summary>
     /// Moves <paramref name="item"/> so its top-left cell is <paramref name="column"/>, <paramref name="row"/>
     /// (dropped after a drag). Nothing changes when it does not fit there.
     /// </summary>
