@@ -7,7 +7,7 @@ public enum AffixType
     Suffix = 1
 }
 
-/// <summary>Where an affix comes from (the game's <c>specialAffixType</c>, equipment affixes only).</summary>
+/// <summary>Where an affix comes from (the game's <c>specialAffixType</c>; idol affixes are <see cref="Normal"/>).</summary>
 public enum AffixCategory
 {
     Normal = 0,
@@ -23,7 +23,7 @@ public enum AffixCategory
 /// <param name="Stats">One modifier per affix stat with this tier's range.</param>
 public sealed record AffixTier(int Number, IReadOnlyList<ItemImplicit> Stats);
 
-/// <summary>A craftable equipment affix from the <c>affixes</c> node.</summary>
+/// <summary>A craftable equipment or idol affix from the <c>affixes</c> node.</summary>
 /// <param name="Id">The game's <c>affixId</c> (stored in item saves).</param>
 /// <param name="Name">Shown name, e.g. "Increased Melee Attack Speed".</param>
 /// <param name="Title">Item name part, e.g. "Deft" or "of Embers".</param>

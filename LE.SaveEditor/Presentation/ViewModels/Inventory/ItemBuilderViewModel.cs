@@ -30,6 +30,10 @@ public enum ItemListKind
 /// Affix slots follow the rarity: bases take 2 prefixes, 2 suffixes, a sealed prefix, a sealed suffix and a
 /// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
 /// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
+/// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic or Unique: an idol base takes one prefix and one suffix
+/// (idol affixes), a unique idol none.
+/// For an item kept in a grid (backpack) a search can also list the items of extra slots (a weapon search finds
+/// off-hands too); without a search only the slot's own items are listed.
 /// </summary>
 public sealed partial class ItemBuilderViewModel : ViewModelBase
 {
@@ -43,26 +47,40 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary>Forging potential of the item being edited, kept when it is applied again (the builder does not edit it).</summary>
     private readonly int? _forgingPotential;
 
+    /// <summary>Slots whose items a search lists besides the slot's own.</summary>
+    private readonly IReadOnlyList<EquipmentSlot> _extraSearchSlots;
+
+    /// <summary>Rarities an idol can have.</summary>
+    private static readonly ItemRarity[] IdolRarities = [ItemRarity.Normal, ItemRarity.Magic, ItemRarity.Unique];
+
     /// <param name="confirm">Asks a Yes/No question (title, message); <c>true</c> for Yes.</param>
+    /// <param name="extraSearchSlots">
+    /// Slots whose items a search also lists (only while searching); picking one builds that item in this builder.
+    /// </param>
     public ItemBuilderViewModel(
         IItemBaseCatalog catalog,
         IIconProvider iconProvider,
         Func<string, string, bool> confirm,
         EquipmentSlot slot,
         CharacterClass characterClass,
-        BuiltItem? current)
+        BuiltItem? current,
+        IReadOnlyList<EquipmentSlot>? extraSearchSlots = null)
     {
         _catalog = catalog;
         _iconProvider = iconProvider;
         _confirm = confirm;
         _forgingPotential = current?.ForgingPotential;
+        CanRemove = current is not null;
+        _extraSearchSlots = extraSearchSlots?.Where(s => s != slot).Distinct().ToList() ?? [];
         Slot = slot;
         CharacterClass = characterClass;
         IsDatabaseAvailable = catalog.IsAvailable;
         IsDatabaseOutdated = catalog.IsOutdated;
 
-        Rarities = Enum.GetValues<ItemRarity>().Select(r => new RarityOptionViewModel(r)).ToList();
-        _selectedRarity = Rarities.First(r => r.Rarity == (current?.Rarity ?? ItemRarity.Normal));
+        Rarities = (slot.IsIdol ? IdolRarities : Enum.GetValues<ItemRarity>())
+            .Select(r => new RarityOptionViewModel(r))
+            .ToList();
+        _selectedRarity = Rarities.FirstOrDefault(r => r.Rarity == (current?.Rarity ?? ItemRarity.Normal)) ?? Rarities[0];
         _selectedRarity.IsSelected = true;
         ListKind = KindOf(_selectedRarity.Rarity);
 
@@ -72,7 +90,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         // Editing an equipped item: select it again and keep its rolls.
         if (current is not null)
         {
-            var match = CurrentListOptions.FirstOrDefault(o => o.Base.BaseTypeId == current.Base.BaseTypeId
+            // Also among the extra slots' items: a backpack weapon slot may hold an off-hand picked from a search.
+            var match = _allOptions.Where(o => o.Kind == ListKind).FirstOrDefault(o => o.Base.BaseTypeId == current.Base.BaseTypeId
                                                       && o.Base.SubTypeId == current.Base.SubTypeId
                                                       && o.Base.UniqueId == current.Base.UniqueId);
             if (match is not null)
@@ -248,7 +267,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public string EmptyBasesText =>
         !IsDatabaseAvailable ? "The game database was not found. Generate it with the database button in the title bar, then reopen the builder."
-        : IsSearching ? "No bases, unique or set items match the search."
+        : IsSearching ? Slot.IsIdol ? "No idols or unique idols match the search." : "No bases, unique or set items match the search."
         : !CurrentListOptions.Any(o => !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
         : ShowOnlyUsable && !CurrentListOptions.Any(o => o.IsUsable && !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
         : $"No {ListNoun} match the search.";
@@ -275,18 +294,27 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary>A search is typed: the list spans bases, unique and set items.</summary>
     private bool IsSearching => !string.IsNullOrWhiteSpace(SearchText);
 
-    /// <summary>Items of the selected rarity's list.</summary>
-    private IEnumerable<BaseOptionViewModel> CurrentListOptions => _allOptions.Where(o => o.Kind == ListKind);
+    /// <summary>Items of the selected rarity's list (the slot's own; extra search slots only show up in a search).</summary>
+    private IEnumerable<BaseOptionViewModel> CurrentListOptions => _allOptions.Where(o => o.Kind == ListKind && !o.IsFromExtraSlot);
 
-    /// <summary>Loads bases, unique and set items of the slot once; the filter picks what is shown.</summary>
+    /// <summary>
+    /// Loads bases, unique and set items of the slot (and of the extra search slots) once; the filter picks what is shown.
+    /// </summary>
     private void LoadOptions()
     {
-        var bases = _catalog.GetBases(Slot).Select(b => (Item: b, Kind: ItemListKind.Bases));
-        var uniques = _catalog.GetUniques(Slot, sets: false).Select(b => (Item: b, Kind: ItemListKind.Uniques));
-        var sets = _catalog.GetUniques(Slot, sets: true).Select(b => (Item: b, Kind: ItemListKind.Sets));
+        var items = new[] { Slot }.Concat(_extraSearchSlots).SelectMany(slot =>
+        {
+            var isExtra = slot != Slot;
+            var bases = _catalog.GetBases(slot).Select(b => (Item: b, Kind: ItemListKind.Bases, IsExtra: isExtra));
+            var uniques = _catalog.GetUniques(slot, sets: false).Select(b => (Item: b, Kind: ItemListKind.Uniques, IsExtra: isExtra));
+            // Idols have no set rarity, so set idols (if the data has any) would have no list to switch to.
+            var sets = (slot.IsIdol ? [] : _catalog.GetUniques(slot, sets: true))
+                .Select(b => (Item: b, Kind: ItemListKind.Sets, IsExtra: isExtra));
+            return bases.Concat(uniques).Concat(sets);
+        });
 
-        _allOptions = bases.Concat(uniques).Concat(sets)
-            .Select(x => new BaseOptionViewModel(x.Item, x.Kind, CharacterClass, _iconProvider))
+        _allOptions = items
+            .Select(x => new BaseOptionViewModel(x.Item, x.Kind, CharacterClass, _iconProvider) { IsFromExtraSlot = x.IsExtra })
             .OrderBy(o => o.GroupOrder)
             .ThenBy(o => o.GroupName, StringComparer.Ordinal)
             .ThenBy(o => o.Base.LevelRequirement)
@@ -471,6 +499,23 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     [RelayCommand]
     private void Cancel() => CloseRequested?.Invoke(this, null);
 
+    /// <summary>Raised when the user confirmed removing the item being edited; the dialog closes right after.</summary>
+    public event EventHandler? RemoveRequested;
+
+    /// <summary>The builder edits an existing item (equipped, in the backpack or in the idol grid), which can be removed.</summary>
+    public bool CanRemove { get; }
+
+    /// <summary>Removes the edited item from the character after asking, then closes like Cancel.</summary>
+    [RelayCommand(CanExecute = nameof(CanRemove))]
+    private void Remove()
+    {
+        if (!_confirm("Remove item", "Remove this item from the character? It is deleted from the save when you save."))
+            return;
+
+        RemoveRequested?.Invoke(this, EventArgs.Empty);
+        CloseRequested?.Invoke(this, null);
+    }
+
     // ===== Affixes =====
 
     /// <summary>Affix slots of the current rarity (empty until an item is selected, see <see cref="HasAffixSlots"/>).</summary>
@@ -534,13 +579,18 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     [RelayCommand]
     private void CloseAffixPicker() => AffixPickerSlot = null;
 
-    /// <summary>Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets corruption.</summary>
+    /// <summary>
+    /// Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets
+    /// corruption; idols 1P / 1S, unique idols none.
+    /// </summary>
     private void BuildAffixSlots()
     {
-        AffixSlotKind[] kinds = ListKind switch
+        AffixSlotKind[] kinds = (Slot.IsIdol, ListKind) switch
         {
-            ItemListKind.Sets => [AffixSlotKind.Corrupted],
-            ItemListKind.Uniques => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
+            (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix],
+            (true, _) => [],
+            (_, ItemListKind.Sets) => [AffixSlotKind.Corrupted],
+            (_, ItemListKind.Uniques) => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             _ => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix,
                   AffixSlotKind.SealedPrefix, AffixSlotKind.SealedSuffix, AffixSlotKind.Corrupted]
         };
@@ -596,8 +646,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     private void OnAffixesChanged()
     {
         // A unique with any affix is a legendary.
-        if (SelectedRarity.Rarity == ItemRarity.Unique && HasAnyAffix)
-            ApplyRarity(Rarities.First(r => r.Rarity == ItemRarity.Legendary));
+        if (SelectedRarity.Rarity == ItemRarity.Unique && HasAnyAffix
+            && Rarities.FirstOrDefault(r => r.Rarity == ItemRarity.Legendary) is { } legendary)
+            ApplyRarity(legendary);
 
         // Plain bases take their rarity from their affixes, like in the game (set / unique / legendary keep theirs).
         if (ListKind == ItemListKind.Bases && HasSelectedBase)
@@ -614,12 +665,16 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Normal without affixes, Magic with 1–2, Rare with 3–4, Exalted as soon as one affix is tier 6 or higher.
-    /// Prefixes, suffixes and sealed affixes count; the corruption does not change the rarity.
+    /// Normal without affixes, Magic with 1–2, Rare with 3–4, Exalted as soon as one affix is tier 6 or higher
+    /// (idols: Normal or Magic). Prefixes, suffixes and sealed affixes count; the corruption does not change the rarity.
     /// </summary>
     private ItemRarity RarityFromAffixes()
     {
         var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted).ToList();
+
+        // Idols are never rare or exalted: any affix makes them magic.
+        if (Slot.IsIdol)
+            return affixes.Count == 0 ? ItemRarity.Normal : ItemRarity.Magic;
         if (affixes.Any(s => s.TierNumber >= ExaltedTier))
             return ItemRarity.Exalted;
 

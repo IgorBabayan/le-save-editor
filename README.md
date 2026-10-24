@@ -25,9 +25,20 @@ Offline, slow (> 15 s) or failed startup checks are ignored.
 download / countdown / install sequence.
 Copies that were not installed with the installer (e.g. debug builds) are never updated.
 
+## Inventory
+- Click an equipment slot, a backpack item or an idol to edit it in the item inspector; drag backpack items and idols
+  to move them inside their grid.
+- Right-click an empty backpack cell to build a new item there (equipment or an idol), or an empty cell of the idol
+  grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
+- Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
+  equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
+- Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
+- Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
+  finds off-hands (shields, quivers, catalysts).
+
 ## Saving
 The save button in the title bar (or `Ctrl+S`) writes the changes of the selected character —
-equipped items and the backpack (edited, moved or removed items) — into its `1CHARACTERSLOT_*` file.
+equipped items, idols and the backpack (edited, moved, added or removed items) — into its `1CHARACTERSLOT_*` file.
 It is enabled while the character has changes; changes of several characters are kept while switching
 between them, and closing the editor or reloading the save folder asks before discarding them.
 

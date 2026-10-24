@@ -28,7 +28,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <summary>What was read from base.db.</summary>
     /// <param name="Uniques">Unique and set items.</param>
     /// <param name="HasStatNames">The <c>Properties</c> table exists (databases made before it show "Property 10" etc.).</param>
-    /// <param name="Affixes">Equipment affixes.</param>
+    /// <param name="Affixes">Equipment and idol affixes.</param>
     private sealed record Catalog(IReadOnlyList<ItemBase> Bases, IReadOnlyList<ItemBase> Uniques, IReadOnlyList<AffixDefinition> Affixes, bool HasStatNames);
 
     public bool IsAvailable => GetAll().Count > 0;
@@ -83,8 +83,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     public ItemBase? FindUnique(int uniqueId) =>
         GetCatalog().Uniques.FirstOrDefault(u => u.UniqueId == uniqueId);
 
-    public AffixDefinition? FindAffix(int affixId) =>
-        GetCatalog().Affixes.FirstOrDefault(a => a.Id == affixId);
+    public AffixDefinition? FindAffix(int affixId, int? baseTypeId = null)
+    {
+        // Equipment and idol affixes are separate lists in the data; prefer the one that can roll on the item.
+        var matches = GetCatalog().Affixes.Where(a => a.Id == affixId).ToList();
+        return (baseTypeId is { } type ? matches.FirstOrDefault(a => a.CanRollOnType(type)) : null)
+               ?? matches.FirstOrDefault();
+    }
 
     private Catalog GetCatalog()
     {
@@ -340,8 +345,15 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <summary>Display categories that belong to one class (affixes of other classes are not offered).</summary>
     private static readonly string[] ClassCategories = ["Acolyte", "Mage", "Primalist", "Sentinel", "Rogue"];
 
+    /// <summary><c>rollsOn</c> of equipment affixes.</summary>
+    private const int RollsOnEquipment = 0;
+
+    /// <summary><c>rollsOn</c> of idol affixes.</summary>
+    private const int RollsOnIdols = 1;
+
     /// <summary>
-    /// Equipment affixes (<c>rollsOn</c> 0) of the craftable kinds. An affix has one stat (<c>property</c>, <c>tags</c>,
+    /// Equipment affixes (<c>rollsOn</c> 0) of the craftable kinds and idol affixes (<c>rollsOn</c> 1); which item types
+    /// an affix fits comes from its <c>canRollOn</c> list. An affix has one stat (<c>property</c>, <c>tags</c>,
     /// <c>modifierType</c> on the affix) or several (<c>affixProperties</c>); each tier gives the range of the first stat
     /// in <c>minRoll</c> / <c>maxRoll</c> and of the others in <c>extraRolls</c>.
     /// </summary>
@@ -353,10 +365,16 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         {
             using var document = TryParse(json);
             if (document?.RootElement is not { ValueKind: JsonValueKind.Object } affix
-                || GetInt(affix, "rollsOn") is not (null or 0)
-                || GetInt(affix, "affixId") is not { } id
-                || GetInt(affix, "specialAffixType") is not { } special
-                || !Enum.IsDefined((AffixCategory)special))
+                || GetInt(affix, "affixId") is not { } id)
+                continue;
+
+            var rollsOn = GetInt(affix, "rollsOn") ?? RollsOnEquipment;
+            if (rollsOn is not (RollsOnEquipment or RollsOnIdols))
+                continue;
+
+            // Idol affixes may leave the special type out: they are plain affixes.
+            var special = GetInt(affix, "specialAffixType") ?? (rollsOn == RollsOnIdols ? (int)AffixCategory.Normal : -1);
+            if (!Enum.IsDefined((AffixCategory)special))
                 continue;
 
             var name = GetString(affix, "affixDisplayName") ?? GetString(affix, "affixName") ?? rowName;

@@ -19,8 +19,8 @@ public interface IItemBaseCatalog
     IReadOnlyList<ItemBase> GetUniques(EquipmentSlot slot, bool sets);
 
     /// <summary>
-    /// Equipment affixes that can be crafted on item type <paramref name="baseTypeId"/> (prefixes, suffixes,
-    /// experimental, personal, set, variant and corrupted affixes; idol affixes are left out).
+    /// Affixes that can be crafted on item type <paramref name="baseTypeId"/>: for equipment its prefixes, suffixes,
+    /// experimental, personal, set, variant and corrupted affixes; for an idol type its idol affixes.
     /// </summary>
     IReadOnlyList<AffixDefinition> GetAffixes(int baseTypeId);
 
@@ -30,8 +30,11 @@ public interface IItemBaseCatalog
     /// <summary>The unique / set item with <paramref name="uniqueId"/> (<c>uniqueID</c>), or <c>null</c>.</summary>
     ItemBase? FindUnique(int uniqueId);
 
-    /// <summary>The equipment affix with <paramref name="affixId"/> (<c>affixId</c>), or <c>null</c>.</summary>
-    AffixDefinition? FindAffix(int affixId);
+    /// <summary>
+    /// The affix with <paramref name="affixId"/> (<c>affixId</c>), or <c>null</c>. When equipment and idol affixes share
+    /// the id, the one that can roll on <paramref name="baseTypeId"/> wins.
+    /// </summary>
+    AffixDefinition? FindAffix(int affixId, int? baseTypeId = null);
 
     /// <summary>Forgets what was read, so a database written by the generator is picked up.</summary>
     void ClearCache();

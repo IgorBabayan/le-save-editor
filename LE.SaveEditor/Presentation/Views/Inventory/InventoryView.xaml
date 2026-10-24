@@ -8,6 +8,53 @@
              d:DataContext="{d:DesignInstance Type=inventoryVm:InventoryViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="800" d:DesignWidth="900">
 
+    <UserControl.Resources>
+        <!-- An item of a grid (backpack, idol grid), placed over the cells of its footprint. -->
+        <Style x:Key="GridItemContainerStyle" TargetType="ContentPresenter">
+            <Setter Property="Grid.Column" Value="{Binding Column}" />
+            <Setter Property="Grid.Row" Value="{Binding Row}" />
+            <Setter Property="Grid.ColumnSpan" Value="{Binding Width}" />
+            <Setter Property="Grid.RowSpan" Value="{Binding Height}" />
+        </Style>
+
+        <DataTemplate x:Key="GridItemTemplate" DataType="{x:Type inventoryVm:BackpackItemViewModel}">
+            <Grid x:Name="ItemRoot">
+                <!-- Equipment and idols the editor can decode: same tile as an equipment slot.
+                     The wrapper carries the visibility, the button binds to the slot. -->
+                <Grid Visibility="{Binding IsEquipment, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Margin="2"
+                            Style="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Equipment}"
+                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                </Grid>
+
+                <!-- Keys and items or idols missing from base.db keep their cells taken. -->
+                <Border Margin="2"
+                        CornerRadius="6"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource WindowBorderBrush}"
+                        Background="{DynamicResource ControlBackgroundBrush}"
+                        SnapsToDevicePixels="True"
+                        ToolTip="{Binding PlaceholderToolTip}"
+                        Visibility="{Binding IsEquipment, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                    <TextBlock HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Opacity="0.7"
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               Text="{Binding PlaceholderLabel}" />
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <!-- The item stays in its cells, dimmed, until it is dropped. -->
+                <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                    <Setter TargetName="ItemRoot" Property="Opacity" Value="0.4" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
         <Grid Margin="0,16,0,0">
             <Grid.RowDefinitions>
@@ -23,8 +70,11 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- ===== Equipment: click a slot to open the item builder for it ===== -->
-                <Grid Grid.Column="0" VerticalAlignment="Top">
+                <!-- ===== Equipment: click a slot to open the item builder for it, right-click to edit or remove its item ===== -->
+                <Grid Grid.Column="0"
+                      VerticalAlignment="Top"
+                      Background="Transparent"
+                      MouseRightButtonUp="EquipmentGrid_OnMouseRightButtonUp">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="112" />
                         <ColumnDefinition Width="144" />
@@ -108,43 +158,102 @@
                                Text="Idols"
                                Style="{StaticResource SectionHeaderTextStyle}" />
 
+                    <!-- Idol grid: 5 × 5 cells without the corners (60 px pitch, matching the item layer).
+                         Click an idol to edit it, drag it to move it, right-click an empty cell to build a new one. -->
                     <Border Padding="6"
                             HorizontalAlignment="Center"
                             CornerRadius="6"
                             BorderThickness="1"
                             BorderBrush="{DynamicResource ControlBorderBrush}"
                             Background="{DynamicResource TitleBarBackgroundBrush}">
-                        <ItemsControl ItemsSource="{Binding IdolCells}" Focusable="False">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Rows="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}"
-                                                 Columns="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type inventoryVm:IdolCellViewModel}">
-                                    <Border x:Name="Cell"
-                                            Width="56"
-                                            Height="56"
-                                            Margin="2"
-                                            CornerRadius="4"
-                                            BorderThickness="1"
-                                            BorderBrush="{DynamicResource ControlBorderBrush}"
-                                            Background="{DynamicResource ControlBackgroundBrush}"
-                                            SnapsToDevicePixels="True" />
-                                    <DataTemplate.Triggers>
-                                        <!-- Blocked cells can never hold an idol. -->
-                                        <DataTrigger Binding="{Binding IsBlocked}" Value="True">
-                                            <Setter TargetName="Cell" Property="Background" Value="Transparent" />
-                                            <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
-                                            <Setter TargetName="Cell" Property="Opacity" Value="0.5" />
-                                            <Setter TargetName="Cell" Property="ToolTip" Value="Unavailable" />
-                                        </DataTrigger>
-                                    </DataTemplate.Triggers>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <Grid DataContext="{Binding Idols}">
+                            <ItemsControl x:Name="IdolCells"
+                                          ItemsSource="{Binding Cells}"
+                                          Focusable="False"
+                                          IsHitTestVisible="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}"
+                                                     Columns="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type inventoryVm:BackpackCellViewModel}">
+                                        <Border x:Name="Cell"
+                                                Width="56"
+                                                Height="56"
+                                                Margin="2"
+                                                CornerRadius="4"
+                                                BorderThickness="1"
+                                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                Background="{DynamicResource ControlBackgroundBrush}"
+                                                SnapsToDevicePixels="True" />
+                                        <DataTemplate.Triggers>
+                                            <!-- Blocked cells can never hold an idol. -->
+                                            <DataTrigger Binding="{Binding IsBlocked}" Value="True">
+                                                <Setter TargetName="Cell" Property="Background" Value="Transparent" />
+                                                <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                                <Setter TargetName="Cell" Property="Opacity" Value="0.5" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Idols, each spanning the cells of its footprint; dragged and built like backpack items. -->
+                            <ItemsControl x:Name="IdolItems"
+                                          ItemsSource="{Binding Items}"
+                                          Background="Transparent"
+                                          Focusable="False"
+                                          ItemContainerStyle="{StaticResource GridItemContainerStyle}"
+                                          ItemTemplate="{StaticResource GridItemTemplate}"
+                                          PreviewMouseLeftButtonDown="GridItems_OnPreviewMouseLeftButtonDown"
+                                          PreviewMouseMove="GridItems_OnPreviewMouseMove"
+                                          PreviewMouseLeftButtonUp="GridItems_OnPreviewMouseLeftButtonUp"
+                                          MouseRightButtonUp="GridItems_OnMouseRightButtonUp"
+                                          LostMouseCapture="GridItems_OnLostMouseCapture">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="60" />
+                                                <ColumnDefinition Width="60" />
+                                                <ColumnDefinition Width="60" />
+                                                <ColumnDefinition Width="60" />
+                                                <ColumnDefinition Width="60" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="60" />
+                                                <RowDefinition Height="60" />
+                                                <RowDefinition Height="60" />
+                                                <RowDefinition Height="60" />
+                                                <RowDefinition Height="60" />
+                                            </Grid.RowDefinitions>
+                                        </Grid>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+
+                            <!-- Cells the dragged idol would take: green when it fits there, red otherwise. -->
+                            <Canvas IsHitTestVisible="False" ClipToBounds="True">
+                                <Border x:Name="IdolDropPreview"
+                                        Visibility="Collapsed"
+                                        CornerRadius="6"
+                                        BorderThickness="2"
+                                        SnapsToDevicePixels="True" />
+                            </Canvas>
+                        </Grid>
                     </Border>
+                    <TextBlock Margin="0,6,0,0"
+                               HorizontalAlignment="Center"
+                               Opacity="0.7"
+                               DataContext="{Binding Idols}"
+                               Text="{Binding Summary}"
+                               Style="{StaticResource SecondaryTextStyle}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               Opacity="0.7"
+                               Text="Right-click an empty cell to build an idol, or an idol to remove it."
+                               Style="{StaticResource SecondaryTextStyle}" />
 
                     <!-- Crafting materials -->
                     <Border Margin="0,16,0,0"
@@ -228,15 +337,18 @@
 
                                 <!-- Items, each spanning the cells of its footprint. Items are dragged with the mouse
                                      inside the grid only (code-behind); a click without moving opens the inspector.
-                                     The transparent background lets empty cells take a double-click (new item). -->
+                                     The transparent background lets empty cells take a right-click (new item). -->
                                 <ItemsControl x:Name="BackpackItems"
                                               ItemsSource="{Binding Items}"
                                               Background="Transparent"
                                               Focusable="False"
-                                              PreviewMouseLeftButtonDown="BackpackItems_OnPreviewMouseLeftButtonDown"
-                                              PreviewMouseMove="BackpackItems_OnPreviewMouseMove"
-                                              PreviewMouseLeftButtonUp="BackpackItems_OnPreviewMouseLeftButtonUp"
-                                              LostMouseCapture="BackpackItems_OnLostMouseCapture">
+                                              ItemContainerStyle="{StaticResource GridItemContainerStyle}"
+                                              ItemTemplate="{StaticResource GridItemTemplate}"
+                                              PreviewMouseLeftButtonDown="GridItems_OnPreviewMouseLeftButtonDown"
+                                              PreviewMouseMove="GridItems_OnPreviewMouseMove"
+                                              PreviewMouseLeftButtonUp="GridItems_OnPreviewMouseLeftButtonUp"
+                                              MouseRightButtonUp="GridItems_OnMouseRightButtonUp"
+                                              LostMouseCapture="GridItems_OnLostMouseCapture">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <Grid>
@@ -269,52 +381,6 @@
                                             </Grid>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemContainerStyle>
-                                        <Style TargetType="ContentPresenter">
-                                            <Setter Property="Grid.Column" Value="{Binding Column}" />
-                                            <Setter Property="Grid.Row" Value="{Binding Row}" />
-                                            <Setter Property="Grid.ColumnSpan" Value="{Binding Width}" />
-                                            <Setter Property="Grid.RowSpan" Value="{Binding Height}" />
-                                        </Style>
-                                    </ItemsControl.ItemContainerStyle>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="{x:Type inventoryVm:BackpackItemViewModel}">
-                                            <Grid x:Name="ItemRoot">
-                                                <!-- Equipment the editor can decode: same tile as an equipment slot.
-                                                     The wrapper carries the visibility, the button binds to the slot. -->
-                                                <Grid Visibility="{Binding IsEquipment, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <Button Margin="2"
-                                                            Style="{StaticResource EquipmentSlotButtonStyle}"
-                                                            DataContext="{Binding Equipment}"
-                                                            Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}" />
-                                                </Grid>
-
-                                                <!-- Idols, keys and items missing from base.db keep their cells taken. -->
-                                                <Border Margin="2"
-                                                        CornerRadius="6"
-                                                        BorderThickness="1"
-                                                        BorderBrush="{DynamicResource WindowBorderBrush}"
-                                                        Background="{DynamicResource ControlBackgroundBrush}"
-                                                        SnapsToDevicePixels="True"
-                                                        ToolTip="{Binding PlaceholderToolTip}"
-                                                        Visibility="{Binding IsEquipment, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                                    <TextBlock HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               FontSize="11"
-                                                               Opacity="0.7"
-                                                               Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                                               Text="{Binding PlaceholderLabel}" />
-                                                </Border>
-                                            </Grid>
-                                            <DataTemplate.Triggers>
-                                                <!-- The item stays in its cells, dimmed, until it is dropped. -->
-                                                <DataTrigger Binding="{Binding IsDragging}" Value="True">
-                                                    <Setter TargetName="ItemRoot" Property="Opacity" Value="0.4" />
-                                                </DataTrigger>
-                                            </DataTemplate.Triggers>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
                                 <!-- Cells the dragged item would take: green when it fits there, red otherwise. -->
@@ -333,7 +399,7 @@
                                    Style="{StaticResource SecondaryTextStyle}" />
                         <TextBlock Margin="2,2,0,0"
                                    Opacity="0.7"
-                                   Text="Double-click an empty cell to build a new item there."
+                                   Text="Right-click an empty cell to build a new item there, or an item to edit or remove it."
                                    Style="{StaticResource SecondaryTextStyle}" />
                     </StackPanel>
                 </TabItem>
