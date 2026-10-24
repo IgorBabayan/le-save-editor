@@ -54,6 +54,7 @@ public sealed class ItemTooltipViewModel
         if (mods.Count > 0)
             sections.Add(new ItemTooltipSection("MODIFIERS", mods));
 
+        AddAffixSection(sections, "UNIQUE AFFIX", item, AffixSlotKind.Unique);
         AddAffixSection(sections, "PREFIXES", item, AffixSlotKind.Prefix);
         AddAffixSection(sections, "SUFFIXES", item, AffixSlotKind.Suffix);
         AddAffixSection(sections, "SEALED AFFIX", item, AffixSlotKind.SealedPrefix, AffixSlotKind.SealedSuffix);

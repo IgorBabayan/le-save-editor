@@ -6,6 +6,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData.Items;
+using Material.Icons;
+using Material.Icons.WPF;
 
 namespace LE.SaveEditor.Presentation.Views.Inventory;
 
@@ -27,21 +29,34 @@ public partial class InventoryView : UserControl
     /// <summary>Opacity of the highlight's fill (its border is fully opaque).</summary>
     private const double DropFillOpacity = 0.2;
 
-    /// <summary>Item types offered for a new backpack item, in menu order (rings are built as left rings).</summary>
-    private static readonly EquipmentSlot[] NewItemSlots =
+    /// <summary>
+    /// Item types offered for a new backpack item, in menu order and grouped (armour, weapons, jewellery, idols);
+    /// a separator goes between groups. Rings are built as left rings.
+    /// </summary>
+    private static readonly EquipmentSlot[][] NewItemSlotGroups =
     [
-        EquipmentSlot.Helmet,
-        EquipmentSlot.BodyArmour,
-        EquipmentSlot.Gloves,
-        EquipmentSlot.Belt,
-        EquipmentSlot.Boots,
-        EquipmentSlot.Weapon,
-        EquipmentSlot.OffHand,
-        EquipmentSlot.Amulet,
-        EquipmentSlot.LeftRing,
-        EquipmentSlot.Relic,
-        EquipmentSlot.Idol
+        [EquipmentSlot.Helmet, EquipmentSlot.BodyArmour, EquipmentSlot.Gloves, EquipmentSlot.Belt, EquipmentSlot.Boots],
+        [EquipmentSlot.Weapon, EquipmentSlot.OffHand],
+        [EquipmentSlot.Amulet, EquipmentSlot.LeftRing, EquipmentSlot.Relic],
+        [EquipmentSlot.Idol]
     ];
+
+    /// <summary>Material icon of each item type in the menus (names of <see cref="MaterialIconKind"/>).</summary>
+    private static string IconNameOf(EquipmentSlot slot) => slot switch
+    {
+        EquipmentSlot.Helmet => "HardHat",
+        EquipmentSlot.BodyArmour => "TshirtCrew",
+        EquipmentSlot.Gloves => "HandBackLeft",
+        EquipmentSlot.Belt => "Seatbelt",
+        EquipmentSlot.Boots => "ShoeFormal",
+        EquipmentSlot.Weapon => "Sword",
+        EquipmentSlot.OffHand => "Shield",
+        EquipmentSlot.Amulet => "Necklace",
+        EquipmentSlot.LeftRing or EquipmentSlot.RightRing => "Ring",
+        EquipmentSlot.Relic => "TreasureChest",
+        EquipmentSlot.Idol => "DiamondStone",
+        _ => "HelpCircleOutline"
+    };
 
     /// <summary>The controls of one grid: its item layer, its background cells and its drop highlight.</summary>
     private sealed record GridParts(ItemsControl Items, ItemsControl Cells, Border Preview)
@@ -213,11 +228,10 @@ public partial class InventoryView : UserControl
             menu.Style = menuStyle;
 
         var itemStyle = TryFindResource("ThemedMenuItemStyle") as Style;
-        menu.ItemContainerStyle = itemStyle;
 
         if (slot is not null)
         {
-            var edit = new MenuItem { Header = "Edit…", Style = itemStyle };
+            var edit = new MenuItem { Header = "Edit…", Icon = MenuIcon("PencilOutline"), Style = itemStyle };
             // Through the slot's own button, so the inspector opens next to it.
             edit.Click += (_, _) => Dispatcher.InvokeAsync(() =>
             {
@@ -228,9 +242,10 @@ public partial class InventoryView : UserControl
                 }
             }, DispatcherPriority.Background);
             menu.Items.Add(edit);
+            menu.Items.Add(MenuSeparator());
         }
 
-        var removeItem = new MenuItem { Header = "Remove", Style = itemStyle };
+        var removeItem = new MenuItem { Header = "Remove", Icon = MenuIcon("DeleteOutline"), Style = itemStyle };
         // After the menu has closed: removing asks for confirmation first.
         removeItem.Click += (_, _) => Dispatcher.InvokeAsync(remove, DispatcherPriority.Background);
         menu.Items.Add(removeItem);
@@ -353,7 +368,6 @@ public partial class InventoryView : UserControl
             menu.Style = menuStyle;
 
         var itemStyle = TryFindResource("ThemedMenuItemStyle") as Style;
-        menu.ItemContainerStyle = itemStyle;
 
         // Title: a menu item that can be neither highlighted nor clicked.
         menu.Items.Add(new MenuItem
@@ -368,12 +382,24 @@ public partial class InventoryView : UserControl
             Focusable = false,
             IsHitTestVisible = false
         });
-        foreach (var slot in NewItemSlots)
+        foreach (var entry in NewItemSlotGroups.SelectMany(group => group.Select((s, i) => (Slot: s, StartsGroup: i == 0))))
+        {
+            // Every group, the first included (it follows the title), starts with a separator.
+            if (entry.StartsGroup)
+                menu.Items.Add(MenuSeparator());
+
+            AddNewItemEntry(entry.Slot);
+        }
+
+        menu.IsOpen = true;
+
+        void AddNewItemEntry(EquipmentSlot slot)
         {
             var hasRoom = grid.HasRoomFor(slot);
             var menuItem = new MenuItem
             {
                 Header = slot.DisplayName,
+                Icon = MenuIcon(IconNameOf(slot)),
                 IsEnabled = hasRoom,
                 Style = itemStyle,
                 ToolTip = hasRoom ? null : $"No room left in the {grid.Layout.Name} for this item type"
@@ -387,9 +413,16 @@ public partial class InventoryView : UserControl
                 DispatcherPriority.Background);
             menu.Items.Add(menuItem);
         }
-
-        menu.IsOpen = true;
     }
+
+    /// <summary>A 16 px Material icon for a menu entry; <c>null</c> (no icon) for an unknown name.</summary>
+    private static MaterialIcon? MenuIcon(string kind) =>
+        Enum.TryParse<MaterialIconKind>(kind, out var iconKind)
+            ? new MaterialIcon { Kind = iconKind, Width = 16, Height = 16 }
+            : null;
+
+    /// <summary>A themed line between groups of a menu.</summary>
+    private Separator MenuSeparator() => new() { Style = TryFindResource("ThemedMenuSeparatorStyle") as Style };
 
     private void BuildNewItem(EquipmentSlot slot, BackpackViewModel grid, int column, int row, FrameworkElement? anchor)
     {

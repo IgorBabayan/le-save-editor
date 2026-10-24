@@ -12,7 +12,7 @@
         xmlns:characterViews="clr-namespace:LE.SaveEditor.Presentation.Views.Characters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
-        Title="Last Epoch Save Editor" Height="1080" Width="1120"
+        Title="Last Epoch Save Editor" Height="1150" Width="1140"
         MinHeight="300" MinWidth="500"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}"
@@ -20,7 +20,8 @@
 
     <!--
         WindowChrome removes the native title bar but keeps native behaviour:
-        resize borders, Aero Snap, drag to move, double-click to maximize, Alt+Space menu.
+        resize borders, Aero Snap, drag to move, Alt+Space menu.
+        Maximizing is disabled (see MainWindow.xaml.cs, DisableMaximize).
     -->
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="32"
@@ -112,8 +113,6 @@
 
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static SystemCommands.MinimizeWindowCommand}" Executed="OnMinimizeExecuted" />
-        <CommandBinding Command="{x:Static SystemCommands.MaximizeWindowCommand}" Executed="OnMaximizeExecuted" />
-        <CommandBinding Command="{x:Static SystemCommands.RestoreWindowCommand}" Executed="OnRestoreExecuted" />
         <CommandBinding Command="{x:Static SystemCommands.CloseWindowCommand}" Executed="OnCloseExecuted" />
     </Window.CommandBindings>
 
@@ -368,17 +367,6 @@
                             ToolTip="Minimize"
                             Content="&#xE921;"
                             Command="{x:Static SystemCommands.MinimizeWindowCommand}" />
-                    <Button x:Name="MaximizeButton"
-                            Style="{StaticResource CaptionButtonStyle}"
-                            ToolTip="Maximize"
-                            Content="&#xE922;"
-                            Command="{x:Static SystemCommands.MaximizeWindowCommand}" />
-                    <Button x:Name="RestoreButton"
-                            Style="{StaticResource CaptionButtonStyle}"
-                            ToolTip="Restore Down"
-                            Content="&#xE923;"
-                            Visibility="Collapsed"
-                            Command="{x:Static SystemCommands.RestoreWindowCommand}" />
                     <Button Style="{StaticResource CloseCaptionButtonStyle}"
                             ToolTip="Close"
                             Content="&#xE8BB;"

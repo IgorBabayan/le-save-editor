@@ -56,6 +56,10 @@ public sealed record ItemImplicit(
 /// <param name="BaseName">Name of the base a unique is built on (e.g. "Jewelled Circlet"); <c>null</c> for a plain base.</param>
 /// <param name="UniqueMods">Modifiers of a unique / set item, empty for a plain base.</param>
 /// <param name="UniqueEffects">Tooltip lines of a unique / set item that do not roll (e.g. "You are immune to Blind and Chill").</param>
+/// <param name="LegendaryAffixSlots">How many of <paramref name="LegendaryAffixIds"/> the unique can carry at once.</param>
+/// <param name="LegendaryAffixIds">
+/// Affixes only this unique drops as a legendary (e.g. the Blood Rage affixes of Unsated Rage); empty for most uniques.
+/// </param>
 public sealed record ItemBase(
     int BaseTypeId,
     int SubTypeId,
@@ -70,13 +74,20 @@ public sealed record ItemBase(
     bool IsSet = false,
     string? BaseName = null,
     IReadOnlyList<ItemImplicit>? UniqueMods = null,
-    IReadOnlyList<string>? UniqueEffects = null)
+    IReadOnlyList<string>? UniqueEffects = null,
+    IReadOnlyList<int>? LegendaryAffixIds = null,
+    int LegendaryAffixSlots = 1)
 {
     public bool IsUnique => UniqueId is not null;
 
     public IReadOnlyList<ItemImplicit> Mods => UniqueMods ?? [];
 
     public IReadOnlyList<string> Effects => UniqueEffects ?? [];
+
+    public IReadOnlyList<int> LegendaryAffixes => LegendaryAffixIds ?? [];
+
+    /// <summary>Unique affix slots in the item builder: none without own legendary affixes, else at least one.</summary>
+    public int LegendaryAffixCount => LegendaryAffixes.Count == 0 ? 0 : Math.Clamp(LegendaryAffixSlots, 1, LegendaryAffixes.Count);
 
     public bool IsUsableBy(LE.SaveEditor.Services.Saves.Models.CharacterClass characterClass) =>
         ClassRequirement == 0 || (ClassRequirement & (1 << (int)characterClass)) != 0;

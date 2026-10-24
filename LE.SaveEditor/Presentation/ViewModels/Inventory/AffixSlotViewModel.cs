@@ -10,7 +10,10 @@ public enum AffixSlotKind
     Suffix,
     SealedPrefix,
     SealedSuffix,
-    Corrupted
+    Corrupted,
+
+    /// <summary>One of the affixes only a specific unique has as a legendary (e.g. the Blood Rage affixes of Unsated Rage).</summary>
+    Unique
 }
 
 /// <summary>
@@ -37,10 +40,11 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
         AffixSlotKind.Suffix => "Suffix",
         AffixSlotKind.SealedPrefix => "Sealed prefix",
         AffixSlotKind.SealedSuffix => "Sealed suffix",
+        AffixSlotKind.Unique => "Unique affix",
         _ => "Corruption"
     };
 
-    /// <summary>Affix type the slot takes; <c>null</c> for the corruption slot (corrupted affixes only).</summary>
+    /// <summary>Affix type the slot takes; <c>null</c> for the corruption and unique affix slots.</summary>
     public AffixType? AcceptedType => Kind switch
     {
         AffixSlotKind.Prefix or AffixSlotKind.SealedPrefix => AffixType.Prefix,
@@ -52,11 +56,22 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
 
     public bool IsCorrupted => Kind == AffixSlotKind.Corrupted;
 
-    /// <summary><c>true</c> when <paramref name="affix"/> may go into this slot (type and corrupted / not corrupted).</summary>
-    public bool Accepts(AffixDefinition affix) =>
-        IsCorrupted
-            ? affix.Category == AffixCategory.Corrupted
-            : affix.Category != AffixCategory.Corrupted && affix.Type == AcceptedType;
+    /// <summary>The slot takes the unique's own legendary affixes.</summary>
+    public bool IsUniqueAffix => Kind == AffixSlotKind.Unique;
+
+    /// <summary>
+    /// <c>true</c> when <paramref name="affix"/> may go into this slot: prefixes / suffixes take affixes of their type
+    /// that are not corruption-only; the corruption slot takes corruption-only affixes and normal prefixes / suffixes
+    /// (a corruption can also be an ordinary affix, e.g. Cold Penetration on an amulet). A unique's own legendary
+    /// affixes go only into the unique affix slots, and those take nothing else.
+    /// </summary>
+    public bool Accepts(AffixDefinition affix) => Kind switch
+    {
+        AffixSlotKind.Unique => affix.OnlyOnUniques.Count > 0,
+        _ when affix.OnlyOnUniques.Count > 0 => false,
+        AffixSlotKind.Corrupted => affix.Category is AffixCategory.Corrupted or AffixCategory.Normal,
+        _ => affix.Category != AffixCategory.Corrupted && affix.Type == AcceptedType
+    };
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAffix))]

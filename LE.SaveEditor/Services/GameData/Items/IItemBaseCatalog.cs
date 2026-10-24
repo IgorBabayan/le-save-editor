@@ -7,8 +7,8 @@ public interface IItemBaseCatalog
     bool IsAvailable { get; }
 
     /// <summary>
-    /// <c>base.db</c> was generated before stat names were stored (no <c>Properties</c> table):
-    /// implicits show as "Property 10" until the database is updated.
+    /// <c>base.db</c> was generated before stat names were stored (no <c>Properties</c> or <c>AbilityProperties</c> table):
+    /// implicits show as "Property 10" and skill affixes by their internal names until the database is updated.
     /// </summary>
     bool IsOutdated { get; }
 

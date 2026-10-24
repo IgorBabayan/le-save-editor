@@ -26,7 +26,7 @@ internal sealed class GameDbContext(string databaseFile) : DbContext
     /// Version of the table layout, stored as SQLite <c>user_version</c>. Bump it whenever an entity
     /// or table changes: Update then rebuilds the database instead of failing on the old layout.
     /// </summary>
-    public const int SchemaVersion = 3;
+    public const int SchemaVersion = 5;
 
     public async Task<int> GetSchemaVersionAsync(CancellationToken ct)
     {

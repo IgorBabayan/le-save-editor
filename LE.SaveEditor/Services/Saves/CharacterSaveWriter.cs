@@ -12,8 +12,9 @@ namespace LE.SaveEditor.Services.Saves;
 /// <summary>
 /// Writes <c>savedItems</c> changes into a character save. The file is read again and only the changed entries of
 /// <c>savedItems</c> are touched: every other field, unknown properties of the entries and the entry order stay as the
-/// game wrote them. The text is written with the game's layout (<c>EPOCH</c> marker, two-space indentation, the file's
-/// line endings) to a temporary file that then replaces the save, keeping the old file as a timestamped backup.
+/// game wrote them. The JSON is written compact on one line, like the game writes it (the <c>EPOCH</c> marker and
+/// anything after the JSON body are kept), to a temporary file that then replaces the save, keeping the old file as a
+/// timestamped backup. Numbers keep the text they were read with (<c>0.0</c> stays <c>0.0</c>).
 /// </summary>
 public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : ICharacterSaveWriter
 {
@@ -72,17 +73,16 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
 
         var prefix = content[..start];
         var suffix = content[(end + 1)..];
-        var newLine = content.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
 
         if (JsonNode.Parse(content[start..(end + 1)], documentOptions: DocumentOptions) is not JsonObject root)
             throw new JsonException("The save file holds no JSON object.");
 
         ApplyToSavedItems(root, updates);
 
+        // Compact like the game's own saves: no indentation or line breaks inside the JSON.
         var json = root.ToJsonString(new JsonSerializerOptions
         {
-            WriteIndented = true,
-            NewLine = newLine,
+            WriteIndented = false,
             // Write names and texts as they are instead of \u-escaping quotes, '+', '<', accents, ...
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         });

@@ -1201,17 +1201,53 @@
                             CornerRadius="4"
                             Background="Transparent"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <!-- Icon column: entries without an icon keep their text aligned with the others. -->
+                                <ColumnDefinition Width="26" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter x:Name="IconHost"
+                                              Grid.Column="0"
+                                              Width="16"
+                                              Height="16"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              ContentSource="Icon" />
+                            <ContentPresenter Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              ContentSource="Header"
+                                              RecognizesAccessKey="True" />
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                        </Trigger>
+                        <!-- Titles (no icon, not clickable) start at the left edge. -->
+                        <Trigger Property="IsHitTestVisible" Value="False">
+                            <Setter TargetName="IconHost" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Line between groups of a themed context menu. -->
+    <Style x:Key="ThemedMenuSeparatorStyle" TargetType="Separator">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1"
+                            Margin="6,4"
+                            Background="{DynamicResource ControlBorderBrush}"
+                            SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

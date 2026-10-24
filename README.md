@@ -32,6 +32,9 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
+- The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. A normal
+  affix used as the corruption is stored after the other affixes; reading it back, a prefix or suffix beyond the
+  two of its kind is shown as the corruption (so an item with one prefix and a prefix corruption reads as two prefixes).
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).
@@ -43,7 +46,8 @@ It is enabled while the character has changes; changes of several characters are
 between them, and closing the editor or reloading the save folder asks before discarding them.
 
 - Only the changed entries of `savedItems` are rewritten. Every other field, unknown properties and the
-  entry order stay as the game wrote them, in the game's layout (`EPOCH` marker, indentation, line endings).
+  entry order stay as the game wrote them. The JSON is written compact on one line after the `EPOCH` marker,
+  like the game writes it (a file that was indented before is written compact too).
 - Rolls of an item keep their stored byte while their value is unchanged, so an item applied again
   without edits is written back byte for byte; items the editor cannot show are never touched.
 - The file is written to a temporary file that then replaces the save; the previous file is kept next to it
@@ -57,7 +61,7 @@ Console tool that builds the editor's game data from maxroll's planner data
 `%APPDATA%\LE.SaveEditor` (next to `settings.json`):
 
 - `base.db` — SQLite (EF Core) with the tables `Classes`, `Affixes`, `ItemTypes`,
-  `ItemCategories`, `Uniques`, `Stats`, `Icons`. Every row keeps its element as JSON (`Json`)
+  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
   plus `Key`, `Name` and a SHA-256 `Hash`; `__DataMigrations` records every build/update.
   `Icons` has one row per image (`Group` + `Name`, `Path` = `uniques/spirit_xylem`).
 - `Icons/<group>/<name>.png` — from `https://assets-ng.maxroll.gg/last-epoch/webp/<group>/<name>.webp`,

@@ -55,6 +55,22 @@ public sealed class Ailment : GameEntity
 {
 }
 
+/// <summary>
+/// <c>abilityProperties</c>: per skill (<c>abilityID</c>) its own properties in order. Affixes and unique mods with
+/// property 58 refer to one of them (tags = abilityID, specialTag = index), e.g. "You have Incisive Rage".
+/// </summary>
+public sealed class AbilityProperty : GameEntity
+{
+}
+
+/// <summary>
+/// <c>idolAltarProperties</c>: idol altar properties, keyed by their position in the list. Idol altar affixes and
+/// unique mods with property 130 refer to one of them by index (tags), e.g. "Health per Equipped Heretical Idol".
+/// </summary>
+public sealed class IdolAltarProperty : GameEntity
+{
+}
+
 /// <summary><c>stats</c></summary>
 public sealed class Stat : GameEntity
 {
