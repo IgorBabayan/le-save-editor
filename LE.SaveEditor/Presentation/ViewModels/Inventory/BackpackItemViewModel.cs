@@ -15,9 +15,11 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     private const int FirstIdolTypeId = 25;
     private const int LastIdolTypeId = 33;
 
-    public BackpackItemViewModel(SavedItem source, int baseTypeId, int column, int row, EquipmentSlotViewModel? equipment)
+    /// <param name="isNew">The item was made in the editor and is not in the save yet.</param>
+    public BackpackItemViewModel(SavedItem source, int baseTypeId, int column, int row, EquipmentSlotViewModel? equipment, bool isNew = false)
     {
         Source = source;
+        IsNew = isNew;
         BaseTypeId = baseTypeId;
         Equipment = equipment;
         AcceptedItem = equipment?.Item;
@@ -26,8 +28,11 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
         Footprint = ItemFootprint.Of(equipment?.Item?.Base.BaseTypeId ?? baseTypeId);
     }
 
-    /// <summary>The entry of <c>savedItems</c> the item was read from.</summary>
+    /// <summary>The entry of <c>savedItems</c> the item was read from (for a new item, the entry it was made with).</summary>
     public SavedItem Source { get; }
+
+    /// <summary>The item was built in an empty cell of the backpack and is added to the save on the next save.</summary>
+    public bool IsNew { get; }
 
     /// <summary>Item type as stored in the save (<c>baseTypeID</c>).</summary>
     public int BaseTypeId { get; }
@@ -73,6 +78,19 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
         return data.SequenceEqual(Source.Data) && x == Source.X && y == Source.Y
             ? null
             : Source with { X = x, Y = y, Data = data };
+    }
+
+    /// <summary>
+    /// The entry to add for a <see cref="IsNew">new</see> item: the current item at its current cell.
+    /// </summary>
+    /// <exception cref="ArgumentException">The item cannot be stored.</exception>
+    internal SavedItem ToNewSavedItem()
+    {
+        var data = Equipment?.Item is { } current
+            ? ItemDataWriter.Write(SavedItemConverter.ToItemData(current, null))
+            : Source.Data;
+
+        return Source with { X = Column, Y = BackpackViewModel.SavedYFromRow(Row, Footprint), Data = data };
     }
 
     /// <summary>Left column of the item (0-based).</summary>

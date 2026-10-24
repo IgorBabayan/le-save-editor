@@ -205,7 +205,7 @@
                                 Background="{DynamicResource TitleBarBackgroundBrush}">
                             <Grid>
                                 <!-- Background cells (one 50 px pitch per cell, matching the item layer below). -->
-                                <ItemsControl ItemsSource="{Binding Cells}" Focusable="False" IsHitTestVisible="False">
+                                <ItemsControl x:Name="BackpackCells" ItemsSource="{Binding Cells}" Focusable="False" IsHitTestVisible="False">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <UniformGrid Rows="{x:Static inventoryVm:BackpackViewModel.Rows}"
@@ -227,9 +227,11 @@
                                 </ItemsControl>
 
                                 <!-- Items, each spanning the cells of its footprint. Items are dragged with the mouse
-                                     inside the grid only (code-behind); a click without moving opens the inspector. -->
+                                     inside the grid only (code-behind); a click without moving opens the inspector.
+                                     The transparent background lets empty cells take a double-click (new item). -->
                                 <ItemsControl x:Name="BackpackItems"
                                               ItemsSource="{Binding Items}"
+                                              Background="Transparent"
                                               Focusable="False"
                                               PreviewMouseLeftButtonDown="BackpackItems_OnPreviewMouseLeftButtonDown"
                                               PreviewMouseMove="BackpackItems_OnPreviewMouseMove"
@@ -328,6 +330,10 @@
 
                         <TextBlock Margin="2,8,0,0"
                                    Text="{Binding Summary}"
+                                   Style="{StaticResource SecondaryTextStyle}" />
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="Double-click an empty cell to build a new item there."
                                    Style="{StaticResource SecondaryTextStyle}" />
                     </StackPanel>
                 </TabItem>

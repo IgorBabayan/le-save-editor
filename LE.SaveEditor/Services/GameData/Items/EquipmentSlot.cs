@@ -109,6 +109,9 @@ public static class EquipmentSlotExtensions
 
         public bool AcceptsBaseType(int baseTypeId) => BaseTypeIds[slot].Contains(baseTypeId);
 
+        /// <summary><c>baseTypeID</c>s of the item types that fit the slot.</summary>
+        public IReadOnlyList<int> BaseTypes => BaseTypeIds[slot];
+
         /// <summary>Fallback for item types without an id: matches the normalized type name.</summary>
         public bool AcceptsTypeName(string normalizedTypeName) =>
             TypeNameWords[slot].Any(word => slot is EquipmentSlot.LeftRing or EquipmentSlot.RightRing

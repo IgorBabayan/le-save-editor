@@ -1,8 +1,11 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
+using LE.SaveEditor.Services.GameData.Items;
 
 namespace LE.SaveEditor.Presentation.Views.Inventory;
 
@@ -11,7 +14,8 @@ namespace LE.SaveEditor.Presentation.Views.Inventory;
 /// pressing an item and moving it past the system drag distance starts a drag, a highlight shows the cells it would
 /// take (green when it fits, red otherwise), and releasing the button over a free spot moves it there. Releasing
 /// over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click without moving
-/// still opens the item inspector.
+/// still opens the item inspector. Double-clicking an empty cell offers the item types to build there and opens the
+/// item inspector for a new item of the chosen type next to that cell.
 /// </summary>
 public partial class InventoryView : UserControl
 {
@@ -20,6 +24,21 @@ public partial class InventoryView : UserControl
 
     /// <summary>Opacity of the highlight's fill (its border is fully opaque).</summary>
     private const double DropFillOpacity = 0.2;
+
+    /// <summary>Item types offered for a new backpack item, in menu order (rings are built as left rings).</summary>
+    private static readonly EquipmentSlot[] NewItemSlots =
+    [
+        EquipmentSlot.Helmet,
+        EquipmentSlot.BodyArmour,
+        EquipmentSlot.Gloves,
+        EquipmentSlot.Belt,
+        EquipmentSlot.Boots,
+        EquipmentSlot.Weapon,
+        EquipmentSlot.OffHand,
+        EquipmentSlot.Amulet,
+        EquipmentSlot.LeftRing,
+        EquipmentSlot.Relic
+    ];
 
     private BackpackItemViewModel? _pressedItem;
     private Point _pressPoint;
@@ -44,8 +63,15 @@ public partial class InventoryView : UserControl
 
     private void BackpackItems_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (FindItem(e.OriginalSource as DependencyObject) is not { } item || CellWidth <= 0 || CellHeight <= 0)
+        if (CellWidth <= 0 || CellHeight <= 0)
             return;
+
+        if (FindItem(e.OriginalSource as DependencyObject) is not { } item)
+        {
+            if (e.ClickCount == 2 && ShowNewItemMenu(e.GetPosition(BackpackItems)))
+                e.Handled = true;
+            return;
+        }
 
         // Not handled: a plain click must still reach the item's button.
         _pressedItem = item;
@@ -170,6 +196,77 @@ public partial class InventoryView : UserControl
         // Releasing raises LostMouseCapture; _isDragging is already false, so it is ignored.
         if (BackpackItems.IsMouseCaptured)
             BackpackItems.ReleaseMouseCapture();
+    }
+
+    /// <summary>
+    /// Offers the item types that can be built in the empty cell under <paramref name="position"/>; types with no
+    /// room left anywhere in the backpack are disabled.
+    /// </summary>
+    /// <returns><c>false</c> when the position is not over an empty cell (nothing was shown).</returns>
+    private bool ShowNewItemMenu(Point position)
+    {
+        var column = (int)Math.Floor(position.X / CellWidth);
+        var row = (int)Math.Floor(position.Y / CellHeight);
+        if (Backpack is not { } backpack || !backpack.IsCellFree(column, row))
+            return false;
+
+        var anchor = BackpackCells.ItemContainerGenerator.ContainerFromIndex(row * BackpackViewModel.Columns + column) as FrameworkElement;
+        var menu = new ContextMenu
+        {
+            PlacementTarget = BackpackItems,
+            Placement = PlacementMode.MousePoint
+        };
+        if (TryFindResource("ThemedContextMenuStyle") is Style menuStyle)
+            menu.Style = menuStyle;
+
+        var itemStyle = TryFindResource("ThemedMenuItemStyle") as Style;
+        menu.ItemContainerStyle = itemStyle;
+
+        // Title: a menu item that can be neither highlighted nor clicked.
+        menu.Items.Add(new MenuItem
+        {
+            Header = new TextBlock
+            {
+                Text = "Build a new item",
+                FontWeight = FontWeights.SemiBold,
+                Style = TryFindResource("SecondaryTextStyle") as Style
+            },
+            Style = itemStyle,
+            Focusable = false,
+            IsHitTestVisible = false
+        });
+        foreach (var slot in NewItemSlots)
+        {
+            var hasRoom = backpack.HasRoomFor(slot);
+            var menuItem = new MenuItem
+            {
+                Header = slot.DisplayName,
+                IsEnabled = hasRoom,
+                Style = itemStyle,
+                ToolTip = hasRoom ? null : "No room left in the backpack for this item type"
+            };
+            ToolTipService.SetShowOnDisabled(menuItem, true);
+
+            var chosen = slot;
+            // After the menu has closed, so the inspector keeps the focus it takes.
+            menuItem.Click += (_, _) => Dispatcher.InvokeAsync(
+                () => BuildNewItem(chosen, column, row, anchor),
+                DispatcherPriority.Background);
+            menu.Items.Add(menuItem);
+        }
+
+        menu.IsOpen = true;
+        return true;
+    }
+
+    private void BuildNewItem(EquipmentSlot slot, int column, int row, FrameworkElement? anchor)
+    {
+        if (DataContext is not InventoryViewModel inventory)
+            return;
+
+        var request = new NewBackpackItemRequest(slot, column, row, anchor ?? BackpackItems);
+        if (inventory.BuildBackpackItemCommand.CanExecute(request))
+            inventory.BuildBackpackItemCommand.Execute(request);
     }
 
     /// <summary>The backpack item shown by <paramref name="source"/> or one of its ancestors inside the item layer.</summary>

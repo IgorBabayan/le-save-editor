@@ -11,7 +11,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
 /// Equipment slots show the items the character wears and the "Items" section the backpack (both read from
-/// <c>savedItems</c>); the other sections start empty. Clicking an equipment slot opens the item inspector (a compact item builder) next to it.
+/// <c>savedItems</c>); the other sections start empty. Clicking an equipment slot opens the item inspector (a compact item builder) next to it;
+/// double-clicking an empty backpack cell builds a new item there.
 /// <see cref="GetUpdates"/> collects what changed since the save was read, for saving.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
@@ -105,6 +106,23 @@ public sealed partial class InventoryViewModel : ViewModelBase
             return;
 
         _dialogService.ShowItemInspector(slot, Character.CharacterClass);
+    }
+
+    /// <summary>
+    /// An empty cell of the backpack was double-clicked and an item type picked: opens the item inspector for a new
+    /// item of that type next to the cell; an applied item is put into the backpack at that cell (or the nearest spot).
+    /// </summary>
+    [RelayCommand]
+    private void BuildBackpackItem(NewBackpackItemRequest? request)
+    {
+        if (request is null || !Backpack.IsCellFree(request.Column, request.Row))
+            return;
+
+        _dialogService.ShowItemInspector(
+            request.Slot,
+            Character.CharacterClass,
+            request.Anchor,
+            built => Backpack.AddItem(built, request.Column, request.Row));
     }
 
     /// <summary>
@@ -202,6 +220,10 @@ public sealed partial class InventoryViewModel : ViewModelBase
         return cells;
     }
 }
+
+/// <summary>A new item of type <paramref name="Slot"/> to build in the empty backpack cell <paramref name="Column"/>, <paramref name="Row"/>.</summary>
+/// <param name="Anchor">The view element of the cell; the item inspector opens next to it.</param>
+public sealed record NewBackpackItemRequest(EquipmentSlot Slot, int Column, int Row, object? Anchor);
 
 /// <summary>One cell of the idol grid; <see cref="IsBlocked"/> cells can never hold an idol.</summary>
 public sealed record IdolCellViewModel(int Row, int Column, bool IsBlocked);

@@ -22,6 +22,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
     public const int Rows = 8;
 
     private readonly IToastService _toastService;
+    private readonly IIconProvider _iconProvider;
     private bool _isReverting;
 
     /// <summary>Items placed when the save was read, including the ones removed since (for <see cref="GetUpdates"/>).</summary>
@@ -37,6 +38,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
         IToastService toastService)
     {
         _toastService = toastService;
+        _iconProvider = iconProvider;
         Items.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Summary));
         Load(savedItems, iconProvider, itemBaseCatalog);
     }
@@ -113,10 +115,10 @@ public sealed partial class BackpackViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Changes to write into <c>savedItems</c>: moved and edited items, and items removed from the backpack.
-    /// Items that were not shown (no room, see <see cref="SkippedCount"/>) are left as they are.
+    /// Changes to write into <c>savedItems</c>: moved and edited items, items removed from the backpack and items
+    /// built in its empty cells. Items that were not shown (no room, see <see cref="SkippedCount"/>) are left as they are.
     /// </summary>
-    /// <exception cref="ArgumentException">An edited item cannot be stored.</exception>
+    /// <exception cref="ArgumentException">An edited or new item cannot be stored.</exception>
     public IEnumerable<SavedItemUpdate> GetUpdates()
     {
         foreach (var item in _loadedItems)
@@ -126,6 +128,77 @@ public sealed partial class BackpackViewModel : ViewModelBase
             else if (item.ToSavedItem() is { } replacement)
                 yield return SavedItemUpdate.Replace(item.Source, replacement);
         }
+
+        foreach (var item in Items.Where(i => i.IsNew))
+            yield return SavedItemUpdate.Add(item.ToNewSavedItem());
+    }
+
+    /// <summary>Whether no item covers the cell in <paramref name="column"/>, <paramref name="row"/> (inside the grid).</summary>
+    public bool IsCellFree(int column, int row) =>
+        column is >= 0 and < Columns && row is >= 0 and < Rows && !Items.Any(i => i.Covers(column, row));
+
+    /// <summary>Whether at least one item type of <paramref name="slot"/> still fits somewhere in the backpack.</summary>
+    public bool HasRoomFor(EquipmentSlot slot) =>
+        slot.BaseTypes.Select(ItemFootprint.Of).Distinct().Any(f => FindFreeSpot(f, ignore: null) is not null);
+
+    /// <summary>
+    /// Puts an item built in the empty cell <paramref name="column"/>, <paramref name="row"/> into the backpack.
+    /// It takes that cell as its top-left corner when it fits there, else the nearest spot that still covers the
+    /// cell, else the first free spot; when it fits nowhere it is not added.
+    /// </summary>
+    /// <returns><c>true</c> if the item was added.</returns>
+    public bool AddItem(BuiltItem built, int column, int row)
+    {
+        var baseTypeId = built.Base.BaseTypeId;
+        var footprint = ItemFootprint.Of(baseTypeId);
+        var spot = FindSpotCovering(footprint, column, row);
+        var moved = false;
+        if (spot is null)
+        {
+            spot = FindFreeSpot(footprint, ignore: null);
+            moved = spot is not null;
+        }
+
+        if (spot is not { } place)
+        {
+            _toastService.Show(
+                $"There is no room in the backpack for {built.Base.Name} ({footprint.Width}×{footprint.Height}); the item was not added.",
+                NotificationSeverity.Warning);
+            return false;
+        }
+
+        var slot = EquipmentSlotExtensions.FromBaseTypeId(baseTypeId) ?? built.Slot;
+        var equipment = new EquipmentSlotViewModel(slot, _iconProvider) { Item = built };
+        var source = new SavedItem(
+            SavedItem.BackpackContainerId,
+            place.Column,
+            SavedYFromRow(place.Row, footprint),
+            1,
+            ItemDataReader.Version2,
+            ItemDataWriter.Write(SavedItemConverter.ToItemData(built, null)));
+
+        Add(new BackpackItemViewModel(source, baseTypeId, place.Column, place.Row, equipment, isNew: true));
+        Changed?.Invoke(this, EventArgs.Empty);
+
+        if (moved)
+            _toastService.Show($"{built.Base.Name} did not fit at the chosen cell and was put in another spot of the backpack.");
+        return true;
+    }
+
+    /// <summary>
+    /// A spot for <paramref name="footprint"/> that covers the cell <paramref name="column"/>, <paramref name="row"/>:
+    /// that cell as the top-left corner first, then shifted left and up one cell at a time.
+    /// </summary>
+    private (int Column, int Row)? FindSpotCovering(ItemFootprint footprint, int column, int row)
+    {
+        for (var up = 0; up < footprint.Height; up++)
+        for (var left = 0; left < footprint.Width; left++)
+        {
+            if (CanPlace(footprint, column - left, row - up, ignore: null))
+                return (column - left, row - up);
+        }
+
+        return null;
     }
 
     /// <summary>

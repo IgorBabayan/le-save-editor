@@ -54,6 +54,18 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
             slot.Item = built;
     }
 
+    public void ShowItemInspector(EquipmentSlot slot, CharacterClass characterClass, object? anchor, Action<BuiltItem> applied)
+    {
+        var viewModel = CreateItemBuilder(slot, characterClass, null);
+
+        if (anchor is FrameworkElement element
+            && ItemInspectorAdorner.TryShow(element, viewModel, applied, vm => ShowItemBuilderWindow(vm)))
+            return;
+
+        if (ShowItemBuilderWindow(viewModel) is { } built)
+            applied(built);
+    }
+
     private ItemBuilderViewModel CreateItemBuilder(EquipmentSlot slot, CharacterClass characterClass, BuiltItem? current) =>
         new(services.GetRequiredService<IItemBaseCatalog>(),
             services.GetRequiredService<IIconProvider>(),

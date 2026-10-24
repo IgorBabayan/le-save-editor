@@ -35,4 +35,11 @@ public interface IDialogService
     /// the item it replaces <see cref="EquipmentSlotViewModel.Item"/>.
     /// </summary>
     void ShowItemInspector(EquipmentSlotViewModel slot, CharacterClass characterClass);
+
+    /// <summary>
+    /// Opens the item inspector for a new item of <paramref name="slot"/> next to <paramref name="anchor"/> (a view
+    /// element; falls back to the modal builder when it is missing or cannot host the inspector). Returns at once;
+    /// <paramref name="applied"/> is called with the item when the user applies it.
+    /// </summary>
+    void ShowItemInspector(EquipmentSlot slot, CharacterClass characterClass, object? anchor, Action<BuiltItem> applied);
 }
