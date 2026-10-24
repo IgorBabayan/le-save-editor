@@ -43,7 +43,8 @@ It is enabled while the character has changes; changes of several characters are
 between them, and closing the editor or reloading the save folder asks before discarding them.
 
 - Only the changed entries of `savedItems` are rewritten. Every other field, unknown properties and the
-  entry order stay as the game wrote them, in the game's layout (`EPOCH` marker, indentation, line endings).
+  entry order stay as the game wrote them. The JSON is written compact on one line after the `EPOCH` marker,
+  like the game writes it (a file that was indented before is written compact too).
 - Rolls of an item keep their stored byte while their value is unchanged, so an item applied again
   without edits is written back byte for byte; items the editor cannot show are never touched.
 - The file is written to a temporary file that then replaces the save; the previous file is kept next to it
