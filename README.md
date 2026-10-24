@@ -61,7 +61,7 @@ Console tool that builds the editor's game data from maxroll's planner data
 `%APPDATA%\LE.SaveEditor` (next to `settings.json`):
 
 - `base.db` — SQLite (EF Core) with the tables `Classes`, `Affixes`, `ItemTypes`,
-  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
+  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
   plus `Key`, `Name` and a SHA-256 `Hash`; `__DataMigrations` records every build/update.
   `Icons` has one row per image (`Group` + `Name`, `Path` = `uniques/spirit_xylem`).
 - `Icons/<group>/<name>.png` — from `https://assets-ng.maxroll.gg/last-epoch/webp/<group>/<name>.webp`,

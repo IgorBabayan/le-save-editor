@@ -133,7 +133,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
             var properties = ReadProperties(connection);
             var abilityProperties = ReadAbilityProperties(connection);
-            var names = new ImplicitNames(properties, ReadAilments(connection), abilityProperties);
+            var names = new ImplicitNames(properties, ReadAilments(connection), abilityProperties, ReadIdolAltarProperties(connection));
             var icons = ReadIcons(connection);
 
             var result = new List<ItemBase>();
@@ -267,7 +267,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 itemBase?.Name,
                 mods,
                 effects,
-                legendaryAffixIds));
+                legendaryAffixIds,
+                GetInt(unique, "droppableLegendaryAffixCount") ?? 1));
         }
 
         return result;
@@ -366,6 +367,9 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <summary>Property id of a skill's own property (see <c>ImplicitNames</c>).</summary>
     private const int SkillPropertyId = 58;
 
+    /// <summary>Property id of an idol altar property (see <c>ImplicitNames</c>).</summary>
+    private const int IdolAltarPropertyId = 130;
+
     /// <summary><c>rollsOn</c> of equipment affixes.</summary>
     private const int RollsOnEquipment = 0;
 
@@ -423,13 +427,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             if (tiers.Count == 0)
                 continue;
 
-            // Skill affixes have only an internal name ("Blood Rage Deadly Strikes"): show what the game shows,
-            // the skill property of their stat ("You have Incisive Rage").
-            if (GetString(affix, "affixDisplayName") is null
-                && GetInt(affix, "property") == SkillPropertyId
-                && tiers[0].Stats is [var skillStat]
-                && !string.Equals(skillStat.Property, name, StringComparison.Ordinal))
-                name = skillStat.Property;
+            // Skill affixes have only an internal name ("Blood Rage Deadly Strikes") and idol altar affixes a shared,
+            // misleading one ("Maximum Idols Equipped"): show what the game shows, the property of their one stat
+            // ("You have Incisive Rage", "Health per Equipped Heretical Idol").
+            var ownProperty = GetInt(affix, "property");
+            if (((ownProperty == SkillPropertyId && GetString(affix, "affixDisplayName") is null) || ownProperty == IdolAltarPropertyId)
+                && tiers[0].Stats is [var onlyStat]
+                && !string.Equals(onlyStat.Property, name, StringComparison.Ordinal))
+                name = onlyStat.Property;
 
             result.Add(new AffixDefinition(
                 id,
@@ -586,7 +591,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     {
         var type = Enum.IsDefined((ImplicitModifierType)modifierType) ? (ImplicitModifierType)modifierType : ImplicitModifierType.Added;
         // A skill's own property (property 58) takes its name and display rules from that skill's list.
-        var abilityInfo = names.GetAbilityProperty(property, tags, specialTag);
+        var abilityInfo = names.GetIndexedProperty(property, tags, specialTag);
         var info = abilityInfo ?? names.GetProperty(property);
         var name = abilityInfo?.Name ?? names.Compose(info, property, tags, specialTag);
 
@@ -613,10 +618,12 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// Per skill (<c>abilityID</c>) its own properties in order, from the <c>AbilityProperties</c> table; empty for
     /// databases made before it.
     /// </param>
+    /// <param name="idolAltarProperties">Idol altar properties in order (<c>IdolAltarProperties</c> table), or empty.</param>
     private sealed class ImplicitNames(
         Dictionary<int, PropertyInfo> properties,
         Dictionary<int, string> ailments,
-        Dictionary<int, IReadOnlyList<PropertyInfo>> abilityProperties)
+        Dictionary<int, IReadOnlyList<PropertyInfo>> abilityProperties,
+        IReadOnlyList<PropertyInfo> idolAltarProperties)
     {
         /// <summary>Tag bits (the game's <c>AT</c> flags) in the order their words go before the property name.</summary>
         private static readonly (long Bit, string Word)[] PrefixTags =
@@ -635,24 +642,31 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         private const int AbilityProperty = 58;
         private const int LevelOfSkillsProperty = 88;
 
+        /// <summary>An idol altar property: <c>tags</c> is the index in the idol altar property list.</summary>
+        private const int IdolAltarProperty = 130;
+
         public PropertyInfo? GetProperty(int property) => properties.GetValueOrDefault(property);
 
-        /// <summary>The skill property that property 58 refers to; <c>null</c> for other properties or when unknown.</summary>
-        public PropertyInfo? GetAbilityProperty(int property, long tags, int specialTag) =>
-            property == AbilityProperty
-            && tags is >= 0 and <= int.MaxValue
-            && abilityProperties.TryGetValue((int)tags, out var list)
-            && specialTag >= 0 && specialTag < list.Count
-                ? list[specialTag]
-                : null;
+        /// <summary>
+        /// The skill property (58) or idol altar property (130) a modifier refers to; <c>null</c> for other properties or
+        /// when unknown.
+        /// </summary>
+        public PropertyInfo? GetIndexedProperty(int property, long tags, int specialTag) => property switch
+        {
+            AbilityProperty when tags is >= 0 and <= int.MaxValue
+                                 && abilityProperties.TryGetValue((int)tags, out var list)
+                                 && specialTag >= 0 && specialTag < list.Count => list[specialTag],
+            IdolAltarProperty when tags >= 0 && tags < idolAltarProperties.Count => idolAltarProperties[(int)tags],
+            _ => null
+        };
 
         /// <summary>
         /// <c>false</c> for properties without a name, for skill properties (58) whose skill is unknown, and for
         /// "Level of Skills" with a special tag (its tags then select a single skill).
         /// </summary>
         public bool IsNamed(int property, int specialTag, long tags) =>
-            property == AbilityProperty
-                ? GetAbilityProperty(property, tags, specialTag) is not null
+            property is AbilityProperty or IdolAltarProperty
+                ? GetIndexedProperty(property, tags, specialTag) is not null
                 : properties.ContainsKey(property)
                   && !(property == LevelOfSkillsProperty && specialTag != 0);
 
@@ -732,12 +746,59 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             if (id is null || name is null)
                 continue;
 
-            result.TryAdd(id.Value, new PropertyInfo(
-                name,
-                GetBool(property, "displayAddedAsPercentage") ?? false,
-                GetBool(property, "displayAddedAsTenthOfValue") ?? false,
-                GetBool(property, "dontDisplayPlus") ?? false,
-                GetBool(property, "nameIncludesModifier") ?? false));
+            result.TryAdd(id.Value, ReadPropertyInfo(property, name));
+        }
+
+        // Properties the data leaves out but items use; only for databases that have the table at all.
+        if (result.Count > 0)
+        {
+            foreach (var (id, name) in MissingPropertyNames)
+                result.TryAdd(id, new PropertyInfo(name, false, false, false, false));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Names of properties missing from maxroll's <c>properties</c> list. "Ailment" is replaced by the modifier's
+    /// ailment (special tag), e.g. property 120 with Frenzy: "30% increased Effect of Frenzy on You".
+    /// </summary>
+    private static readonly Dictionary<int, string> MissingPropertyNames = new()
+    {
+        [120] = "Effect of Ailment on You"
+    };
+
+    private static PropertyInfo ReadPropertyInfo(JsonElement property, string name) => new(
+        name,
+        GetBool(property, "displayAddedAsPercentage") ?? false,
+        GetBool(property, "displayAddedAsTenthOfValue") ?? false,
+        GetBool(property, "dontDisplayPlus") ?? false,
+        GetBool(property, "nameIncludesModifier") ?? false);
+
+    /// <summary>
+    /// <c>idolAltarProperties</c>: a list of properties (no ids) that idol altar affixes refer to by index
+    /// (<c>tags</c> of property 130). Rows are keyed by their position; databases made before the table have none.
+    /// </summary>
+    private static List<PropertyInfo> ReadIdolAltarProperties(SqliteConnection connection)
+    {
+        var rows = ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM IdolAltarProperties")
+            .Select(r => (Index: int.TryParse(r.Key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i) ? i : -1, r.Json))
+            .Where(r => r.Index >= 0)
+            .OrderBy(r => r.Index)
+            .ToList();
+
+        var result = new List<PropertyInfo>();
+        foreach (var (index, json) in rows)
+        {
+            // Keep positions: a gap would shift every later property.
+            while (result.Count < index)
+                result.Add(new PropertyInfo($"Idol altar property {result.Count}", false, false, false, false));
+
+            using var document = TryParse(json);
+            result.Add(document?.RootElement is { ValueKind: JsonValueKind.Object } property
+                       && GetString(property, "propertyName") is { } name
+                ? ReadPropertyInfo(property, name)
+                : new PropertyInfo($"Idol altar property {index}", false, false, false, false));
         }
 
         return result;

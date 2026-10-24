@@ -62,6 +62,7 @@ public static class SavedItemConverter
 
     private static AffixSlotKind SlotKindOf(AffixDefinition affix, bool isSealed) => affix switch
     {
+        { OnlyOnUniques.Count: > 0 } => AffixSlotKind.Unique,
         { Category: AffixCategory.Corrupted } => AffixSlotKind.Corrupted,
         { Type: AffixType.Prefix } => isSealed ? AffixSlotKind.SealedPrefix : AffixSlotKind.Prefix,
         _ => isSealed ? AffixSlotKind.SealedSuffix : AffixSlotKind.Suffix
@@ -142,12 +143,12 @@ public static class SavedItemConverter
             }
         }
 
-        // The corruption goes last (the sealed affix is put first by the writer), so a normal affix used as the
-        // corruption is read back into the corruption slot.
+        // The unique's own affixes first (the game shows them on top), the corruption last (the sealed affix is put
+        // first by the writer), so a normal affix used as the corruption is read back into the corruption slot.
         IReadOnlyList<ItemAffixData> affixes = item.Rarity is ItemRarity.Unique or ItemRarity.Set
             ? []
             : item.Affixes
-                .OrderBy(a => a.Slot == AffixSlotKind.Corrupted ? 1 : 0)
+                .OrderBy(a => a.Slot switch { AffixSlotKind.Unique => 0, AffixSlotKind.Corrupted => 2, _ => 1 })
                 .Select(a => ToAffixData(a, original))
                 .ToList();
 

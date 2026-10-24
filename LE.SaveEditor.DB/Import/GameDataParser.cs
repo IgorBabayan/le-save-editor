@@ -127,6 +127,10 @@ internal static class GameDataParser
     {
         var items = array.EnumerateArray().ToList();
 
+        // Lists referred to by position keep their position as the key.
+        if (preferredField == GameNode.IndexKey)
+            return items.Select((item, i) => (i.ToString(CultureInfo.InvariantCulture), item)).ToList();
+
         if (items.Count > 0 && items.All(i => i.ValueKind == JsonValueKind.String))
         {
             var strings = items.Select(i => i.GetString()!).ToList();

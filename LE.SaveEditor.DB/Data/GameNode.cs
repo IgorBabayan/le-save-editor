@@ -22,10 +22,17 @@ internal abstract class GameNode(string jsonName, string tableName, string? keyF
     public static GameNode Properties { get; } = new GameNode<GameProperty>("properties", "Properties", "property");
     public static GameNode Ailments { get; } = new GameNode<Ailment>("ailments", "Ailments");
     public static GameNode AbilityProperties { get; } = new GameNode<AbilityProperty>("abilityProperties", "AbilityProperties", "abilityID");
+    public static GameNode IdolAltarProperties { get; } = new GameNode<IdolAltarProperty>("idolAltarProperties", "IdolAltarProperties", IndexKey);
+
+    /// <summary>
+    /// <see cref="KeyField"/> value that keys array elements by their position: for lists that items refer to by index
+    /// (<c>idolAltarProperties</c>), where an id-like field must not be picked instead.
+    /// </summary>
+    public const string IndexKey = "#index";
     public static GameNode Icons { get; } = new GameNode<Icon>("icons", "Icons");
 
     public static IReadOnlyList<GameNode> All { get; } =
-        [Classes, Affixes, ItemTypes, ItemCategories, Uniques, Stats, Properties, Ailments, AbilityProperties, Icons];
+        [Classes, Affixes, ItemTypes, ItemCategories, Uniques, Stats, Properties, Ailments, AbilityProperties, IdolAltarProperties, Icons];
 
     /// <summary>Property name in <c>data.json</c>.</summary>
     public string JsonName { get; } = jsonName;

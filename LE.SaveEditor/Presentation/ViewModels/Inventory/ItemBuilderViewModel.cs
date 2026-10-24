@@ -447,15 +447,16 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
         FillStats(value?.Base, null, null);
 
-        // Affixes depend on the item type (a wand and an axe share the weapon slot but not their affixes).
-        foreach (var slot in AffixSlots)
-        {
-            if (slot.Affix is { } affix && (value is null || !affix.CanRollOnType(value.Base.BaseTypeId)))
-                slot.Clear();
-        }
-
-        AffixPickerSlot = null;
-        OnAffixesChanged();
+        // Affixes depend on the item type (a wand and an axe share the weapon slot but not their affixes), and a unique's
+        // own affixes on that unique. The slots are rebuilt: the number of unique affix slots follows the selection.
+        var kept = value is null
+            ? []
+            : AffixSlots.Select(s => s.ToBuiltAffix())
+                .OfType<BuiltAffix>()
+                .Where(a => a.Affix.CanRollOnType(value.Base.BaseTypeId) && a.Affix.IsAllowedOn(value.Base))
+                .ToList();
+        BuildAffixSlots();
+        RestoreAffixes(kept);
     }
 
     private void FillStats(ItemBase? item, IReadOnlyList<double>? implicitValues, IReadOnlyList<double>? modValues)
@@ -585,7 +586,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// </summary>
     private void BuildAffixSlots()
     {
-        AffixSlotKind[] kinds = (Slot.IsIdol, ListKind) switch
+        AffixSlotKind[] listKinds = (Slot.IsIdol, ListKind) switch
         {
             (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix],
             (true, _) => [],
@@ -594,6 +595,12 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             _ => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix,
                   AffixSlotKind.SealedPrefix, AffixSlotKind.SealedSuffix, AffixSlotKind.Corrupted]
         };
+
+        // A unique with its own legendary affixes (Unsated Rage, ...) gets that many unique affix slots on top.
+        var uniqueSlots = !Slot.IsIdol && ListKind == ItemListKind.Uniques && SelectedBase is { LegendaryAffixes.Count: > 0 } unique
+            ? unique.LegendaryAffixCount
+            : 0;
+        var kinds = Enumerable.Repeat(AffixSlotKind.Unique, uniqueSlots).Concat(listKinds);
 
         AffixPickerSlot = null;
         AffixSlots.Clear();

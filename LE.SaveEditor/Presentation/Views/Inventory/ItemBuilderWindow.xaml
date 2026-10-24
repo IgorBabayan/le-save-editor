@@ -172,6 +172,10 @@
                 <DataTrigger Binding="{Binding IsSealed}" Value="True">
                     <Setter TargetName="SlotLabel" Property="Foreground" Value="{DynamicResource AccentBrush}" />
                 </DataTrigger>
+                <!-- The unique's own legendary affix (e.g. Blood Rage on Unsated Rage). -->
+                <DataTrigger Binding="{Binding IsUniqueAffix}" Value="True">
+                    <Setter TargetName="SlotLabel" Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding IsCorrupted}" Value="True">
                     <Setter TargetName="SlotLabel" Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
                     <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource ErrorForegroundBrush}" />
