@@ -43,4 +43,14 @@ public sealed record AffixDefinition(
     IReadOnlyList<AffixTier> Tiers)
 {
     public bool CanRollOnType(int baseTypeId) => CanRollOn.Contains(baseTypeId);
+
+    /// <summary>
+    /// <c>uniqueID</c>s of the uniques that alone can have this affix (their own legendary affixes, e.g. the Blood Rage
+    /// affixes of Unsated Rage); empty when any item of a fitting type can.
+    /// </summary>
+    public IReadOnlySet<int> OnlyOnUniques { get; init; } = new HashSet<int>();
+
+    /// <summary>Whether the affix may go on <paramref name="item"/> as far as unique-only affixes are concerned.</summary>
+    public bool IsAllowedOn(ItemBase item) =>
+        OnlyOnUniques.Count == 0 || (item.UniqueId is { } uniqueId && OnlyOnUniques.Contains(uniqueId));
 }

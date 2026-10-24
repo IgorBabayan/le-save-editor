@@ -696,21 +696,27 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         }
 
         var className = CharacterClassCatalog.GetDisplayName(CharacterClass);
-        // The same affix cannot be on an item twice.
-        var used = AffixSlots.Where(s => s != slot && s.Affix is not null).Select(s => s.Affix!.Id).ToHashSet();
+        // The same affix cannot be a prefix / suffix twice, but the corruption may repeat one of them (the game stacks
+        // them, e.g. Increased Health as a prefix and again as the corruption).
+        var used = slot.IsCorrupted
+            ? []
+            : AffixSlots.Where(s => s != slot && !s.IsCorrupted && s.Affix is not null).Select(s => s.Affix!.Id).ToHashSet();
         var words = AffixSearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         var options = _catalog.GetAffixes(item.BaseTypeId)
             .Where(a => slot.Accepts(a)
                         && !used.Contains(a.Id)
+                        // A unique's own legendary affixes (Blood Rage, ...) only for that unique.
+                        && a.IsAllowedOn(item)
                         // Class affixes only for the character's own class.
                         && (a.ClassName is null || string.Equals(a.ClassName, className, StringComparison.OrdinalIgnoreCase))
                         && words.All(w => a.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
                                           || (a.Title?.Contains(w, StringComparison.CurrentCultureIgnoreCase) ?? false)
                                           || a.GroupName.Contains(w, StringComparison.CurrentCultureIgnoreCase)))
-            // Normal affixes first, then experimental / personal / set / variant (for the corruption slot the
-            // corruption-only affixes first, then normal ones); by category, then name.
-            .OrderBy(a => slot.IsCorrupted
+            // The unique's own affixes first; then normal affixes, then experimental / personal / set / variant (for the
+            // corruption slot the corruption-only affixes first, then normal ones); by category, then name.
+            .OrderBy(a => a.OnlyOnUniques.Count > 0 ? 0 : 1)
+            .ThenBy(a => slot.IsCorrupted
                 ? a.Category == AffixCategory.Corrupted ? 0 : 1
                 : a.Category == AffixCategory.Normal ? 0 : 1)
             .ThenBy(a => a.GroupName, StringComparer.CurrentCultureIgnoreCase)

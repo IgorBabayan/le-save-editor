@@ -27,7 +27,10 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
     /// <summary>What was read from base.db.</summary>
     /// <param name="Uniques">Unique and set items.</param>
-    /// <param name="HasStatNames">The <c>Properties</c> table exists (databases made before it show "Property 10" etc.).</param>
+    /// <param name="HasStatNames">
+    /// The <c>Properties</c> and <c>AbilityProperties</c> tables exist (databases made before them show "Property 10" or
+    /// internal skill affix names).
+    /// </param>
     /// <param name="Affixes">Equipment and idol affixes.</param>
     private sealed record Catalog(IReadOnlyList<ItemBase> Bases, IReadOnlyList<ItemBase> Uniques, IReadOnlyList<AffixDefinition> Affixes, bool HasStatNames);
 
@@ -129,7 +132,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             connection.Open();
 
             var properties = ReadProperties(connection);
-            var names = new ImplicitNames(properties, ReadAilments(connection));
+            var abilityProperties = ReadAbilityProperties(connection);
+            var names = new ImplicitNames(properties, ReadAilments(connection), abilityProperties);
             var icons = ReadIcons(connection);
 
             var result = new List<ItemBase>();
@@ -141,8 +145,9 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             }
 
             var uniques = ReadUniques(connection, result, names, icons);
-            var affixes = ReadAffixes(connection, names);
-            return new Catalog(result, uniques, affixes, properties.Count > 0);
+            var affixes = LimitToUniques(ReadAffixes(connection, names), uniques);
+            // A database without skill properties (made before them) shows skill affixes by internal name: outdated too.
+            return new Catalog(result, uniques, affixes, properties.Count > 0 && abilityProperties.Count > 0);
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -234,6 +239,18 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             var effects = new List<string>();
             var mods = ParseUniqueMods(unique, names, effects);
 
+            // Uniques like Unsated Rage drop as legendaries only with affixes from their own list.
+            var legendaryAffixIds = new List<int>();
+            if (GetBool(unique, "dropsSpecificLegendaryAffixes") == true
+                && Find(unique, "droppableLegendaryAffixes") is { ValueKind: JsonValueKind.Array } droppable)
+            {
+                foreach (var id in droppable.EnumerateArray())
+                {
+                    if (id.ValueKind == JsonValueKind.Number && id.TryGetInt32(out var affixId))
+                        legendaryAffixIds.Add(affixId);
+                }
+            }
+
             result.Add(new ItemBase(
                 baseTypeId,
                 subTypeId,
@@ -249,7 +266,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 GetBool(unique, "isSetItem") ?? false,
                 itemBase?.Name,
                 mods,
-                effects));
+                effects,
+                legendaryAffixIds));
         }
 
         return result;
@@ -320,7 +338,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 continue;
 
             // Skill-specific properties have no name in the data: keep the slider when it rolls, drop fixed ones.
-            if (!names.IsNamed(GetInt(entry, "property") ?? -1, GetInt(entry, "specialTag") ?? 0))
+            if (!names.IsNamed(GetInt(entry, "property") ?? -1, GetInt(entry, "specialTag") ?? 0, GetLong(entry, "tags") ?? 0))
             {
                 if (mod.Max - mod.Min > double.Epsilon)
                     result.Add(mod with { Property = "Special modifier" });
@@ -344,6 +362,9 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
     /// <summary>Display categories that belong to one class (affixes of other classes are not offered).</summary>
     private static readonly string[] ClassCategories = ["Acolyte", "Mage", "Primalist", "Sentinel", "Rogue"];
+
+    /// <summary>Property id of a skill's own property (see <c>ImplicitNames</c>).</summary>
+    private const int SkillPropertyId = 58;
 
     /// <summary><c>rollsOn</c> of equipment affixes.</summary>
     private const int RollsOnEquipment = 0;
@@ -401,6 +422,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             var tiers = ParseAffixTiers(affix, name, names);
             if (tiers.Count == 0)
                 continue;
+
+            // Skill affixes have only an internal name ("Blood Rage Deadly Strikes"): show what the game shows,
+            // the skill property of their stat ("You have Incisive Rage").
+            if (GetString(affix, "affixDisplayName") is null
+                && GetInt(affix, "property") == SkillPropertyId
+                && tiers[0].Stats is [var skillStat]
+                && !string.Equals(skillStat.Property, name, StringComparison.Ordinal))
+                name = skillStat.Property;
 
             result.Add(new AffixDefinition(
                 id,
@@ -464,7 +493,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 var modifier = BuildModifier(property, specialTag, tags, modifierType, min, max, names);
 
                 // Skill-specific properties have no name in the data: the affix name says what they do.
-                if (!names.IsNamed(property, specialTag))
+                if (!names.IsNamed(property, specialTag, tags))
                     modifier = modifier with { Property = affixName };
 
                 tierStats.Add(modifier);
@@ -475,6 +504,34 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Affixes that only the listed uniques drop (their <c>droppableLegendaryAffixes</c>) are kept for those uniques:
+    /// they get <see cref="AffixDefinition.OnlyOnUniques"/> and the unique's name as their group.
+    /// </summary>
+    private static List<AffixDefinition> LimitToUniques(List<AffixDefinition> affixes, IReadOnlyList<ItemBase> uniques)
+    {
+        var owners = new Dictionary<int, List<ItemBase>>();
+        foreach (var unique in uniques)
+        {
+            foreach (var affixId in unique.LegendaryAffixes)
+            {
+                if (!owners.TryGetValue(affixId, out var list))
+                    owners[affixId] = list = [];
+                list.Add(unique);
+            }
+        }
+
+        return affixes
+            .Select(a => owners.TryGetValue(a.Id, out var list)
+                ? a with
+                {
+                    OnlyOnUniques = list.Select(u => u.UniqueId!.Value).ToHashSet(),
+                    GroupName = string.Join(" / ", list.Select(u => u.Name).Distinct())
+                }
+                : a)
+            .ToList();
     }
 
     /// <summary>Names of the affix display categories (the <c>affixDisplayCategories</c> list is not stored, so they are fixed here).</summary>
@@ -528,8 +585,10 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static ItemImplicit BuildModifier(int property, int specialTag, long tags, int modifierType, double first, double second, ImplicitNames names)
     {
         var type = Enum.IsDefined((ImplicitModifierType)modifierType) ? (ImplicitModifierType)modifierType : ImplicitModifierType.Added;
-        var info = names.GetProperty(property);
-        var name = names.Compose(info, property, tags, specialTag);
+        // A skill's own property (property 58) takes its name and display rules from that skill's list.
+        var abilityInfo = names.GetAbilityProperty(property, tags, specialTag);
+        var info = abilityInfo ?? names.GetProperty(property);
+        var name = abilityInfo?.Name ?? names.Compose(info, property, tags, specialTag);
 
         // Increased / more are always percentages; added values only for properties shown that way (resistances, ...).
         var isPercent = type != ImplicitModifierType.Added || (info?.AddedAsPercentage ?? false);
@@ -550,7 +609,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private sealed record PropertyInfo(string Name, bool AddedAsPercentage, bool AddedAsTenth, bool DontDisplayPlus, bool NameIncludesModifier);
 
     /// <summary>Builds implicit names like the game: "Minion Spell Fire Damage", "Bleed Chance", "Damage over Time".</summary>
-    private sealed class ImplicitNames(Dictionary<int, PropertyInfo> properties, Dictionary<int, string> ailments)
+    /// <param name="abilityProperties">
+    /// Per skill (<c>abilityID</c>) its own properties in order, from the <c>AbilityProperties</c> table; empty for
+    /// databases made before it.
+    /// </param>
+    private sealed class ImplicitNames(
+        Dictionary<int, PropertyInfo> properties,
+        Dictionary<int, string> ailments,
+        Dictionary<int, IReadOnlyList<PropertyInfo>> abilityProperties)
     {
         /// <summary>Tag bits (the game's <c>AT</c> flags) in the order their words go before the property name.</summary>
         private static readonly (long Bit, string Word)[] PrefixTags =
@@ -562,20 +628,33 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
         private const long DamageOverTimeTag = 4096;
 
-        /// <summary>Properties that refer to one specific skill and cannot be named from the data.</summary>
-        private const int DeprecatedSkillProperty = 58;
+        /// <summary>
+        /// A property of one specific skill: <c>tags</c> holds the skill's <c>abilityID</c> and <c>specialTag</c> the
+        /// index in that skill's property list (e.g. Blood Rage, index 5: "You have Incisive Rage").
+        /// </summary>
+        private const int AbilityProperty = 58;
         private const int LevelOfSkillsProperty = 88;
 
         public PropertyInfo? GetProperty(int property) => properties.GetValueOrDefault(property);
 
+        /// <summary>The skill property that property 58 refers to; <c>null</c> for other properties or when unknown.</summary>
+        public PropertyInfo? GetAbilityProperty(int property, long tags, int specialTag) =>
+            property == AbilityProperty
+            && tags is >= 0 and <= int.MaxValue
+            && abilityProperties.TryGetValue((int)tags, out var list)
+            && specialTag >= 0 && specialTag < list.Count
+                ? list[specialTag]
+                : null;
+
         /// <summary>
-        /// <c>false</c> for properties without a name and for skill-specific ones (property 58, and "Level of Skills"
-        /// with a special tag, whose tags then select a single skill).
+        /// <c>false</c> for properties without a name, for skill properties (58) whose skill is unknown, and for
+        /// "Level of Skills" with a special tag (its tags then select a single skill).
         /// </summary>
-        public bool IsNamed(int property, int specialTag) =>
-            properties.ContainsKey(property)
-            && property != DeprecatedSkillProperty
-            && !(property == LevelOfSkillsProperty && specialTag != 0);
+        public bool IsNamed(int property, int specialTag, long tags) =>
+            property == AbilityProperty
+                ? GetAbilityProperty(property, tags, specialTag) is not null
+                : properties.ContainsKey(property)
+                  && !(property == LevelOfSkillsProperty && specialTag != 0);
 
         public string Compose(PropertyInfo? info, int property, long tags, int specialTag)
         {
@@ -598,6 +677,43 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
             return name;
         }
+    }
+
+    /// <summary>
+    /// <c>abilityProperties</c>: <c>{"abilityID":950,"properties":[{"propertyName":"You have Berserking Rage",...}, ...]}</c>.
+    /// Databases made before the table existed simply have none.
+    /// </summary>
+    private static Dictionary<int, IReadOnlyList<PropertyInfo>> ReadAbilityProperties(SqliteConnection connection)
+    {
+        var result = new Dictionary<int, IReadOnlyList<PropertyInfo>>();
+
+        foreach (var (key, _, json) in ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM AbilityProperties"))
+        {
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } ability
+                || (GetInt(ability, "abilityID")
+                    ?? (int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var k) ? (int?)k : null)) is not { } abilityId
+                || Find(ability, "properties") is not { ValueKind: JsonValueKind.Array } entries)
+                continue;
+
+            var list = new List<PropertyInfo>();
+            foreach (var entry in entries.EnumerateArray())
+            {
+                // Keep the position even for an unreadable entry: affixes refer to properties by index.
+                list.Add(entry.ValueKind == JsonValueKind.Object
+                    ? new PropertyInfo(
+                        GetString(entry, "propertyName") ?? $"Skill property {list.Count}",
+                        GetBool(entry, "displayAddedAsPercentage") ?? false,
+                        GetBool(entry, "displayAddedAsTenthOfValue") ?? false,
+                        GetBool(entry, "dontDisplayPlus") ?? false,
+                        GetBool(entry, "nameIncludesModifier") ?? false)
+                    : new PropertyInfo($"Skill property {list.Count}", false, false, false, false));
+            }
+
+            result.TryAdd(abilityId, list);
+        }
+
+        return result;
     }
 
     private static Dictionary<int, PropertyInfo> ReadProperties(SqliteConnection connection)
