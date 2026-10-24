@@ -27,7 +27,7 @@ public partial class MainWindow : Window
         // Unsaved changes are lost with the window: ask first.
         Closing += (_, e) => e.Cancel = !viewModel.ConfirmClose();
 
-        // Maximizing is not supported: strip WS_MAXIMIZEBOX once the HWND exists.
+        // Maximizing is not supported: block it in the window procedure once the HWND exists.
         SourceInitialized += (_, _) => DisableMaximize();
         StateChanged += (_, _) => PreventMaximizedState();
         // Resource references (not brush instances) so the title follows runtime theme changes.
@@ -69,28 +69,53 @@ public partial class MainWindow : Window
 
     #region Maximize disabled
 
-    private const int GWL_STYLE = -16;
-    private const int WS_MAXIMIZEBOX = 0x00010000;
+    private const int WM_SYSCOMMAND = 0x0112;
+    private const int WM_NCLBUTTONDBLCLK = 0x00A3;
+    private const int WM_INITMENUPOPUP = 0x0117;
+    private const int SC_MAXIMIZE = 0xF030;
+    private const int HTCAPTION = 2;
+    private const uint MF_BYCOMMAND = 0x0000;
+    private const uint MF_GRAYED = 0x0001;
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+    [DllImport("user32.dll")]
+    private static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
 
     /// <summary>
-    /// Removes WS_MAXIMIZEBOX from the native window. Windows then rejects every maximize path
-    /// (title bar double-click, Win+Up, dragging to the top edge, the Alt+Space menu entry)
-    /// while the resize borders keep working.
+    /// Blocks maximizing in the window procedure (title bar double-click, Win+Up, the Alt+Space menu entry, which is
+    /// also greyed out). The window style is left alone on purpose: removing WS_MAXIMIZEBOX from a WindowChrome window
+    /// makes Windows paint its classic caption buttons and frame line over the custom title bar whenever the frame is
+    /// repainted (at start-up, when a dialog closes, after saving).
     /// </summary>
     private void DisableMaximize()
     {
-        var hwnd = new WindowInteropHelper(this).Handle;
-        var style = GetWindowLong(hwnd, GWL_STYLE);
-        SetWindowLong(hwnd, GWL_STYLE, style & ~WS_MAXIMIZEBOX);
+        if (PresentationSource.FromVisual(this) is HwndSource source)
+            source.AddHook(BlockMaximize);
     }
 
-    /// <summary>Safety net: if anything still maximizes the window, put it back to normal.</summary>
+    private static IntPtr BlockMaximize(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        switch (msg)
+        {
+            case WM_SYSCOMMAND when ((int)wParam.ToInt64() & 0xFFF0) == SC_MAXIMIZE:
+            case WM_NCLBUTTONDBLCLK when wParam.ToInt64() == HTCAPTION:
+                handled = true;
+                break;
+            case WM_INITMENUPOPUP:
+                // The system menu is about to open: grey out "Maximize" (the menu itself is still shown by Windows).
+                EnableMenuItem(GetSystemMenu(hwnd, false), SC_MAXIMIZE, MF_BYCOMMAND | MF_GRAYED);
+                break;
+        }
+
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Safety net for paths that do not go through WM_SYSCOMMAND (e.g. dragging the window to the top edge with
+    /// Aero Snap): put the window back to normal.
+    /// </summary>
     private void PreventMaximizedState()
     {
         if (WindowState == WindowState.Maximized)
