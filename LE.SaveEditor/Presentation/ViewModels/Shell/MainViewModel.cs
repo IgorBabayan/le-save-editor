@@ -96,11 +96,13 @@ public partial class MainViewModel(
     [NotifyPropertyChangedFor(nameof(ShowNoCharacters))]
     [NotifyPropertyChangedFor(nameof(ShowLoading))]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ReloadCommand))]
     private bool _isLoading;
 
     /// <summary>The selected character is being written to its save file.</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ReloadCommand))]
     private bool _isSaving;
 
     /// <summary>Some opened character has changes that are not saved yet.</summary>
@@ -352,11 +354,32 @@ public partial class MainViewModel(
         notificationService.Notify(title, string.IsNullOrWhiteSpace(message) ? null : message, severity);
     }
 
-    [RelayCommand]
-    private async Task LoadSavesAsync()
+    private bool CanReload() => HasSaveFolder && !IsLoading && !IsSaving;
+
+    /// <summary>
+    /// Title bar reload button (F5): reads the save files of the save folder again, e.g. after the game wrote them.
+    /// Asks first when there are unsaved changes; each tab keeps its selected character.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanReload))]
+    private async Task ReloadAsync()
+    {
+        if (!await LoadSavesAsync())
+            return;
+
+        if (LoadErrors.Count == 0)
+            toastService.Show("Save files reloaded.", NotificationSeverity.Success);
+        else
+            toastService.Show("Save files reloaded, but some could not be read. See the notifications for details.", NotificationSeverity.Warning);
+    }
+
+    /// <summary>
+    /// Reads the save folder; <c>false</c> when the user kept the unsaved changes, a newer load superseded this one or
+    /// the folder could not be read.
+    /// </summary>
+    private async Task<bool> LoadSavesAsync()
     {
         if (!ConfirmDiscardChanges("Read the save folder again"))
-            return;
+            return false;
 
         // A newer load (e.g. Save pressed again) supersedes the running one.
         _loadCts?.Cancel();
@@ -366,12 +389,13 @@ public partial class MainViewModel(
         var folder = settingsService.Current.SaveFolderPath ?? string.Empty;
         var previousSelection = SelectedCharacter?.FilePath;
 
+        var loaded = false;
         IsLoading = true;
         try
         {
             var content = await saveFolderLoader.LoadAsync(folder, cts.Token);
             if (cts.IsCancellationRequested)
-                return;
+                return false;
 
             Replace(Characters, content.Characters.OrderBy(c => c.Slot));
             ForgetClosedCharacters();
@@ -380,11 +404,13 @@ public partial class MainViewModel(
 
             if (content.Errors.Count > 0)
                 NotifyLoadErrors(content.Errors);
+
+            loaded = true;
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
             // Superseded by a newer load.
-            return;
+            return false;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -418,6 +444,7 @@ public partial class MainViewModel(
             SelectedCharacterTabIndex = SoftcoreTabIndex;
 
         NotifyStateChanged();
+        return loaded;
     }
 
     private void NotifyLoadErrors(IReadOnlyCollection<SaveFileError> errors)
@@ -441,6 +468,7 @@ public partial class MainViewModel(
         OnPropertyChanged(nameof(ShowNoCharacters));
         OnPropertyChanged(nameof(ShowLoading));
         OnPropertyChanged(nameof(ShowSelectCharacterHint));
+        ReloadCommand.NotifyCanExecuteChanged();
     }
 
     private static bool IsExistingFolder(string? path) =>

@@ -44,6 +44,8 @@ The save button in the title bar (or `Ctrl+S`) writes the changes of the selecte
 equipped items, idols and the backpack (edited, moved, added or removed items) — into its `1CHARACTERSLOT_*` file.
 It is enabled while the character has changes; changes of several characters are kept while switching
 between them, and closing the editor or reloading the save folder asks before discarding them.
+The reload button in the title bar (or `F5`) reads the save files again, e.g. after playing; it asks first
+when there are unsaved changes and keeps the selected character.
 
 - Only the changed entries of `savedItems` are rewritten. Every other field, unknown properties and the
   entry order stay as the game wrote them. The JSON is written compact on one line after the `EPOCH` marker,

@@ -118,6 +118,7 @@
 
     <Window.InputBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+        <KeyBinding Gesture="F5" Command="{Binding ReloadCommand}" />
     </Window.InputBindings>
 
     <Border x:Name="RootBorder"
@@ -154,6 +155,15 @@
                             AutomationProperties.Name="Save changes"
                             Command="{Binding SaveCommand}">
                         <wpf:MaterialIcon Kind="ContentSaveOutline" Width="18" Height="18" />
+                    </Button>
+
+                    <!-- Reads the save files again (e.g. after the game wrote them); asks before discarding unsaved changes. -->
+                    <Button x:Name="ReloadButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Reload save files (F5)"
+                            AutomationProperties.Name="Reload save files"
+                            Command="{Binding ReloadCommand}">
+                        <wpf:MaterialIcon Kind="Refresh" Width="18" Height="18" />
                     </Button>
 
                     <!-- Generates the game database, or updates it if it already exists (LE.SaveEditor.DB). -->
