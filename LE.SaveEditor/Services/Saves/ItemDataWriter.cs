@@ -71,8 +71,8 @@ public static class ItemDataWriter
     }
 
     /// <summary>
-    /// Affix count followed by 3 bytes per affix. The sealed affix and the corruption come first and are marked in the
-    /// count: on a plain base 0x80 = sealed, 0x40 = corruption; on a legendary 0x80 = corruption.
+    /// Affix count followed by 3 bytes per affix, the special ones marked in the count: on a plain base the sealed affix
+    /// (0x80) and the corruption (0x40) come first; on a legendary the corruption (0x80) comes last.
     /// </summary>
     private static void AddAffixes(List<byte> bytes, IReadOnlyList<ItemAffixData> affixes, bool isLegendary)
     {
@@ -87,10 +87,10 @@ public static class ItemDataWriter
         if (affixes.Count > ItemDataReader.AffixCountMask)
             throw new ArgumentException($"An item can have at most {ItemDataReader.AffixCountMask} affixes.", nameof(affixes));
 
-        var ordered = sealedAffixes
-            .Concat(corruptions)
-            .Concat(affixes.Where(a => !a.IsCorrupted && !a.IsSealed))
-            .ToList();
+        var others = affixes.Where(a => !a.IsCorrupted && !a.IsSealed);
+        var ordered = isLegendary
+            ? others.Concat(corruptions).ToList()
+            : sealedAffixes.Concat(corruptions).Concat(others).ToList();
 
         var flags = isLegendary
             ? corruptions.Count > 0 ? ItemDataReader.SealedFlag : 0

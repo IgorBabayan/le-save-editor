@@ -147,7 +147,7 @@ public static class SavedItemConverter
         }
 
         // The unique's own affixes before the others (the game shows them on top); the writer puts the sealed affix and
-        // the corruption first and marks them, as the game does.
+        // the corruption where the game expects them (first on a plain base, the corruption last on a legendary).
         IReadOnlyList<ItemAffixData> affixes = item.Rarity is ItemRarity.Unique or ItemRarity.Set
             ? []
             : item.Affixes

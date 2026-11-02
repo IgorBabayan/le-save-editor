@@ -19,12 +19,11 @@ namespace LE.SaveEditor.Services.Saves;
 /// unique / set:            [8..9] uniqueID (big endian)   [10..17] unique modifier rolls   [18] legendary potential
 /// legendary:               [8..9] uniqueID   [10..17] unique modifier rolls   [18] affix count   affixes...   [last] 0
 /// </code>
-/// The affix count keeps the number in its low bits; its high bits mark the special affixes, which are stored
-/// before the others:
+/// The affix count keeps the number in its low bits; its high bits mark the special affixes:
 /// <code>
 /// plain base:   0x80 = the first affix is sealed (Glyph of Insight)
 ///               0x40 = the next affix (after the sealed one, if any) is the corruption
-/// legendary:    0x80 = the first affix is the corruption (uniques cannot be sealed)
+/// legendary:    0x80 = the last affix is the corruption (uniques cannot be sealed)
 /// </code>
 /// A corrupted item has bit <c>0x10</c> in the flags byte, also when the corruption added no affix. Corrupting a
 /// unique turns it into a legendary that carries the corruption as its only affix.
@@ -47,7 +46,7 @@ public static class ItemDataReader
 
     internal const int ImplicitCount = 3;
     internal const int UniqueRollCount = 8;
-    /// <summary>Affix count bit: the first affix of a plain base is sealed; on a legendary, the first affix is the corruption.</summary>
+    /// <summary>Affix count bit: the first affix of a plain base is sealed; on a legendary, the last affix is the corruption.</summary>
     internal const int SealedFlag = 0x80;
 
     /// <summary>Affix count bit of a plain base: the affix after the sealed one (or the first) is the corruption.</summary>
@@ -145,12 +144,13 @@ public static class ItemDataReader
         if (data.Count < position + count * 3)
             return null;
 
-        // Index of the sealed affix and of the corruption among the stored affixes (-1 = none); both come first.
+        // Index of the sealed affix and of the corruption among the stored affixes (-1 = none): on a plain base both come
+        // first, on a legendary the corruption comes last (after the unique's own and the Temporal Sanctum affixes).
         int sealedIndex, corruptionIndex;
         if (isLegendary)
         {
             sealedIndex = -1;
-            corruptionIndex = (countByte & (SealedFlag | CorruptionFlag)) != 0 ? 0 : -1;
+            corruptionIndex = (countByte & (SealedFlag | CorruptionFlag)) != 0 ? count - 1 : -1;
         }
         else
         {
