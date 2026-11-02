@@ -13,8 +13,9 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
 /// (all read from <c>savedItems</c>); the other sections start empty. Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
-/// builds a new item there. Crafting materials in the backpack (runes, glyphs, affix shards) are added, changed and
-/// removed with the crafting material picker.
+/// builds a new item there. Crafting materials in the backpack (runes, glyphs, affix shards) are counted in the
+/// "Crafting materials" box, which has an add action per kind; they are changed with the crafting material picker of
+/// their kind and removed like other items.
 /// <see cref="GetUpdates"/> collects what changed since the save was read, for saving.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
@@ -63,7 +64,12 @@ public sealed partial class InventoryViewModel : ViewModelBase
                 if (e.PropertyName == nameof(EquipmentSlotViewModel.Item))
                     Changed?.Invoke(this, EventArgs.Empty);
             };
-        Backpack.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        Backpack.Changed += (_, _) =>
+        {
+            UpdateCraftingMaterials();
+            Changed?.Invoke(this, EventArgs.Empty);
+        };
+        UpdateCraftingMaterials();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -92,12 +98,15 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// <summary>The idol grid (<see cref="IdolGridSize"/> × <see cref="IdolGridSize"/> without its corners) with the character's idols.</summary>
     public BackpackViewModel Idols { get; }
 
-    /// <summary>Totals shown in the "Crafting materials" box.</summary>
+    /// <summary>
+    /// The "Crafting materials" box: per kind (shards, glyphs, runes) how many the backpack holds, and its own action
+    /// to add one.
+    /// </summary>
     public IReadOnlyList<CraftingMaterialViewModel> CraftingMaterials { get; } =
     [
-        new("Shards"),
-        new("Glyphs"),
-        new("Runes")
+        new(CraftingMaterialKind.AffixShard, "Shards"),
+        new(CraftingMaterialKind.Glyph, "Glyphs"),
+        new(CraftingMaterialKind.Rune, "Runes")
     ];
 
     /// <summary>
@@ -164,22 +173,34 @@ public sealed partial class InventoryViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// An empty backpack cell was right-clicked and a crafting material kind picked: opens the crafting material picker
-    /// and puts the picked rune, glyph or affix shard into the backpack at that cell.
+    /// The add action of a kind in the "Crafting materials" box: opens the crafting material picker for that kind and
+    /// puts the picked rune, glyph or affix shard into the first free cell of the backpack.
     /// </summary>
-    [RelayCommand]
-    private void BuildCraftingMaterial(NewCraftingMaterialRequest? request)
+    [RelayCommand(CanExecute = nameof(CanAddCraftingMaterial))]
+    private void AddCraftingMaterial(CraftingMaterialViewModel? kind)
     {
-        if (request is null || !Backpack.IsCellFree(request.Column, request.Row))
+        if (kind is null || !CanAddCraftingMaterial(kind))
             return;
 
-        if (_dialogService.ShowCraftingMaterialPicker(request.Kind, null) is { } material)
-            Backpack.AddMaterial(material, request.Column, request.Row);
+        if (_dialogService.ShowCraftingMaterialPicker(kind.Kind, null) is { } material)
+            Backpack.AddMaterial(material);
+    }
+
+    private bool CanAddCraftingMaterial(CraftingMaterialViewModel? kind) =>
+        kind is not null && Backpack.HasRoomForMaterial(kind.Kind);
+
+    /// <summary>Counts the materials of each kind in the backpack and re-checks whether there is room to add one.</summary>
+    private void UpdateCraftingMaterials()
+    {
+        foreach (var material in CraftingMaterials)
+            material.Amount = Backpack.Items.Count(i => i.MaterialKind == material.Kind);
+
+        AddCraftingMaterialCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>
-    /// A crafting material in the backpack was clicked (or "Edit…" chosen): opens the crafting material picker on it;
-    /// the picked material replaces it in its cell.
+    /// A crafting material in the backpack was clicked (or "Edit…" chosen): opens the crafting material picker of its
+    /// kind on it; the picked material replaces it in its cell.
     /// </summary>
     [RelayCommand]
     private void EditCraftingMaterial(BackpackItemViewModel? item)
@@ -276,8 +297,25 @@ public sealed partial class InventoryViewModel : ViewModelBase
 /// <param name="Grid">The grid to build in (backpack or idol grid); <c>null</c> for the backpack.</param>
 public sealed record NewBackpackItemRequest(EquipmentSlot Slot, int Column, int Row, object? Anchor, BackpackViewModel? Grid = null);
 
-/// <summary>A new crafting material of <paramref name="Kind"/> to put into the empty backpack cell <paramref name="Column"/>, <paramref name="Row"/>.</summary>
-public sealed record NewCraftingMaterialRequest(CraftingMaterialKind Kind, int Column, int Row);
+/// <summary>
+/// One kind in the "Crafting materials" box: its name, how many materials of the kind the backpack holds and, in the
+/// view, the action that adds one.
+/// </summary>
+public sealed partial class CraftingMaterialViewModel(CraftingMaterialKind kind, string name) : ObservableObject
+{
+    public CraftingMaterialKind Kind { get; } = kind;
 
-/// <summary>A crafting material total; <see cref="Amount"/> is <c>null</c> until it is read from the save.</summary>
-public sealed record CraftingMaterialViewModel(string Name, int? Amount = null);
+    /// <summary>Label of the box column, e.g. "Shards".</summary>
+    public string Name { get; } = name;
+
+    /// <summary>Materials of the kind in the backpack (also ones <c>base.db</c> does not know); <c>null</c> until counted.</summary>
+    [ObservableProperty]
+    private int? _amount;
+
+    /// <summary>Tooltip of the add action, e.g. "Add a rune to the backpack".</summary>
+    public string AddToolTip => Kind switch
+    {
+        CraftingMaterialKind.AffixShard => "Add an affix shard to the backpack",
+        _ => $"Add a {Kind.DisplayName.ToLowerInvariant()} to the backpack"
+    };
+}

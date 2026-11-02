@@ -6,15 +6,16 @@ using LE.SaveEditor.Services.GameData.Items;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// The crafting material picker: chooses a rune, a glyph or an affix shard to put into the backpack, or the material an
-/// existing one becomes. The kinds are tabs; the list is filtered by the search text (name, kind, affix category).
+/// The crafting material picker: chooses a material of one kind (a rune, a glyph or an affix shard) to put into the
+/// backpack, or the material of that kind an existing one becomes. The list is filtered by the search text (name and,
+/// for shards, prefix / suffix and affix category).
 /// </summary>
 public sealed partial class CraftingMaterialPickerViewModel : ViewModelBase
 {
     private readonly IItemBaseCatalog _catalog;
     private readonly IIconProvider _iconProvider;
 
-    /// <param name="kind">Kind shown first.</param>
+    /// <param name="kind">Kind of material to pick.</param>
     /// <param name="current">The material being edited (selected in the list), or <c>null</c> for a new one.</param>
     public CraftingMaterialPickerViewModel(
         IItemBaseCatalog catalog,
@@ -24,40 +25,34 @@ public sealed partial class CraftingMaterialPickerViewModel : ViewModelBase
     {
         _catalog = catalog;
         _iconProvider = iconProvider;
-        Current = current;
-        IsEditing = current is not null;
-        Kinds = Enum.GetValues<CraftingMaterialKind>()
-            .OrderBy(k => k switch
-            {
-                CraftingMaterialKind.Rune => 0,
-                CraftingMaterialKind.Glyph => 1,
-                _ => 2
-            })
-            .Select(k => new CraftingMaterialKindOption(k, this))
-            .ToList();
-        // Fills the list (the field starts at 0, which is no kind).
-        SelectedKind = current?.Kind ?? kind;
+        Kind = kind;
+        Current = current?.Kind == kind ? current : null;
+        IsEditing = Current is not null;
+        Refresh();
     }
+
+    /// <summary>Kind of material the picker lists.</summary>
+    public CraftingMaterialKind Kind { get; }
 
     /// <summary>The material being edited; <c>null</c> when a new one is picked.</summary>
     public CraftingMaterial? Current { get; }
 
     public bool IsEditing { get; }
 
-    public string Title => IsEditing ? "Edit crafting material" : "Add crafting material";
+    /// <summary>Window title, e.g. "Add rune" or "Edit affix shard".</summary>
+    public string Title => $"{(IsEditing ? "Edit" : "Add")} {Kind.DisplayName.ToLowerInvariant()}";
 
     public string ApplyText => IsEditing ? "Apply" : "Add";
 
-    /// <summary>The kind tabs: runes, glyphs, affix shards.</summary>
-    public IReadOnlyList<CraftingMaterialKindOption> Kinds { get; }
-
-    [ObservableProperty]
-    private CraftingMaterialKind _selectedKind;
+    /// <summary>Hint of the search box.</summary>
+    public string SearchToolTip => Kind == CraftingMaterialKind.AffixShard
+        ? "Search shards by affix name, prefix / suffix or affix category"
+        : $"Search {Kind.PluralName.ToLowerInvariant()} by name";
 
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    /// <summary>Materials of <see cref="SelectedKind"/> that match <see cref="SearchText"/>.</summary>
+    /// <summary>Materials of <see cref="Kind"/> that match <see cref="SearchText"/>.</summary>
     public ObservableCollection<CraftingMaterialOptionViewModel> Options { get; } = [];
 
     [ObservableProperty]
@@ -80,21 +75,14 @@ public sealed partial class CraftingMaterialPickerViewModel : ViewModelBase
     public string EmptyText => !_catalog.IsAvailable
         ? "The game database is missing. Generate it with the database button in the title bar."
         : string.IsNullOrWhiteSpace(SearchText)
-            ? $"The game database has no {SelectedKind.PluralName.ToLowerInvariant()}. Update it with the database button in the title bar."
-            : $"No {SelectedKind.PluralName.ToLowerInvariant()} match \"{SearchText.Trim()}\".";
+            ? $"The game database has no {Kind.PluralName.ToLowerInvariant()}. Update it with the database button in the title bar."
+            : $"No {Kind.PluralName.ToLowerInvariant()} match \"{SearchText.Trim()}\".";
 
     /// <summary>The picked material, set when the user applies.</summary>
     public CraftingMaterial? Result { get; private set; }
 
     /// <summary>The user applied the selection; the view closes.</summary>
     public event EventHandler? Applied;
-
-    partial void OnSelectedKindChanged(CraftingMaterialKind value)
-    {
-        foreach (var option in Kinds)
-            option.NotifySelection();
-        Refresh();
-    }
 
     partial void OnSearchTextChanged(string value) => Refresh();
 
@@ -114,7 +102,7 @@ public sealed partial class CraftingMaterialPickerViewModel : ViewModelBase
         var previous = SelectedOption?.Material ?? Current;
 
         Options.Clear();
-        foreach (var material in _catalog.GetCraftingMaterials(SelectedKind))
+        foreach (var material in _catalog.GetCraftingMaterials(Kind))
         {
             var option = new CraftingMaterialOptionViewModel(material, _iconProvider);
             if (words.All(w => option.SearchText.Contains(w, StringComparison.CurrentCultureIgnoreCase)))
@@ -125,26 +113,6 @@ public sealed partial class CraftingMaterialPickerViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasOptions));
         OnPropertyChanged(nameof(EmptyText));
     }
-}
-
-/// <summary>A kind tab of the crafting material picker.</summary>
-public sealed partial class CraftingMaterialKindOption(CraftingMaterialKind kind, CraftingMaterialPickerViewModel owner) : ObservableObject
-{
-    public CraftingMaterialKind Kind { get; } = kind;
-
-    public string Label => Kind.PluralName;
-
-    public bool IsSelected
-    {
-        get => owner.SelectedKind == Kind;
-        set
-        {
-            if (value)
-                owner.SelectedKind = Kind;
-        }
-    }
-
-    internal void NotifySelection() => OnPropertyChanged(nameof(IsSelected));
 }
 
 /// <summary>One row of the crafting material picker.</summary>

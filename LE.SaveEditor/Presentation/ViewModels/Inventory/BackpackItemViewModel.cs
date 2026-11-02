@@ -74,7 +74,14 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(HasMaterialDescription))]
     [NotifyPropertyChangedFor(nameof(MaterialShortLabel))]
     [NotifyPropertyChangedFor(nameof(DisplayName))]
+    [NotifyPropertyChangedFor(nameof(MaterialKind))]
     private CraftingMaterial? _material;
+
+    /// <summary>
+    /// Kind of crafting material the item is: of its <see cref="Material"/>, or as stored when <c>base.db</c> does not
+    /// know the material; <c>null</c> for any other item.
+    /// </summary>
+    public CraftingMaterialKind? MaterialKind => Material?.Kind ?? (IsEquipment ? null : StoredMaterialKind);
 
     public bool IsMaterial => Material is not null;
 

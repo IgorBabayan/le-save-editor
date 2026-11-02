@@ -8,7 +8,7 @@ using LE.SaveEditor.Services.GameData.Items;
 namespace LE.SaveEditor.Presentation.Views.Inventory;
 
 /// <summary>
-/// Picks a rune, a glyph or an affix shard for the backpack. <see cref="Result"/> is the picked material, or
+/// Picks a material of one kind (a rune, a glyph or an affix shard) for the backpack. <see cref="Result"/> is the picked material, or
 /// <c>null</c> when cancelled. The search box takes the focus; Down moves into the list, Enter or a double click applies.
 /// </summary>
 public partial class CraftingMaterialPickerWindow : Window

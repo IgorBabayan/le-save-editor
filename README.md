@@ -30,10 +30,12 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   to move them inside their grid.
 - Right-click an empty backpack cell to build a new item there (equipment or an idol), or an empty cell of the idol
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
-- Crafting materials in the backpack: right-click an empty backpack cell and choose "Rune…", "Glyph…" or "Affix shard…"
-  to pick one in the crafting material picker (tabs per kind, search by name; shards also by prefix / suffix and affix
-  category). Click a material, or right-click it and choose "Edit…", to turn it into another rune, glyph or shard;
-  "Remove" deletes it on the next save. Materials take one cell and can be dragged like other items. Their names,
+- Crafting materials in the backpack: the "Crafting materials" box shows how many shards, glyphs and runes the
+  backpack holds, and each kind has its own "Add" action. It opens the crafting material picker for that kind (search
+  by name; shards also by prefix / suffix and affix category) and puts the picked material into the first free
+  backpack cell; "Add" is disabled while the backpack is full. Click a material in the backpack, or right-click it and
+  choose "Edit…", to turn it into another material of the same kind; "Remove" deletes it on the next save.
+  Materials take one cell and can be dragged like other items. Their names,
   descriptions and icons come from the game database; materials it does not know are shown as "Rune", "Glyph" or
   "Shard" placeholders and stay in the save untouched.
   A rune or glyph is stored as `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). The sub type of an affix shard

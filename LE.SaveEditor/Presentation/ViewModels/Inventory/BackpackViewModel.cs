@@ -274,11 +274,11 @@ public sealed partial class BackpackViewModel : ViewModelBase
         Layout.Accepts((int)kind) && FindFreeSpot(ItemFootprint.Single, ignore: null) is not null;
 
     /// <summary>
-    /// Puts a new crafting material into the grid at the empty cell <paramref name="column"/>, <paramref name="row"/>,
-    /// or the first free cell when that one is taken. It is added to the save on the next save.
+    /// Puts a new crafting material into the first free cell of the grid (row by row, as the game fills the backpack).
+    /// It is added to the save on the next save.
     /// </summary>
     /// <returns><c>true</c> if the material was added.</returns>
-    public bool AddMaterial(CraftingMaterial material, int column, int row)
+    public bool AddMaterial(CraftingMaterial material)
     {
         if (!Layout.Accepts(material.BaseTypeId))
         {
@@ -287,15 +287,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
         }
 
         var footprint = ItemFootprint.Single;
-        var moved = false;
-        (int Column, int Row)? spot = CanPlace(footprint, column, row, ignore: null) ? (column, row) : null;
-        if (spot is null)
-        {
-            spot = FindFreeSpot(footprint, ignore: null);
-            moved = spot is not null;
-        }
-
-        if (spot is not { } place)
+        if (FindFreeSpot(footprint, ignore: null) is not { } place)
         {
             _toastService.Show($"There is no room in the {Layout.Name} for {material.FullName}; it was not added.", NotificationSeverity.Warning);
             return false;
@@ -312,20 +304,18 @@ public sealed partial class BackpackViewModel : ViewModelBase
         Add(new BackpackItemViewModel(source, material.BaseTypeId, place.Column, place.Row, null, isNew: true, gridRows: RowCount,
             material: material, iconProvider: _iconProvider));
         Changed?.Invoke(this, EventArgs.Empty);
-
-        if (moved)
-            _toastService.Show($"The chosen cell was taken; {material.FullName} was put in another spot of the {Layout.Name}.");
         return true;
     }
 
     /// <summary>
-    /// Turns the crafting material <paramref name="item"/> into <paramref name="material"/> (any rune, glyph or shard:
-    /// all take one cell). The new material is written back on the next save.
+    /// Turns the crafting material <paramref name="item"/> into <paramref name="material"/> of the same kind (a rune into
+    /// another rune, ...). The new material is written back on the next save.
     /// </summary>
     /// <returns><c>true</c> if the item changed.</returns>
     public bool ChangeMaterial(BackpackItemViewModel item, CraftingMaterial material)
     {
-        if (!Items.Contains(item) || !item.IsMaterial || item.Material == material)
+        // A material stays of its kind: runes, glyphs and shards each have their own action.
+        if (!Items.Contains(item) || item.Material is not { } current || current.Kind != material.Kind || current == material)
             return false;
 
         item.Material = material;
