@@ -304,6 +304,22 @@ public partial class MainViewModel(
             await LoadSavesAsync();
         else
             NotifyStateChanged();
+
+        NotifyIfDatabaseOutdated();
+    }
+
+    /// <summary>
+    /// A database made by an older generator lacks tables the editor reads stat names from (e.g. "Chance to cast Icicle
+    /// on Bow Hit" shows as "+0.12 …" without <c>PlayerProperties</c>): say so once, instead of only in the item builder.
+    /// </summary>
+    private void NotifyIfDatabaseOutdated()
+    {
+        if (!itemBaseCatalog.IsOutdated)
+            return;
+
+        const string message = "The game database is out of date, so some stat names are missing. Update it with the database button in the title bar.";
+        notificationService.Notify("Game database is out of date", message, NotificationSeverity.Warning);
+        toastService.Show(message, NotificationSeverity.Warning);
     }
 
     [RelayCommand]
