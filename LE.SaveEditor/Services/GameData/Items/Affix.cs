@@ -45,6 +45,12 @@ public sealed record AffixDefinition(
     public bool CanRollOnType(int baseTypeId) => CanRollOn.Contains(baseTypeId);
 
     /// <summary>
+    /// The game's <c>standardAffixEffectModifier</c>: the item type <c>affixEffectModifier</c> the tiers are written for.
+    /// The catalog scales the tiers to the item type an affix is asked for (see <c>IItemBaseCatalog.FindAffix</c>).
+    /// </summary>
+    public double StandardEffectModifier { get; init; }
+
+    /// <summary>
     /// <c>uniqueID</c>s of the uniques that alone can have this affix (their own legendary affixes, e.g. the Blood Rage
     /// affixes of Unsated Rage); empty when any item of a fitting type can.
     /// </summary>

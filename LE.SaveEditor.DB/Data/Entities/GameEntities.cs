@@ -71,6 +71,14 @@ public sealed class IdolAltarProperty : GameEntity
 {
 }
 
+/// <summary>
+/// <c>playerProperties</c>: player properties, keyed by their position in the list. Affixes and unique mods with
+/// property 98 refer to one of them by index (tags), e.g. "Chance to cast Icicle on Bow Hit".
+/// </summary>
+public sealed class PlayerProperty : GameEntity
+{
+}
+
 /// <summary><c>stats</c></summary>
 public sealed class Stat : GameEntity
 {

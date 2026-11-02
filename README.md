@@ -39,6 +39,9 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
 - Items saved by older editor versions stored a normal-affix corruption as one more prefix / suffix (the game shows
   it as such). A third prefix or suffix is shown in the corruption slot; applying the item again stores it as a real
   corruption.
+- Affix values are shown as the game shows them on the item: the game scales every affix by the item type
+  (e.g. Increased Bow Attack Speed is 75% higher on a bow, Health 17% higher on an amulet, unless the affix is
+  written for that type), so tiers and ranges in the builder and tooltip match the game.
 - Rarity counts only prefixes and suffixes: a sealed affix and the corruption do not make an item rare. The tooltip
   shows the sealed affix under "Sealed prefix" or "Sealed suffix".
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
@@ -69,7 +72,7 @@ Console tool that builds the editor's game data from maxroll's planner data
 `%APPDATA%\LE.SaveEditor` (next to `settings.json`):
 
 - `base.db` — SQLite (EF Core) with the tables `Classes`, `Affixes`, `ItemTypes`,
-  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
+  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `PlayerProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
   plus `Key`, `Name` and a SHA-256 `Hash`; `__DataMigrations` records every build/update.
   `Icons` has one row per image (`Group` + `Name`, `Path` = `uniques/spirit_xylem`).
 - `Icons/<group>/<name>.png` — from `https://assets-ng.maxroll.gg/last-epoch/webp/<group>/<name>.webp`,
