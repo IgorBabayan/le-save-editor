@@ -42,4 +42,11 @@ public interface IDialogService
     /// <paramref name="applied"/> is called with the item when the user applies it.
     /// </summary>
     void ShowItemInspector(EquipmentSlot slot, CharacterClass characterClass, object? anchor, Action<BuiltItem> applied);
+
+    /// <summary>
+    /// Shows the modal crafting material picker: a rune, a glyph or an affix shard, starting on the
+    /// <paramref name="kind"/> tab, or on <paramref name="current"/> when an existing material is edited.
+    /// </summary>
+    /// <returns>The picked material, or <c>null</c> if the user cancelled.</returns>
+    CraftingMaterial? ShowCraftingMaterialPicker(CraftingMaterialKind kind, CraftingMaterial? current);
 }

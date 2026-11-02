@@ -59,7 +59,8 @@ public sealed record ItemGridLayout(
 
 /// <summary>
 /// A grid container of the character: the backpack (a <see cref="Columns"/> × <see cref="Rows"/> grid holding the items of
-/// container <see cref="SavedItem.BackpackContainerId"/>) or, with <see cref="ItemGridLayout.Idols"/>, the idol grid.
+/// container <see cref="SavedItem.BackpackContainerId"/>: equipment, idols and crafting materials such as runes, glyphs
+/// and affix shards) or, with <see cref="ItemGridLayout.Idols"/>, the idol grid.
 /// Items cover several cells (<see cref="ItemFootprint"/>), never overlap and never cover a blocked cell.
 /// </summary>
 public sealed partial class BackpackViewModel : ViewModelBase
@@ -153,9 +154,10 @@ public sealed partial class BackpackViewModel : ViewModelBase
                 continue;
 
             var equipment = CreateEquipment(saved, baseTypeId, iconProvider, catalog);
+            var material = equipment is null ? FindMaterial(saved, baseTypeId, catalog) : null;
             var footprint = ItemFootprint.Of(equipment?.Item?.Base.BaseTypeId ?? baseTypeId);
             var item = new BackpackItemViewModel(saved, baseTypeId, saved.X, RowFromSaved(saved.Y, footprint, RowCount), equipment,
-                gridRows: RowCount);
+                gridRows: RowCount, material: material, iconProvider: iconProvider);
             if (CanPlace(item.Footprint, item.Column, item.Row, ignore: null))
                 Add(item);
             else
@@ -267,6 +269,70 @@ public sealed partial class BackpackViewModel : ViewModelBase
         return true;
     }
 
+    /// <summary>Whether a crafting material (one cell) still fits somewhere in the grid and the grid takes materials.</summary>
+    public bool HasRoomForMaterial(CraftingMaterialKind kind) =>
+        Layout.Accepts((int)kind) && FindFreeSpot(ItemFootprint.Single, ignore: null) is not null;
+
+    /// <summary>
+    /// Puts a new crafting material into the grid at the empty cell <paramref name="column"/>, <paramref name="row"/>,
+    /// or the first free cell when that one is taken. It is added to the save on the next save.
+    /// </summary>
+    /// <returns><c>true</c> if the material was added.</returns>
+    public bool AddMaterial(CraftingMaterial material, int column, int row)
+    {
+        if (!Layout.Accepts(material.BaseTypeId))
+        {
+            _toastService.Show($"{material.FullName} cannot be put into the {Layout.Name}.", NotificationSeverity.Warning);
+            return false;
+        }
+
+        var footprint = ItemFootprint.Single;
+        var moved = false;
+        (int Column, int Row)? spot = CanPlace(footprint, column, row, ignore: null) ? (column, row) : null;
+        if (spot is null)
+        {
+            spot = FindFreeSpot(footprint, ignore: null);
+            moved = spot is not null;
+        }
+
+        if (spot is not { } place)
+        {
+            _toastService.Show($"There is no room in the {Layout.Name} for {material.FullName}; it was not added.", NotificationSeverity.Warning);
+            return false;
+        }
+
+        var source = new SavedItem(
+            Layout.ContainerId,
+            place.Column,
+            SavedYFromRow(place.Row, footprint, RowCount),
+            1,
+            ItemDataReader.Version2,
+            CraftingMaterialData.Write(material));
+
+        Add(new BackpackItemViewModel(source, material.BaseTypeId, place.Column, place.Row, null, isNew: true, gridRows: RowCount,
+            material: material, iconProvider: _iconProvider));
+        Changed?.Invoke(this, EventArgs.Empty);
+
+        if (moved)
+            _toastService.Show($"The chosen cell was taken; {material.FullName} was put in another spot of the {Layout.Name}.");
+        return true;
+    }
+
+    /// <summary>
+    /// Turns the crafting material <paramref name="item"/> into <paramref name="material"/> (any rune, glyph or shard:
+    /// all take one cell). The new material is written back on the next save.
+    /// </summary>
+    /// <returns><c>true</c> if the item changed.</returns>
+    public bool ChangeMaterial(BackpackItemViewModel item, CraftingMaterial material)
+    {
+        if (!Items.Contains(item) || !item.IsMaterial || item.Material == material)
+            return false;
+
+        item.Material = material;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
     /// <summary>
     /// A spot for <paramref name="footprint"/> that covers the cell <paramref name="column"/>, <paramref name="row"/>:
     /// that cell as the top-left corner first, then shifted left and up one cell at a time.
@@ -306,6 +372,15 @@ public sealed partial class BackpackViewModel : ViewModelBase
 
         return new EquipmentSlotViewModel(slot, iconProvider) { Item = built, IsInGrid = true };
     }
+
+    /// <summary>
+    /// The crafting material (rune, glyph, affix shard) stored in <paramref name="saved"/>; <c>null</c> when it is none,
+    /// does not belong in this grid or is not in <c>base.db</c> (then it is shown as a placeholder).
+    /// </summary>
+    private CraftingMaterial? FindMaterial(SavedItem saved, int baseTypeId, IItemBaseCatalog catalog) =>
+        Layout.Accepts(baseTypeId) && CraftingMaterialData.Read(saved.Data) is { } stored
+            ? catalog.FindCraftingMaterial(stored.Kind, stored.SubTypeId)
+            : null;
 
     private void Add(BackpackItemViewModel item)
     {

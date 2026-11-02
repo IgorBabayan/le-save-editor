@@ -70,7 +70,22 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
             applied(built);
     }
 
-    private ItemBuilderViewModel CreateItemBuilder(
+    public CraftingMaterial? ShowCraftingMaterialPicker(CraftingMaterialKind kind, CraftingMaterial? current)
+    {
+        var viewModel = new CraftingMaterialPickerViewModel(
+            services.GetRequiredService<IItemBaseCatalog>(),
+            services.GetRequiredService<IIconProvider>(),
+            kind,
+            current);
+        var window = new CraftingMaterialPickerWindow(viewModel)
+        {
+            Owner = WindowHelper.GetActiveWindow()
+        };
+        window.ShowDialog();
+        return window.Result;
+    }
+
+        private ItemBuilderViewModel CreateItemBuilder(
         EquipmentSlot slot,
         CharacterClass characterClass,
         BuiltItem? current,

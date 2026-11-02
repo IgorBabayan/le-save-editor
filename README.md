@@ -30,6 +30,15 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   to move them inside their grid.
 - Right-click an empty backpack cell to build a new item there (equipment or an idol), or an empty cell of the idol
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
+- Crafting materials in the backpack: right-click an empty backpack cell and choose "Rune…", "Glyph…" or "Affix shard…"
+  to pick one in the crafting material picker (tabs per kind, search by name; shards also by prefix / suffix and affix
+  category). Click a material, or right-click it and choose "Edit…", to turn it into another rune, glyph or shard;
+  "Remove" deletes it on the next save. Materials take one cell and can be dragged like other items. Their names,
+  descriptions and icons come from the game database; materials it does not know are shown as "Rune", "Glyph" or
+  "Shard" placeholders and stay in the save untouched.
+  A rune or glyph is stored as `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). The sub type of an affix shard
+  (101) is the affix id, which goes past 255, so shards are written with a 2-byte big-endian sub type
+  (`[2, 101, id >> 8, id & 0xFF]`); shards stored with a 1-byte sub type are read too.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
 - The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption

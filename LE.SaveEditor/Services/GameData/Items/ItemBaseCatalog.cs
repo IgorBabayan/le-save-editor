@@ -34,12 +34,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// </param>
     /// <param name="Affixes">Equipment and idol affixes as the data gives them (not scaled to an item type).</param>
     /// <param name="AffixEffectModifiers">Per item type (<c>baseTypeID</c>) its <c>affixEffectModifier</c>.</param>
+    /// <param name="Materials">Runes, glyphs and affix shards.</param>
     private sealed record Catalog(
         IReadOnlyList<ItemBase> Bases,
         IReadOnlyList<ItemBase> Uniques,
         IReadOnlyList<AffixDefinition> Affixes,
         bool HasStatNames,
-        IReadOnlyDictionary<int, double> AffixEffectModifiers)
+        IReadOnlyDictionary<int, double> AffixEffectModifiers,
+        IReadOnlyList<CraftingMaterial> Materials)
     {
         /// <summary>Affixes scaled to an item type, by affix id and item type, so each is built once.</summary>
         public Dictionary<(int AffixId, int BaseTypeId), AffixDefinition> Scaled { get; } = [];
@@ -112,6 +114,17 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         lock (_sync)
             return ScaledFor(catalog, affix, itemType);
     }
+
+    public IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind) =>
+        GetCatalog().Materials
+            .Where(m => m.Kind == kind)
+            // Materials that still drop first, then by name.
+            .OrderBy(m => m.CannotDrop)
+            .ThenBy(m => m.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+    public CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId) =>
+        GetCatalog().Materials.FirstOrDefault(m => m.Kind == kind && m.SubTypeId == subTypeId);
 
     /// <summary>
     /// <paramref name="affix"/> with the values it has on item type <paramref name="baseTypeId"/>. The game scales every
@@ -196,7 +209,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return new Catalog([], [], [], false, new Dictionary<int, double>());
+            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
 
         try
         {
@@ -224,6 +237,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
             var result = new List<ItemBase>();
             var affixEffectModifiers = new Dictionary<int, double>();
+            var materials = new List<CraftingMaterial>();
             foreach (var (key, name, json) in ReadRows(connection, "SELECT Key, Name, Json FROM ItemTypes"))
             {
                 using var document = TryParse(json);
@@ -232,6 +246,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
                 var bases = ParseItemType(key, name, itemType, names, icons);
                 result.AddRange(bases);
+                materials.AddRange(ParseCraftingMaterials(itemType, icons));
                 // Affix values on this item type are scaled by its affixEffectModifier (see ScaledFor).
                 if ((GetInt(itemType, "baseTypeID") ?? bases.FirstOrDefault()?.BaseTypeId) is { } typeId
                     && GetDouble(itemType, "affixEffectModifier") is { } modifier)
@@ -239,7 +254,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             }
 
             var uniques = ReadUniques(connection, result, names, icons);
-            var affixes = LimitToUniques(ReadAffixes(connection, names), uniques);
+            var allAffixes = ReadAffixes(connection, names);
+            var affixes = LimitToUniques(allAffixes, uniques);
             // A database without skill or player properties (made before them) shows skill affixes by internal name and
             // player properties by the affix name: outdated too.
             return new Catalog(
@@ -247,12 +263,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 uniques,
                 affixes,
                 properties.Count > 0 && abilityProperties.Count > 0 && playerProperties.Count > 0,
-                affixEffectModifiers);
+                affixEffectModifiers,
+                NameShards(materials, allAffixes, icons));
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             // A missing or broken database means an empty builder, never a crash.
-            return new Catalog([], [], [], false, new Dictionary<int, double>());
+            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
         }
     }
 
@@ -295,6 +312,101 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    // ===== Crafting materials =====
+
+    /// <summary>Rich-text tags of material descriptions (<c>&lt;color=#fff&gt;</c>, <c>&lt;font="Caladea SDF"&gt;</c>, ...).</summary>
+    private static readonly Regex RichTextTag = new(@"<[^<>]+>", RegexOptions.Compiled);
+
+    /// <summary>The hint every crafting material ends with ("Press [F] to open the Crafting Panel.").</summary>
+    private static readonly Regex CraftingPanelHint = new(@"Press \[?F\]? to open the Crafting Panel\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Regex BlankLines = new(@"\n{3,}", RegexOptions.Compiled);
+
+    /// <summary>
+    /// The runes (<c>baseTypeID</c> 102), glyphs (103) or affix shards (101) of an item type; empty for any other type.
+    /// A sub item looks like <c>{"name":"Rune of Removal","displayName":"","subTypeID":2,"levelRequirement":15,
+    /// "cannotDrop":false,"description":"&lt;color=#fff&gt;Removes a random affix ..."}</c>; the <c>name</c> of a shard is
+    /// its affix, and its <c>subTypeID</c> the <c>affixId</c>.
+    /// </summary>
+    private static List<CraftingMaterial> ParseCraftingMaterials(JsonElement itemType, IconIndex icons)
+    {
+        var result = new List<CraftingMaterial>();
+        if (GetInt(itemType, "baseTypeID") is not { } baseTypeId
+            || CraftingMaterialKindExtensions.FromBaseTypeId(baseTypeId) is not { } kind
+            || Find(itemType, "subItems") is not { ValueKind: JsonValueKind.Array } subItems)
+            return result;
+
+        var typeName = GetString(itemType, "BaseTypeName") ?? kind.DisplayName;
+        var shardIcon = icons.Find(typeName, "affix-shard", "affix shard");
+        foreach (var subItem in subItems.EnumerateArray())
+        {
+            if (subItem.ValueKind != JsonValueKind.Object || GetInt(subItem, "subTypeID") is not { } subTypeId)
+                continue;
+
+            var internalName = GetString(subItem, "name");
+            var name = GetString(subItem, "displayName") ?? internalName;
+            if (name is null)
+                continue;
+
+            result.Add(new CraftingMaterial(
+                kind,
+                subTypeId,
+                name,
+                CleanDescription(GetString(subItem, "description")),
+                GetInt(subItem, "levelRequirement") ?? 0,
+                GetBool(subItem, "cannotDrop") ?? false,
+                kind == CraftingMaterialKind.AffixShard ? shardIcon : icons.Find(typeName, internalName, name)));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Shards with the shown name, type, category and prefix / suffix icon of their affix (the <c>affixId</c> is the
+    /// shard's sub type). Shards of affixes the editor does not read keep the internal name and the plain shard icon.
+    /// </summary>
+    private static List<CraftingMaterial> NameShards(
+        List<CraftingMaterial> materials,
+        IReadOnlyList<AffixDefinition> affixes,
+        IconIndex icons)
+    {
+        var shardIcons = new Dictionary<AffixType, string?>
+        {
+            [AffixType.Prefix] = icons.Find("Affix Shard", "prefix-shard"),
+            [AffixType.Suffix] = icons.Find("Affix Shard", "suffix-shard")
+        };
+
+        var byId = new Dictionary<int, AffixDefinition>();
+        foreach (var affix in affixes)
+            byId.TryAdd(affix.Id, affix);
+
+        var result = materials
+            .Select(m => m.Kind == CraftingMaterialKind.AffixShard && byId.TryGetValue(m.SubTypeId, out var affix)
+                ? m with
+                {
+                    Name = affix.Name,
+                    AffixType = affix.Type,
+                    GroupName = affix.GroupName,
+                    IconPath = shardIcons[affix.Type] ?? m.IconPath
+                }
+                : m)
+            .ToList();
+        return result;
+    }
+
+    /// <summary>
+    /// <paramref name="description"/> as plain text: without rich-text tags and the crafting panel hint, trimmed.
+    /// </summary>
+    private static string CleanDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return string.Empty;
+
+        var text = RichTextTag.Replace(description, string.Empty);
+        text = CraftingPanelHint.Replace(text, string.Empty).Replace("\r\n", "\n");
+        return BlankLines.Replace(text, "\n\n").Trim();
     }
 
     private static List<ItemImplicit> ParseImplicits(JsonElement subItem, ImplicitNames names) =>

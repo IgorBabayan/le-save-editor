@@ -38,6 +38,15 @@ public interface IItemBaseCatalog
     /// </summary>
     AffixDefinition? FindAffix(int affixId, int? baseTypeId = null);
 
+    /// <summary>
+    /// Crafting materials of <paramref name="kind"/> (runes, glyphs or affix shards), ordered by name; empty when
+    /// <c>base.db</c> is missing.
+    /// </summary>
+    IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind);
+
+    /// <summary>The crafting material with these ids, or <c>null</c> when <c>base.db</c> does not know it.</summary>
+    CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId);
+
     /// <summary>Forgets what was read, so a database written by the generator is picked up.</summary>
     void ClearCache();
 }

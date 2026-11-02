@@ -18,8 +18,9 @@ namespace LE.SaveEditor.Presentation.Views.Inventory;
 /// there. Releasing over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click
 /// without moving still opens the item inspector. Right-clicking an empty backpack cell offers the item types to build
 /// there and opens the item inspector for a new item of the chosen type next to that cell; right-clicking an empty
-/// idol cell opens it for a new idol right away. Right-clicking an equipped item, a backpack item or an idol offers to
-/// edit or remove it.
+/// idol cell opens it for a new idol right away. The backpack menu also offers runes, glyphs and affix shards, picked in
+/// the crafting material picker. Right-clicking an equipped item, a backpack item (also a crafting material) or an idol
+/// offers to edit or remove it.
 /// </summary>
 public partial class InventoryView : UserControl
 {
@@ -40,6 +41,19 @@ public partial class InventoryView : UserControl
         [EquipmentSlot.Amulet, EquipmentSlot.LeftRing, EquipmentSlot.Relic],
         [EquipmentSlot.Idol]
     ];
+
+    /// <summary>Crafting material kinds offered for a new backpack item, in menu order.</summary>
+    private static readonly CraftingMaterialKind[] NewMaterialKinds =
+        [CraftingMaterialKind.Rune, CraftingMaterialKind.Glyph, CraftingMaterialKind.AffixShard];
+
+    /// <summary>Material icon of each crafting material kind in the menus (names of <see cref="MaterialIconKind"/>).</summary>
+    private static string IconNameOf(CraftingMaterialKind kind) => kind switch
+    {
+        CraftingMaterialKind.Rune => "Rhombus",
+        CraftingMaterialKind.Glyph => "StarFourPoints",
+        CraftingMaterialKind.AffixShard => "DiamondOutline",
+        _ => "HelpCircleOutline"
+    };
 
     /// <summary>Material icon of each item type in the menus (names of <see cref="MaterialIconKind"/>).</summary>
     private static string IconNameOf(EquipmentSlot slot) => slot switch
@@ -170,7 +184,8 @@ public partial class InventoryView : UserControl
 
         if (FindItem(e.OriginalSource as DependencyObject, parts.Items) is { } item)
         {
-            ShowItemMenu(parts.Items, item.Equipment, () => ExecuteInventory(i => i.RemoveGridItemCommand, item));
+            Action? editMaterial = item.IsMaterial ? () => ExecuteInventory(i => i.EditCraftingMaterialCommand, item) : null;
+            ShowItemMenu(parts.Items, item.Equipment, () => ExecuteInventory(i => i.RemoveGridItemCommand, item), editMaterial);
             e.Handled = true;
             return;
         }
@@ -215,9 +230,10 @@ public partial class InventoryView : UserControl
     }
 
     /// <summary>
-    /// Context menu of an item: "Edit…" (when the editor can show it, <paramref name="slot"/> is set) and "Remove".
+    /// Context menu of an item: "Edit…" (when the editor can show it: <paramref name="slot"/> is set for equipment,
+    /// <paramref name="onEdit"/> for a crafting material) and "Remove".
     /// </summary>
-    private void ShowItemMenu(UIElement target, EquipmentSlotViewModel? slot, Action remove)
+    private void ShowItemMenu(UIElement target, EquipmentSlotViewModel? slot, Action remove, Action? onEdit = null)
     {
         var menu = new ContextMenu
         {
@@ -242,6 +258,14 @@ public partial class InventoryView : UserControl
                 }
             }, DispatcherPriority.Background);
             menu.Items.Add(edit);
+            menu.Items.Add(MenuSeparator());
+        }
+        else if (onEdit is not null)
+        {
+            var editMaterial = new MenuItem { Header = "Edit…", Icon = MenuIcon("PencilOutline"), Style = itemStyle };
+            // After the menu has closed, so the picker takes the focus.
+            editMaterial.Click += (_, _) => Dispatcher.InvokeAsync(onEdit, DispatcherPriority.Background);
+            menu.Items.Add(editMaterial);
             menu.Items.Add(MenuSeparator());
         }
 
@@ -391,7 +415,36 @@ public partial class InventoryView : UserControl
             AddNewItemEntry(entry.Slot);
         }
 
+        // Crafting materials: one cell each, picked in the crafting material picker.
+        if (grid.Layout.OnlySlot is null)
+        {
+            menu.Items.Add(MenuSeparator());
+            foreach (var kind in NewMaterialKinds)
+                AddNewMaterialEntry(kind);
+        }
+
         menu.IsOpen = true;
+
+        void AddNewMaterialEntry(CraftingMaterialKind kind)
+        {
+            var hasRoom = grid.HasRoomForMaterial(kind);
+            var menuItem = new MenuItem
+            {
+                Header = $"{kind.DisplayName}…",
+                Icon = MenuIcon(IconNameOf(kind)),
+                IsEnabled = hasRoom,
+                Style = itemStyle,
+                ToolTip = hasRoom ? null : $"No room left in the {grid.Layout.Name}"
+            };
+            ToolTipService.SetShowOnDisabled(menuItem, true);
+
+            var chosen = kind;
+            // After the menu has closed, so the picker keeps the focus it takes.
+            menuItem.Click += (_, _) => Dispatcher.InvokeAsync(
+                () => ExecuteInventory(i => i.BuildCraftingMaterialCommand, new NewCraftingMaterialRequest(chosen, column, row)),
+                DispatcherPriority.Background);
+            menu.Items.Add(menuItem);
+        }
 
         void AddNewItemEntry(EquipmentSlot slot)
         {

@@ -13,7 +13,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
 /// (all read from <c>savedItems</c>); the other sections start empty. Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
-/// builds a new item there.
+/// builds a new item there. Crafting materials in the backpack (runes, glyphs, affix shards) are added, changed and
+/// removed with the crafting material picker.
 /// <see cref="GetUpdates"/> collects what changed since the save was read, for saving.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
@@ -136,7 +137,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         if (!grid.Items.Contains(item))
             return;
 
-        var name = item.Equipment?.Item?.Base.Name ?? (item.IsIdol ? "this idol" : "this item");
+        var name = item.DisplayName;
         if (!_dialogService.Confirm("Remove item", $"Remove {name} from the {grid.Layout.Name}? It is deleted from the save when you save."))
             return;
 
@@ -160,6 +161,34 @@ public sealed partial class InventoryViewModel : ViewModelBase
             Character.CharacterClass,
             request.Anchor,
             built => grid.AddItem(built, request.Column, request.Row));
+    }
+
+    /// <summary>
+    /// An empty backpack cell was right-clicked and a crafting material kind picked: opens the crafting material picker
+    /// and puts the picked rune, glyph or affix shard into the backpack at that cell.
+    /// </summary>
+    [RelayCommand]
+    private void BuildCraftingMaterial(NewCraftingMaterialRequest? request)
+    {
+        if (request is null || !Backpack.IsCellFree(request.Column, request.Row))
+            return;
+
+        if (_dialogService.ShowCraftingMaterialPicker(request.Kind, null) is { } material)
+            Backpack.AddMaterial(material, request.Column, request.Row);
+    }
+
+    /// <summary>
+    /// A crafting material in the backpack was clicked (or "Edit…" chosen): opens the crafting material picker on it;
+    /// the picked material replaces it in its cell.
+    /// </summary>
+    [RelayCommand]
+    private void EditCraftingMaterial(BackpackItemViewModel? item)
+    {
+        if (item?.Material is not { } current || !Backpack.Items.Contains(item))
+            return;
+
+        if (_dialogService.ShowCraftingMaterialPicker(current.Kind, current) is { } material)
+            Backpack.ChangeMaterial(item, material);
     }
 
     /// <summary>
@@ -246,6 +275,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
 /// <param name="Anchor">The view element of the cell; the item inspector opens next to it.</param>
 /// <param name="Grid">The grid to build in (backpack or idol grid); <c>null</c> for the backpack.</param>
 public sealed record NewBackpackItemRequest(EquipmentSlot Slot, int Column, int Row, object? Anchor, BackpackViewModel? Grid = null);
+
+/// <summary>A new crafting material of <paramref name="Kind"/> to put into the empty backpack cell <paramref name="Column"/>, <paramref name="Row"/>.</summary>
+public sealed record NewCraftingMaterialRequest(CraftingMaterialKind Kind, int Column, int Row);
 
 /// <summary>A crafting material total; <see cref="Amount"/> is <c>null</c> until it is read from the save.</summary>
 public sealed record CraftingMaterialViewModel(string Name, int? Amount = null);
