@@ -673,11 +673,12 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>
     /// Normal without affixes, Magic with 1–2, Rare with 3–4, Exalted as soon as one affix is tier 6 or higher
-    /// (idols: Normal or Magic). Prefixes, suffixes and sealed affixes count; the corruption does not change the rarity.
+    /// (idols: Normal or Magic). Only prefixes and suffixes count: like in the game, the sealed affix and the corruption do
+    /// not change the rarity (one prefix, one suffix and a sealed affix is still Magic).
     /// </summary>
     private ItemRarity RarityFromAffixes()
     {
-        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted).ToList();
+        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted && !s.IsSealed).ToList();
 
         // Idols are never rare or exalted: any affix makes them magic.
         if (Slot.IsIdol)

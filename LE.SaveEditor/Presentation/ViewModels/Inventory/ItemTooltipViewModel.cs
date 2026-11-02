@@ -26,7 +26,7 @@ public sealed record ItemTooltipSection(string Header, IReadOnlyList<ItemTooltip
 
 /// <summary>
 /// Game-styled tooltip of an equipped item: icon, name and type, implicits with their ranges, forging potential,
-/// then unique modifiers, prefixes, suffixes, the sealed affix and the corruption, each affix with its tier and ranges.
+/// then unique modifiers, prefixes, suffixes, the sealed prefix / suffix and the corruption, each affix with its tier and ranges.
 /// </summary>
 public sealed class ItemTooltipViewModel
 {
@@ -57,7 +57,8 @@ public sealed class ItemTooltipViewModel
         AddAffixSection(sections, "UNIQUE AFFIX", item, AffixSlotKind.Unique);
         AddAffixSection(sections, "PREFIXES", item, AffixSlotKind.Prefix);
         AddAffixSection(sections, "SUFFIXES", item, AffixSlotKind.Suffix);
-        AddAffixSection(sections, "SEALED AFFIX", item, AffixSlotKind.SealedPrefix, AffixSlotKind.SealedSuffix);
+        AddAffixSection(sections, "SEALED PREFIX", item, AffixSlotKind.SealedPrefix);
+        AddAffixSection(sections, "SEALED SUFFIX", item, AffixSlotKind.SealedSuffix);
         AddAffixSection(sections, "CORRUPTED", item, AffixSlotKind.Corrupted);
         Sections = sections;
 

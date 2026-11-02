@@ -32,9 +32,15 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
-- The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. A normal
-  affix used as the corruption is stored after the other affixes; reading it back, a prefix or suffix beyond the
-  two of its kind is shown as the corruption (so an item with one prefix and a prefix corruption reads as two prefixes).
+- The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption
+  is stored the way the game stores it (corrupted item flag, corruption affix marked in the affix count), so it shows
+  as corrupted in the game, also when it is a normal affix like Cold Penetration. Adding a corruption to a unique
+  makes it a legendary, as the Rune of Corruption does. Items corrupted in the game without a new affix stay corrupted.
+- Items saved by older editor versions stored a normal-affix corruption as one more prefix / suffix (the game shows
+  it as such). A third prefix or suffix is shown in the corruption slot; applying the item again stores it as a real
+  corruption.
+- Rarity counts only prefixes and suffixes: a sealed affix and the corruption do not make an item rare. The tooltip
+  shows the sealed affix under "Sealed prefix" or "Sealed suffix".
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).

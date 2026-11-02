@@ -19,8 +19,17 @@ namespace LE.SaveEditor.Services.Saves;
 /// unique / set:            [8..9] uniqueID (big endian)   [10..17] unique modifier rolls   [18] legendary potential
 /// legendary:               [8..9] uniqueID   [10..17] unique modifier rolls   [18] affix count   affixes...   [last] 0
 /// </code>
-/// The affix count keeps the number in its low bits; bit 7 marks a sealed affix, which is stored first.
+/// The affix count keeps the number in its low bits; its high bits mark the special affixes, which are stored
+/// before the others:
+/// <code>
+/// plain base:   0x80 = the first affix is sealed (Glyph of Insight)
+///               0x40 = the next affix (after the sealed one, if any) is the corruption
+/// legendary:    0x80 = the first affix is the corruption (uniques cannot be sealed)
+/// </code>
+/// A corrupted item has bit <c>0x10</c> in the flags byte, also when the corruption added no affix. Corrupting a
+/// unique turns it into a legendary that carries the corruption as its only affix.
 /// An affix is 3 bytes: <c>tier &lt;&lt; 4 | affixId &gt;&gt; 8</c>, <c>affixId &amp; 0xFF</c>, roll.
+/// Items written by the game in format 6 end right after the last affix; format 2 and the editor's older saves add a 0.
 /// </remarks>
 public static class ItemDataReader
 {
@@ -38,8 +47,16 @@ public static class ItemDataReader
 
     internal const int ImplicitCount = 3;
     internal const int UniqueRollCount = 8;
+    /// <summary>Affix count bit: the first affix of a plain base is sealed; on a legendary, the first affix is the corruption.</summary>
     internal const int SealedFlag = 0x80;
+
+    /// <summary>Affix count bit of a plain base: the affix after the sealed one (or the first) is the corruption.</summary>
+    internal const int CorruptionFlag = 0x40;
+
     internal const int AffixCountMask = 0x0F;
+
+    /// <summary>Bit of the flags byte that marks a corrupted item.</summary>
+    public const int CorruptedItemFlag = 0x10;
 
     /// <summary>
     /// Only the item type (<c>baseTypeID</c>) of <paramref name="data"/>, for any item (equipment, idol, key, ...);
@@ -97,7 +114,7 @@ public static class ItemDataReader
             position += UniqueRollCount;
 
             // Uniques and set items end with their legendary potential; only legendaries carry affixes.
-            IReadOnlyList<ItemAffixData>? affixes = rarity == LegendaryRarity ? ReadAffixes(data, ref position) : [];
+            IReadOnlyList<ItemAffixData>? affixes = rarity == LegendaryRarity ? ReadAffixes(data, ref position, isLegendary: true) : [];
             return affixes is null
                 ? null
                 : new ItemData(baseTypeId, subTypeId, rarity, implicitRolls, uniqueId, uniqueRolls, null, affixes, version,
@@ -105,7 +122,7 @@ public static class ItemDataReader
         }
 
         var forgingPotential = data[position++];
-        var plainAffixes = ReadAffixes(data, ref position);
+        var plainAffixes = ReadAffixes(data, ref position, isLegendary: false);
         return plainAffixes is null
             ? null
             : new ItemData(baseTypeId, subTypeId, rarity, implicitRolls, null, [], forgingPotential, plainAffixes, version,
@@ -118,16 +135,29 @@ public static class ItemDataReader
     /// Affix count followed by the affixes; <c>null</c> when the data is cut short.
     /// <paramref name="position"/> is moved past the affixes.
     /// </summary>
-    private static IReadOnlyList<ItemAffixData>? ReadAffixes(IReadOnlyList<byte> data, ref int position)
+    private static IReadOnlyList<ItemAffixData>? ReadAffixes(IReadOnlyList<byte> data, ref int position, bool isLegendary)
     {
         if (data.Count <= position)
             return null;
 
         var countByte = data[position++];
         var count = countByte & AffixCountMask;
-        var hasSealed = (countByte & SealedFlag) != 0;
         if (data.Count < position + count * 3)
             return null;
+
+        // Index of the sealed affix and of the corruption among the stored affixes (-1 = none); both come first.
+        int sealedIndex, corruptionIndex;
+        if (isLegendary)
+        {
+            sealedIndex = -1;
+            corruptionIndex = (countByte & (SealedFlag | CorruptionFlag)) != 0 ? 0 : -1;
+        }
+        else
+        {
+            var hasSealed = (countByte & SealedFlag) != 0;
+            sealedIndex = hasSealed ? 0 : -1;
+            corruptionIndex = (countByte & CorruptionFlag) != 0 ? (hasSealed ? 1 : 0) : -1;
+        }
 
         var affixes = new List<ItemAffixData>(count);
         for (var i = 0; i < count; i++, position += 3)
@@ -135,7 +165,7 @@ public static class ItemDataReader
             var head = data[position];
             var affixId = ((head & 0x0F) << 8) | data[position + 1];
             var tier = ((head >> 4) & 0x07) + 1;
-            affixes.Add(new ItemAffixData(affixId, tier, data[position + 2], IsSealed: hasSealed && i == 0));
+            affixes.Add(new ItemAffixData(affixId, tier, data[position + 2], IsSealed: i == sealedIndex, IsCorrupted: i == corruptionIndex));
         }
 
         return affixes;
