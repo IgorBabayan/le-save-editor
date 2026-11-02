@@ -20,8 +20,9 @@
     <!--
         WindowChrome removes the native title bar but keeps native behaviour:
         Aero Snap, drag to move, Alt+Space menu.
-        The window can be maximized but not resized: ResizeBorderThickness is 0 (no resize grips on the edges)
-        and the system-menu "Size" command is blocked (see MainWindow.xaml.cs, DisableResize).
+        The window can be neither resized nor maximized: ResizeBorderThickness is 0 (no resize grips on the edges),
+        and the "Size"/"Maximize" commands are blocked (see MainWindow.xaml.cs, DisableResizeAndMaximize).
+        The Maximize caption button is still shown, but always disabled.
     -->
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="32"
@@ -113,8 +114,6 @@
 
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static SystemCommands.MinimizeWindowCommand}" Executed="OnMinimizeExecuted" />
-        <CommandBinding Command="{x:Static SystemCommands.MaximizeWindowCommand}" Executed="OnMaximizeExecuted" />
-        <CommandBinding Command="{x:Static SystemCommands.RestoreWindowCommand}" Executed="OnRestoreExecuted" />
         <CommandBinding Command="{x:Static SystemCommands.CloseWindowCommand}" Executed="OnCloseExecuted" />
     </Window.CommandBindings>
 
@@ -379,12 +378,12 @@
                             ToolTip="Minimize"
                             Content="&#xE921;"
                             Command="{x:Static SystemCommands.MinimizeWindowCommand}" />
-                    <!-- Glyph, tooltip and command are swapped between Maximize/Restore in UpdateMaximizeRestoreButton. -->
-                    <Button x:Name="MaximizeRestoreButton"
-                            Style="{StaticResource CaptionButtonStyle}"
-                            ToolTip="Maximize"
+                    <!-- Shown for the familiar caption layout, but maximizing is not supported: always disabled. -->
+                    <Button Style="{StaticResource CaptionButtonStyle}"
                             Content="&#xE922;"
-                            Command="{x:Static SystemCommands.MaximizeWindowCommand}" />
+                            IsEnabled="False"
+                            ToolTip="Maximize is not available"
+                            ToolTipService.ShowOnDisabled="True" />
                     <Button Style="{StaticResource CloseCaptionButtonStyle}"
                             ToolTip="Close"
                             Content="&#xE8BB;"
