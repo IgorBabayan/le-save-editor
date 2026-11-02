@@ -3,7 +3,8 @@ using LE.SaveEditor.Services.GameData.Items;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Decodes and encodes the <c>data</c> bytes of a crafting material in the backpack: a rune, a glyph or an affix shard.
+/// Decodes and encodes the <c>data</c> bytes of a crafting material in the backpack: a rune, a glyph, an affix shard or a
+/// resource (key item, <c>baseTypeID</c> 104).
 /// </summary>
 /// <remarks>
 /// A crafting material has no rarity, rolls or affixes; its bytes are the header of every item followed by the sub type:

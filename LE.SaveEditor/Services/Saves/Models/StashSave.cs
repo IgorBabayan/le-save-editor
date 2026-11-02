@@ -9,7 +9,9 @@ public readonly record struct CraftingMaterialKey(CraftingMaterialKind Kind, int
 /// The material storage of one stash file (<c>STASH_0</c>, <c>STASH_CYCLE_8_0</c>, <c>STASH_CYCLE_8_2_1</c>, ...): what the
 /// game's "Crafting Materials" panel shows. Affix shards are the <c>savedShards</c> entries
 /// (<c>{"shardType": affixId, "quantity": n}</c>), runes and glyphs the <c>materialsList</c> entries (an item with a
-/// quantity, e.g. <c>"data": [2, 102, 3]</c> = Rune of Discovery).
+/// quantity, e.g. <c>"data": [2, 102, 3]</c> = Rune of Discovery). The resources of the game's "Resources" inventory tab
+/// (keys, charms, primordial materials, ...) are the <c>keysList</c> entries, stored the same way
+/// (<c>"data": [2, 104, 4]</c> = Temporal Sanctum Key).
 /// </summary>
 public sealed record StashSave
 {

@@ -39,7 +39,7 @@ public interface IItemBaseCatalog
     AffixDefinition? FindAffix(int affixId, int? baseTypeId = null);
 
     /// <summary>
-    /// Crafting materials of <paramref name="kind"/> (runes, glyphs or affix shards), ordered by name; empty when
+    /// Crafting materials of <paramref name="kind"/> (runes, glyphs, affix shards or resources), ordered by name; empty when
     /// <c>base.db</c> is missing.
     /// </summary>
     IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind);

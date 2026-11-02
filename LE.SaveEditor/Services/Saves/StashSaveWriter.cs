@@ -30,8 +30,9 @@ public sealed record StashSaveResult(StashSave Stash, string BackupPath);
 /// <summary>
 /// Writes the material storage of a stash file. Only materials whose amount changed are touched: a changed amount is
 /// written into the material's entry, a material set to 0 loses its entry, and a new material gets one at the end of
-/// <c>savedShards</c> (<c>{"shardType": affixId, "quantity": n}</c>) or <c>materialsList</c> (a rune or glyph item
-/// <c>[2, baseTypeID, subTypeID]</c> at position −4, −4, as the game stores them). Every other field and entry stays as
+/// <c>savedShards</c> (<c>{"shardType": affixId, "quantity": n}</c>), <c>materialsList</c> (a rune or glyph item
+/// <c>[2, baseTypeID, subTypeID]</c> at position −4, −4, as the game stores them) or <c>keysList</c> (a resource item,
+/// stored like a rune). Every other field and entry stays as
 /// the game wrote it; the file is written compact, through a temporary file, keeping the old one as a backup.
 /// </summary>
 public sealed class StashSaveWriter : IStashSaveWriter
@@ -92,25 +93,32 @@ public sealed class StashSaveWriter : IStashSaveWriter
         if (changes.Count == 0)
             return content;
 
-        ApplyTo(GetArray(root, "savedShards"), changes, ShardKey, CreateShardEntry,
-            key => key.Kind == CraftingMaterialKind.AffixShard);
-        ApplyTo(GetArray(root, "materialsList"), changes, MaterialKey, CreateMaterialEntry,
-            key => key.Kind is CraftingMaterialKind.Rune or CraftingMaterialKind.Glyph);
+        foreach (var list in new[] { StashSaveParser.ShardList, StashSaveParser.MaterialList, StashSaveParser.KeyList })
+        {
+            // A list the file lacks is only created when a material is added to it.
+            var listChanges = changes.Where(c => StashSaveParser.ListOf(c.Key.Kind) == list).ToDictionary(c => c.Key, c => c.Value);
+            if (listChanges.Count == 0)
+                continue;
+
+            if (list == StashSaveParser.ShardList)
+                ApplyTo(GetArray(root, list), listChanges, ShardKey, CreateShardEntry);
+            else
+                ApplyTo(GetArray(root, list), listChanges, entry => MaterialKey(entry, list), CreateMaterialEntry);
+        }
 
         return content[..start] + root.ToJsonString(CharacterSaveWriter.CompactJson) + content[(end + 1)..];
     }
 
     /// <summary>
-    /// Writes the changes that <paramref name="belongs"/> to <paramref name="array"/>: the first entry of a changed
-    /// material takes its new amount (further entries of it are removed), a material set to 0 loses its entries and a
-    /// material without an entry gets a new one.
+    /// Writes <paramref name="changes"/> (all of materials kept in <paramref name="array"/>) into it: the first entry of
+    /// a changed material takes its new amount (further entries of it are removed), a material set to 0 loses its
+    /// entries and a material without an entry gets a new one.
     /// </summary>
     private static void ApplyTo(
         JsonArray array,
         IReadOnlyDictionary<CraftingMaterialKey, int> changes,
         Func<JsonNode?, CraftingMaterialKey?> keyOf,
-        Func<CraftingMaterialKey, int, JsonObject> create,
-        Func<CraftingMaterialKey, bool> belongs)
+        Func<CraftingMaterialKey, int, JsonObject> create)
     {
         var written = new HashSet<CraftingMaterialKey>();
         var entries = array.ToList();
@@ -133,7 +141,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
 
         foreach (var (key, quantity) in changes)
         {
-            if (quantity > 0 && belongs(key) && !written.Contains(key))
+            if (quantity > 0 && !written.Contains(key))
                 array.Add(create(key, quantity));
         }
     }
@@ -158,7 +166,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
             ? new CraftingMaterialKey(CraftingMaterialKind.AffixShard, affixId)
             : null;
 
-    private static CraftingMaterialKey? MaterialKey(JsonNode? entry)
+    /// <summary>The material of an item entry of <paramref name="list"/>, when it belongs in that list.</summary>
+    private static CraftingMaterialKey? MaterialKey(JsonNode? entry, string list)
     {
         if (entry is not JsonObject item || item["data"] is not JsonArray data)
             return null;
@@ -171,7 +180,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
             bytes.Add((byte)b);
         }
 
-        return CraftingMaterialData.Read(bytes) is { Kind: CraftingMaterialKind.Rune or CraftingMaterialKind.Glyph } material
+        return CraftingMaterialData.Read(bytes) is { Kind: not CraftingMaterialKind.AffixShard } material
+               && StashSaveParser.ListOf(material.Kind) == list
             ? new CraftingMaterialKey(material.Kind, material.SubTypeId)
             : null;
     }
@@ -182,7 +192,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         ["quantity"] = quantity
     };
 
-    /// <summary>A rune or glyph entry with the properties (and their order) the game writes.</summary>
+    /// <summary>A rune, glyph or resource entry with the properties (and their order) the game writes.</summary>
     private static JsonObject CreateMaterialEntry(CraftingMaterialKey key, int quantity) => new()
     {
         ["itemData"] = null,

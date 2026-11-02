@@ -34,7 +34,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// </param>
     /// <param name="Affixes">Equipment and idol affixes as the data gives them (not scaled to an item type).</param>
     /// <param name="AffixEffectModifiers">Per item type (<c>baseTypeID</c>) its <c>affixEffectModifier</c>.</param>
-    /// <param name="Materials">Runes, glyphs and affix shards.</param>
+    /// <param name="Materials">Runes, glyphs, affix shards and resources (key items).</param>
     private sealed record Catalog(
         IReadOnlyList<ItemBase> Bases,
         IReadOnlyList<ItemBase> Uniques,
@@ -325,7 +325,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static readonly Regex BlankLines = new(@"\n{3,}", RegexOptions.Compiled);
 
     /// <summary>
-    /// The runes (<c>baseTypeID</c> 102), glyphs (103) or affix shards (101) of an item type; empty for any other type.
+    /// The runes (<c>baseTypeID</c> 102), glyphs (103), affix shards (101) or resources (104, "Key Items") of an item
+    /// type; empty for any other type.
     /// A sub item looks like <c>{"name":"Rune of Removal","displayName":"","subTypeID":2,"levelRequirement":15,
     /// "cannotDrop":false,"description":"&lt;color=#fff&gt;Removes a random affix ..."}</c>; the <c>name</c> of a shard is
     /// its affix, and its <c>subTypeID</c> the <c>affixId</c>.

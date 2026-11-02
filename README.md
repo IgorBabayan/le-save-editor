@@ -39,11 +39,20 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   1 = hardcore) or `STASH_CYCLE_<cycle>_2_<character id>` for a solo challenge character; legacy characters use
   `STASH_<type>` (`STASH_2_<id>`). Affix shards are stored in `savedShards` (`{"shardType": affixId, "quantity": n}`),
   runes and glyphs in `materialsList` (an item `[2, 102 | 103, subTypeID]` with a quantity).
+- Resources: the "Resources" section below the inventory shows the keys and consumables of the character's stash,
+  laid out like the game's Resources tab — keys (Harbinger Eye; Temporal Sanctum, Lightless Arbor and Soulfire Bastion
+  keys; Arena Key of Memory and Arena Key) and consumables (Portal and Scale charms; Crystallized Heart and the
+  primordial Horn, Fang, Feather and Petal; Temporal Keystones and Timeglass Fragments). Type an amount into a slot
+  (0 removes the resource); empty slots are dimmed. Resources the game's tab does not show (lizard tails, tokens, ...)
+  are listed under "Other resources" while the stash holds some, and "Edit all…" edits every resource, or adds any
+  resource of the game database, in the material storage dialog. Resources are stored in the stash's `keysList` like
+  runes (`[2, 104, subTypeID]` with a quantity) and written with the other stash changes when the character is saved.
 - Runes and glyphs lying in the backpack: click one, or right-click it and choose "Edit…", to turn it into another
   material of the same kind; "Remove" deletes it on the next save. They take one cell and can be dragged like other
   items. Their names, descriptions and icons come from the game database; materials it does not know are shown as
   "Rune" or "Glyph" placeholders and stay in the save untouched. A rune or glyph item is stored as
-  `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103).
+  `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). Resources (keys, charms, ... — `baseTypeID` 104) lying in
+  the backpack are shown and changed the same way.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
 - The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption

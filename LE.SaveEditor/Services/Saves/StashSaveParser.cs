@@ -8,6 +8,15 @@ namespace LE.SaveEditor.Services.Saves;
 /// <summary>Reads the material storage of a stash file (<see cref="StashSave"/>); everything else in it is ignored.</summary>
 public static class StashSaveParser
 {
+    /// <summary>List of affix shards.</summary>
+    internal const string ShardList = "savedShards";
+
+    /// <summary>List of runes and glyphs.</summary>
+    internal const string MaterialList = "materialsList";
+
+    /// <summary>List of resources (key items).</summary>
+    internal const string KeyList = "keysList";
+
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
         AllowTrailingCommas = true,
@@ -32,7 +41,7 @@ public static class StashSaveParser
             throw new JsonException("The stash file holds no JSON object.");
 
         var amounts = new Dictionary<CraftingMaterialKey, int>();
-        foreach (var (key, quantity) in ReadShards(root).Concat(ReadMaterials(root)))
+        foreach (var (key, quantity) in ReadShards(root).Concat(ReadMaterials(root, MaterialList)).Concat(ReadMaterials(root, KeyList)))
             amounts[key] = amounts.GetValueOrDefault(key) + quantity;
 
         return new StashSave
@@ -48,7 +57,7 @@ public static class StashSaveParser
     /// <summary><c>savedShards</c>: <c>{"shardType": affixId, "quantity": n}</c>.</summary>
     internal static IEnumerable<(CraftingMaterialKey Key, int Quantity)> ReadShards(JsonElement root)
     {
-        if (!root.TryGetProperty("savedShards", out var shards) || shards.ValueKind != JsonValueKind.Array)
+        if (!root.TryGetProperty(ShardList, out var shards) || shards.ValueKind != JsonValueKind.Array)
             yield break;
 
         foreach (var shard in shards.EnumerateArray())
@@ -61,20 +70,34 @@ public static class StashSaveParser
         }
     }
 
-    /// <summary>The runes and glyphs of <c>materialsList</c>; other entries are skipped.</summary>
-    internal static IEnumerable<(CraftingMaterialKey Key, int Quantity)> ReadMaterials(JsonElement root)
+    /// <summary>
+    /// The stash list a material of <paramref name="kind"/> is kept in: <c>savedShards</c>, <c>materialsList</c> (runes,
+    /// glyphs) or <c>keysList</c> (resources).
+    /// </summary>
+    internal static string ListOf(CraftingMaterialKind kind) => kind switch
     {
-        if (!root.TryGetProperty("materialsList", out var materials) || materials.ValueKind != JsonValueKind.Array)
+        CraftingMaterialKind.AffixShard => ShardList,
+        CraftingMaterialKind.KeyItem => KeyList,
+        _ => MaterialList
+    };
+
+    /// <summary>
+    /// The item entries of <paramref name="list"/> (<c>materialsList</c> or <c>keysList</c>) whose material belongs in
+    /// that list; other entries are skipped.
+    /// </summary>
+    internal static IEnumerable<(CraftingMaterialKey Key, int Quantity)> ReadMaterials(JsonElement root, string list)
+    {
+        if (!root.TryGetProperty(list, out var materials) || materials.ValueKind != JsonValueKind.Array)
             yield break;
 
         foreach (var entry in materials.EnumerateArray())
         {
-            if (ReadMaterialKey(entry) is { } key)
+            if (ReadMaterialKey(entry) is { } key && ListOf(key.Kind) == list)
                 yield return (key, GetInt(entry, "quantity", 1));
         }
     }
 
-    /// <summary>The rune or glyph a <c>materialsList</c> entry holds; <c>null</c> for anything else.</summary>
+    /// <summary>The rune, glyph or resource an item entry holds; <c>null</c> for anything else (also affix shards).</summary>
     internal static CraftingMaterialKey? ReadMaterialKey(JsonElement entry)
     {
         if (entry.ValueKind != JsonValueKind.Object
@@ -90,7 +113,7 @@ public static class StashSaveParser
             bytes.Add(b);
         }
 
-        return CraftingMaterialData.Read(bytes) is { Kind: CraftingMaterialKind.Rune or CraftingMaterialKind.Glyph } material
+        return CraftingMaterialData.Read(bytes) is { Kind: not CraftingMaterialKind.AffixShard } material
             ? new CraftingMaterialKey(material.Kind, material.SubTypeId)
             : null;
     }

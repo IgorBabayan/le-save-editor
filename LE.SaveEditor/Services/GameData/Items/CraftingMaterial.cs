@@ -1,8 +1,8 @@
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// Kind of a crafting material the character can carry in the backpack; the value is the item type
-/// (<c>baseTypeID</c>) the game stores it with.
+/// Kind of a stackable material the character can carry in the backpack and the stash keeps an amount of; the value is
+/// the item type (<c>baseTypeID</c>) the game stores it with.
 /// </summary>
 public enum CraftingMaterialKind
 {
@@ -13,11 +13,18 @@ public enum CraftingMaterialKind
     Rune = 102,
 
     /// <summary>Glyph (<c>baseTypeID</c> 103, "Crafting Support Item"): Glyph of Hope, of Chaos, ...</summary>
-    Glyph = 103
+    Glyph = 103,
+
+    /// <summary>
+    /// Resource (<c>baseTypeID</c> 104, "Key Items"): dungeon and arena keys, the Harbinger Eye, charms, primordial
+    /// materials, Temporal Keystones, Timeglass Fragments, ... — what the game's "Resources" inventory tab shows.
+    /// </summary>
+    KeyItem = 104
 }
 
 /// <summary>
-/// One crafting material from the <c>itemTypes</c> node of <c>base.db</c>: a rune, a glyph or an affix shard.
+/// One crafting material from the <c>itemTypes</c> node of <c>base.db</c>: a rune, a glyph, an affix shard or a resource
+/// (key item).
 /// Crafting materials take one backpack cell and have no rolls; the item type and the sub type are all the game stores.
 /// </summary>
 /// <param name="Kind">Rune, glyph or affix shard.</param>
@@ -55,14 +62,15 @@ public static class CraftingMaterialKindExtensions
 
     extension(CraftingMaterialKind kind)
     {
-        /// <summary>Name of one material of the kind ("Rune", "Glyph", "Affix shard").</summary>
+        /// <summary>Name of one material of the kind ("Rune", "Glyph", "Affix shard", "Resource").</summary>
         public string DisplayName => kind switch
         {
             CraftingMaterialKind.AffixShard => "Affix shard",
+            CraftingMaterialKind.KeyItem => "Resource",
             _ => kind.ToString()
         };
 
-        /// <summary>Name of several materials of the kind ("Runes", "Glyphs", "Affix shards").</summary>
+        /// <summary>Name of several materials of the kind ("Runes", "Glyphs", "Affix shards", "Resources").</summary>
         public string PluralName => $"{kind.DisplayName}s";
     }
 }

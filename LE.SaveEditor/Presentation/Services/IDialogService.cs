@@ -44,7 +44,7 @@ public interface IDialogService
     void ShowItemInspector(EquipmentSlot slot, CharacterClass characterClass, object? anchor, Action<BuiltItem> applied);
 
     /// <summary>
-    /// Shows the modal crafting material picker: a rune, a glyph or an affix shard, starting on the
+    /// Shows the modal crafting material picker: a rune, a glyph, an affix shard or a resource, starting on the
     /// <paramref name="kind"/> tab, or on <paramref name="current"/> when an existing material is edited.
     /// </summary>
     /// <returns>The picked material, or <c>null</c> if the user cancelled.</returns>

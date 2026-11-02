@@ -11,7 +11,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
-/// (all read from <c>savedItems</c>); the other sections start empty. Clicking an equipment slot, an idol or a backpack
+/// (all read from <c>savedItems</c>), the "Resources" section the keys and consumables of the character's stash
+/// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty. Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
 /// builds a new item there. The "Crafting materials" box shows the material storage of the character's stash (affix
 /// shards, runes, glyphs) with an edit action per kind; runes and glyphs lying in the backpack are changed with the
@@ -71,6 +72,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
             stash.Changed += (_, _) => UpdateCraftingMaterials();
         UpdateCraftingMaterials();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
     }
 
     /// <summary>All equipment slots.</summary>
@@ -97,6 +99,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     /// <summary>The idol grid (<see cref="IdolGridSize"/> × <see cref="IdolGridSize"/> without its corners) with the character's idols.</summary>
     public BackpackViewModel Idols { get; }
+
+    /// <summary>The "Resources" section: keys and consumables the character's stash keeps (<c>keysList</c>).</summary>
+    public ResourcesViewModel Resources { get; }
 
     /// <summary>
     /// The material storage of the stash the character uses (the game's "Crafting Materials" panel); <c>null</c> when

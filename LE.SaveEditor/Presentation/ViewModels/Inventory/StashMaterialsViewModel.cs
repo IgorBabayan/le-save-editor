@@ -54,6 +54,26 @@ public sealed class StashMaterialsViewModel(StashSave stash)
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Sets the amount of one material (0 removes it on the next save; an entry the game keeps at 0 stays unchanged).
+    /// Nothing happens when the amount is the current one.
+    /// </summary>
+    public void SetAmount(CraftingMaterialKey key, int quantity)
+    {
+        quantity = Math.Max(0, quantity);
+        if (_amounts.GetValueOrDefault(key) == quantity && (quantity > 0 || _amounts.ContainsKey(key) == Stash.Amounts.ContainsKey(key)))
+            return;
+
+        var updated = new Dictionary<CraftingMaterialKey, int>(_amounts);
+        if (quantity > 0 || Stash.Amounts.ContainsKey(key))
+            updated[key] = quantity;
+        else
+            updated.Remove(key);
+
+        _amounts = updated;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>The stash was written: <paramref name="saved"/> (read back from the file) is the new state.</summary>
     public void MarkSaved(StashSave saved)
     {
