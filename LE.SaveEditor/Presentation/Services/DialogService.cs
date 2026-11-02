@@ -85,7 +85,27 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
         return window.Result;
     }
 
-        private ItemBuilderViewModel CreateItemBuilder(
+        public IReadOnlyDictionary<int, int>? ShowCraftingMaterialStorage(
+        CraftingMaterialKind kind,
+        IReadOnlyDictionary<int, int> amounts,
+        string stashName)
+    {
+        var viewModel = new CraftingMaterialStorageViewModel(
+            services.GetRequiredService<IItemBaseCatalog>(),
+            services.GetRequiredService<IIconProvider>(),
+            k => ShowCraftingMaterialPicker(k, null),
+            kind,
+            amounts,
+            stashName);
+        var window = new CraftingMaterialStorageWindow(viewModel)
+        {
+            Owner = WindowHelper.GetActiveWindow()
+        };
+        window.ShowDialog();
+        return window.Result;
+    }
+
+    private ItemBuilderViewModel CreateItemBuilder(
         EquipmentSlot slot,
         CharacterClass characterClass,
         BuiltItem? current,

@@ -18,9 +18,8 @@ namespace LE.SaveEditor.Presentation.Views.Inventory;
 /// there. Releasing over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click
 /// without moving still opens the item inspector. Right-clicking an empty backpack cell offers the item types to build
 /// there and opens the item inspector for a new item of the chosen type next to that cell; right-clicking an empty
-/// idol cell opens it for a new idol right away (runes, glyphs and affix shards are added from the "Crafting materials"
-/// box instead). Right-clicking an equipped item, a backpack item (also a crafting material) or an idol offers to edit
-/// or remove it.
+/// idol cell opens it for a new idol right away. Right-clicking an equipped item, a backpack item (also a rune or glyph)
+/// or an idol offers to edit or remove it.
 /// </summary>
 public partial class InventoryView : UserControl
 {

@@ -30,17 +30,20 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   to move them inside their grid.
 - Right-click an empty backpack cell to build a new item there (equipment or an idol), or an empty cell of the idol
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
-- Crafting materials in the backpack: the "Crafting materials" box shows how many shards, glyphs and runes the
-  backpack holds, and each kind has its own "Add" action. It opens the crafting material picker for that kind (search
-  by name; shards also by prefix / suffix and affix category) and puts the picked material into the first free
-  backpack cell; "Add" is disabled while the backpack is full. Click a material in the backpack, or right-click it and
-  choose "Edit…", to turn it into another material of the same kind; "Remove" deletes it on the next save.
-  Materials take one cell and can be dragged like other items. Their names,
-  descriptions and icons come from the game database; materials it does not know are shown as "Rune", "Glyph" or
-  "Shard" placeholders and stay in the save untouched.
-  A rune or glyph is stored as `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). The sub type of an affix shard
-  (101) is the affix id, which goes past 255, so shards are written with a 2-byte big-endian sub type
-  (`[2, 101, id >> 8, id & 0xFF]`); shards stored with a 1-byte sub type are read too.
+- Crafting materials: the "Crafting materials" box shows the material storage of the character's stash, like the
+  game's Crafting Materials panel (shards, runes, glyphs). Each kind has its own "Edit" action: a dialog lists the
+  materials of that kind with their amounts; change an amount, remove a material (or set it to 0), or add one picked
+  from the game database. The changes are written to the stash file when the character is saved (the stash file is
+  backed up like character saves). Characters that share a stash (e.g. softcore characters of a cycle) share the
+  changes. The stash of a character is found by name: `STASH_CYCLE_<cycle>_<type>` (type 0 = softcore,
+  1 = hardcore) or `STASH_CYCLE_<cycle>_2_<character id>` for a solo challenge character; legacy characters use
+  `STASH_<type>` (`STASH_2_<id>`). Affix shards are stored in `savedShards` (`{"shardType": affixId, "quantity": n}`),
+  runes and glyphs in `materialsList` (an item `[2, 102 | 103, subTypeID]` with a quantity).
+- Runes and glyphs lying in the backpack: click one, or right-click it and choose "Edit…", to turn it into another
+  material of the same kind; "Remove" deletes it on the next save. They take one cell and can be dragged like other
+  items. Their names, descriptions and icons come from the game database; materials it does not know are shown as
+  "Rune" or "Glyph" placeholders and stay in the save untouched. A rune or glyph item is stored as
+  `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103).
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
 - The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption

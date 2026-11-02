@@ -269,44 +269,6 @@ public sealed partial class BackpackViewModel : ViewModelBase
         return true;
     }
 
-    /// <summary>Whether a crafting material (one cell) still fits somewhere in the grid and the grid takes materials.</summary>
-    public bool HasRoomForMaterial(CraftingMaterialKind kind) =>
-        Layout.Accepts((int)kind) && FindFreeSpot(ItemFootprint.Single, ignore: null) is not null;
-
-    /// <summary>
-    /// Puts a new crafting material into the first free cell of the grid (row by row, as the game fills the backpack).
-    /// It is added to the save on the next save.
-    /// </summary>
-    /// <returns><c>true</c> if the material was added.</returns>
-    public bool AddMaterial(CraftingMaterial material)
-    {
-        if (!Layout.Accepts(material.BaseTypeId))
-        {
-            _toastService.Show($"{material.FullName} cannot be put into the {Layout.Name}.", NotificationSeverity.Warning);
-            return false;
-        }
-
-        var footprint = ItemFootprint.Single;
-        if (FindFreeSpot(footprint, ignore: null) is not { } place)
-        {
-            _toastService.Show($"There is no room in the {Layout.Name} for {material.FullName}; it was not added.", NotificationSeverity.Warning);
-            return false;
-        }
-
-        var source = new SavedItem(
-            Layout.ContainerId,
-            place.Column,
-            SavedYFromRow(place.Row, footprint, RowCount),
-            1,
-            ItemDataReader.Version2,
-            CraftingMaterialData.Write(material));
-
-        Add(new BackpackItemViewModel(source, material.BaseTypeId, place.Column, place.Row, null, isNew: true, gridRows: RowCount,
-            material: material, iconProvider: _iconProvider));
-        Changed?.Invoke(this, EventArgs.Empty);
-        return true;
-    }
-
     /// <summary>
     /// Turns the crafting material <paramref name="item"/> into <paramref name="material"/> of the same kind (a rune into
     /// another rune, ...). The new material is written back on the next save.

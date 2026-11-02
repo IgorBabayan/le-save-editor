@@ -1,0 +1,64 @@
+using LE.SaveEditor.Services.GameData.Items;
+using LE.SaveEditor.Services.Saves.Models;
+
+namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
+
+/// <summary>
+/// The material storage of one stash file with the changes made in the editor. Every character that uses the stash
+/// shares this instance (softcore characters of a cycle share their stash), so a change shows for all of them and is
+/// written once.
+/// </summary>
+public sealed class StashMaterialsViewModel(StashSave stash)
+{
+    private Dictionary<CraftingMaterialKey, int> _amounts = new(stash.Amounts);
+
+    /// <summary>The stash as read from (or last written to) its file.</summary>
+    public StashSave Stash { get; private set; } = stash;
+
+    /// <summary>The amounts changed, or the stash was saved.</summary>
+    public event EventHandler? Changed;
+
+    /// <summary>Every material of the storage with its current amount (with entries the game keeps at 0).</summary>
+    public IReadOnlyDictionary<CraftingMaterialKey, int> Amounts => _amounts;
+
+    /// <summary>Some amount differs from the file.</summary>
+    public bool HasChanges =>
+        _amounts.Keys.Concat(Stash.Amounts.Keys).Distinct()
+            .Any(key => _amounts.GetValueOrDefault(key) != Stash.Amounts.GetValueOrDefault(key));
+
+    /// <summary>How many materials of <paramref name="kind"/> the storage holds now.</summary>
+    public int Total(CraftingMaterialKind kind) => _amounts.Where(a => a.Key.Kind == kind).Sum(a => a.Value);
+
+    /// <summary>Amount of each material of <paramref name="kind"/> the storage holds, by sub type.</summary>
+    public IReadOnlyDictionary<int, int> GetAmounts(CraftingMaterialKind kind) =>
+        _amounts.Where(a => a.Key.Kind == kind && a.Value > 0).ToDictionary(a => a.Key.SubTypeId, a => a.Value);
+
+    /// <summary>Replaces every material of <paramref name="kind"/> with <paramref name="amounts"/> (by sub type).</summary>
+    public void SetAmounts(CraftingMaterialKind kind, IReadOnlyDictionary<int, int> amounts)
+    {
+        var updated = _amounts.Where(a => a.Key.Kind != kind).ToDictionary(a => a.Key, a => a.Value);
+        foreach (var (subTypeId, quantity) in amounts)
+        {
+            if (quantity > 0)
+                updated[new CraftingMaterialKey(kind, subTypeId)] = quantity;
+        }
+
+        // Entries the game keeps at 0 stay "unchanged" as long as the user does not add the material.
+        foreach (var (key, quantity) in Stash.Amounts)
+        {
+            if (quantity == 0 && key.Kind == kind && !updated.ContainsKey(key) && !amounts.ContainsKey(key.SubTypeId))
+                updated[key] = 0;
+        }
+
+        _amounts = updated;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>The stash was written: <paramref name="saved"/> (read back from the file) is the new state.</summary>
+    public void MarkSaved(StashSave saved)
+    {
+        Stash = saved;
+        _amounts = new Dictionary<CraftingMaterialKey, int>(saved.Amounts);
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+}

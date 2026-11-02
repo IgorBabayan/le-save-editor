@@ -38,6 +38,14 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             Slot = dto.Slot,
             Hardcore = dto.Hardcore,
             SoloSelfFound = dto.SoloChallenge,
+            SoloCharacterChallenge = dto.SoloCharacterChallenge,
+            Id = dto.Id.ValueKind switch
+            {
+                JsonValueKind.String => dto.Id.GetString(),
+                JsonValueKind.Number => dto.Id.GetRawText(),
+                _ => null
+            },
+            Cycle = dto.Cycle,
             CharacterClass = (CharacterClass)dto.CharacterClass,
             ChosenMastery = dto.ChosenMastery,
             LastPlayed = dto.LastPlayed,
@@ -129,6 +137,10 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
         [JsonPropertyName("slot")] public int Slot { get; init; }
         [JsonPropertyName("hardcore")] public bool Hardcore { get; init; }
         [JsonPropertyName("soloChallenge")] public bool SoloChallenge { get; init; }
+        [JsonPropertyName("soloCharacterChallenge")] public bool SoloCharacterChallenge { get; init; }
+        [JsonPropertyName("cycle")] public int Cycle { get; init; }
+        /// <summary>Text in the game's saves ("2"); kept raw so a number never fails the save.</summary>
+        [JsonPropertyName("id")] public JsonElement Id { get; init; }
         [JsonPropertyName("characterClass")] public int CharacterClass { get; init; }
         [JsonPropertyName("chosenMastery")] public int ChosenMastery { get; init; }
         /// <summary>Display only, so a format the game changed must never make the whole save unreadable.</summary>

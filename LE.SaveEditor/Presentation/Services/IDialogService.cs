@@ -49,4 +49,12 @@ public interface IDialogService
     /// </summary>
     /// <returns>The picked material, or <c>null</c> if the user cancelled.</returns>
     CraftingMaterial? ShowCraftingMaterialPicker(CraftingMaterialKind kind, CraftingMaterial? current);
+
+    /// <summary>
+    /// Shows the modal material storage dialog for <paramref name="kind"/>: the amount of each material in
+    /// <paramref name="amounts"/> (by sub type) can be changed, materials removed and new ones added.
+    /// </summary>
+    /// <param name="stashName">File name of the stash, shown in the dialog.</param>
+    /// <returns>The amounts to store by sub type (materials at 0 left out), or <c>null</c> if the user cancelled.</returns>
+    IReadOnlyDictionary<int, int>? ShowCraftingMaterialStorage(CraftingMaterialKind kind, IReadOnlyDictionary<int, int> amounts, string stashName);
 }

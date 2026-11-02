@@ -4,6 +4,7 @@ using System.Text.Json;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Presentation.ViewModels.Characters;
+using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Presentation.ViewModels.Notifications;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
@@ -19,6 +20,7 @@ public partial class MainViewModel(
     ISettingsService settingsService,
     ISaveFolderLoader saveFolderLoader,
     ICharacterSaveWriter characterSaveWriter,
+    IStashSaveWriter stashSaveWriter,
     INotificationService notificationService,
     IIconProvider iconProvider,
     IItemBaseCatalog itemBaseCatalog,
@@ -44,6 +46,15 @@ public partial class MainViewModel(
     /// survive selecting another character.
     /// </summary>
     private readonly Dictionary<string, CharacterViewModel> _openedCharacters = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Material storage of every stash file read from the folder.</summary>
+    private IReadOnlyList<StashSave> _stashes = [];
+
+    /// <summary>
+    /// The material storage (with its unsaved changes) of each stash a character was opened with, by file path; shared
+    /// by all characters of the stash.
+    /// </summary>
+    private readonly Dictionary<string, StashMaterialsViewModel> _stashMaterials = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Bell button and notification popup in the title bar.</summary>
     public NotificationCenterViewModel NotificationCenter { get; } = notificationCenter;
@@ -191,7 +202,7 @@ public partial class MainViewModel(
         if (_openedCharacters.TryGetValue(character.FilePath, out var opened) && ReferenceEquals(opened.Character, character))
             return opened;
 
-        var details = new CharacterViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService);
+        var details = new CharacterViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService, GetStash(character));
         details.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName != nameof(CharacterViewModel.HasUnsavedChanges))
@@ -203,6 +214,17 @@ public partial class MainViewModel(
 
         _openedCharacters[character.FilePath] = details;
         return details;
+    }
+
+    /// <summary>The material storage of the stash <paramref name="character"/> uses; <c>null</c> when there is none.</summary>
+    private StashMaterialsViewModel? GetStash(CharacterSave character)
+    {
+        if (StashLocator.Find(character, _stashes) is not { } stash)
+            return null;
+
+        if (!_stashMaterials.TryGetValue(stash.FilePath, out var materials))
+            _stashMaterials[stash.FilePath] = materials = new StashMaterialsViewModel(stash);
+        return materials;
     }
 
     /// <summary>Forgets opened details whose character is no longer listed (the folder was read again).</summary>
@@ -238,8 +260,9 @@ public partial class MainViewModel(
     private bool CanSave() => !IsSaving && !IsLoading && CharacterDetails?.HasUnsavedChanges == true;
 
     /// <summary>
-    /// Writes the changes of the selected character into its save file (Ctrl+S). The previous file is kept as a backup,
-    /// and the character is read back from the written file, so what is shown is what the game will load.
+    /// Writes the changes of the selected character into its save file (Ctrl+S), and changes of its material storage into
+    /// its stash file. The previous files are kept as backups, and both are read back from the written files, so what is
+    /// shown is what the game will load.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
@@ -252,14 +275,29 @@ public partial class MainViewModel(
         try
         {
             var updates = details.GetUpdates();
-            if (updates.Count == 0)
+            var stash = details.Stash is { HasChanges: true } changedStash ? changedStash : null;
+            if (updates.Count == 0 && stash is null)
                 return;
 
-            var result = await characterSaveWriter.SaveAsync(character, updates);
-            ReplaceCharacter(character, result.Character);
+            var backups = new List<string>();
+            if (updates.Count > 0)
+            {
+                var result = await characterSaveWriter.SaveAsync(character, updates);
+                backups.Add(Path.GetFileName(result.BackupPath));
+                ReplaceCharacter(character, result.Character);
+            }
+
+            // The material storage lives in the stash file, which the characters of the stash share.
+            if (stash is not null)
+            {
+                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts);
+                backups.Add(Path.GetFileName(stashResult.BackupPath));
+                _stashes = _stashes.Select(s => string.Equals(s.FilePath, stashResult.Stash.FilePath, StringComparison.OrdinalIgnoreCase) ? stashResult.Stash : s).ToList();
+                stash.MarkSaved(stashResult.Stash);
+            }
 
             toastService.Show(
-                $"{character.CharacterName} saved. The previous file was kept as {Path.GetFileName(result.BackupPath)}.",
+                $"{character.CharacterName} saved. The previous {(backups.Count == 1 ? "file was" : "files were")} kept as {string.Join(" and ", backups)}.",
                 NotificationSeverity.Success);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException)
@@ -413,6 +451,9 @@ public partial class MainViewModel(
             if (cts.IsCancellationRequested)
                 return false;
 
+            // Stashes first: the details of the listed characters are built with them.
+            _stashes = content.Stashes;
+            _stashMaterials.Clear();
             Replace(Characters, content.Characters.OrderBy(c => c.Slot));
             ForgetClosedCharacters();
             Replace(StashFiles, content.StashFiles);
@@ -431,6 +472,8 @@ public partial class MainViewModel(
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Folder disappeared or is not accessible.
+            _stashes = [];
+            _stashMaterials.Clear();
             Characters.Clear();
             ForgetClosedCharacters();
             StashFiles.Clear();
