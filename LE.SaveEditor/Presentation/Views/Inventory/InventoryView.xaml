@@ -122,11 +122,11 @@
 
         <!-- ===== Resources section ===== -->
 
-        <!-- One resource: its icon (dimmed while the stash holds none) and its amount, typed in the box at the bottom right. -->
+        <!-- One resource: its icon (dimmed while the stash holds none) and, in a strip below it, its amount to type in. -->
         <DataTemplate x:Key="ResourceSlotTemplate" DataType="{x:Type inventoryVm:ResourceSlotViewModel}">
             <Border x:Name="Bd"
-                    Width="64"
-                    Height="64"
+                    Width="68"
+                    Height="84"
                     Margin="4"
                     CornerRadius="6"
                     BorderThickness="1"
@@ -140,32 +140,35 @@
                     </ToolTip>
                 </Border.ToolTip>
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <Image x:Name="Icon"
-                           Margin="6,4,6,10"
+                           Grid.Row="0"
+                           Margin="8,6,8,4"
                            Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            Source="{Binding Icon}"
                            Visibility="{Binding HasIcon, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <TextBlock x:Name="Initials"
-                               Margin="0,0,0,12"
+                               Grid.Row="0"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                FontSize="12"
                                FontWeight="SemiBold"
                                Text="{Binding Initials}"
                                Visibility="{Binding HasIcon, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
-                    <TextBox Width="44"
+                    <TextBox Grid.Row="1"
                              MinHeight="0"
-                             Margin="0,0,2,2"
-                             Padding="2,0"
-                             HorizontalAlignment="Right"
-                             VerticalAlignment="Bottom"
-                             TextAlignment="Right"
+                             Margin="3,0,3,3"
+                             Padding="2,1"
+                             HorizontalAlignment="Stretch"
+                             TextAlignment="Center"
                              FontSize="12"
                              FontWeight="SemiBold"
                              BorderThickness="0"
-                             Background="#99000000"
-                             Foreground="White"
+                             Background="{DynamicResource TitleBarBackgroundBrush}"
                              IsReadOnly="{Binding IsEditable, Converter={StaticResource InverseBooleanConverter}}"
                              ToolTip="Amount in the stash (0 removes the resource when saved)"
                              behaviors:NumericInput.IsEnabled="True"
@@ -225,6 +228,7 @@
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
             <Setter Property="LayoutTransform">
                 <Setter.Value>
                     <RotateTransform Angle="-90" />
@@ -603,9 +607,8 @@
                 <!-- ===== Resources: keys and consumables the stash keeps (keysList), laid out like the game's tab.
                      Type an amount into a slot; changes are written to the stash file when the character is saved. ===== -->
                 <TabItem Header="Resources">
-                    <StackPanel HorizontalAlignment="Left" DataContext="{Binding Resources}">
+                    <StackPanel DataContext="{Binding Resources}">
                         <Border Padding="6"
-                                HorizontalAlignment="Left"
                                 CornerRadius="6"
                                 BorderThickness="1"
                                 BorderBrush="{DynamicResource ControlBorderBrush}"
@@ -613,8 +616,8 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="32" />
-                                    <ColumnDefinition Width="Auto" MinWidth="440" />
-                                    <ColumnDefinition Width="Auto" MinWidth="120" />
+                                    <ColumnDefinition Width="3*" MinWidth="440" />
+                                    <ColumnDefinition Width="*" MinWidth="120" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -687,11 +690,11 @@
                         <StackPanel Margin="0,12,0,0"
                                     Visibility="{Binding HasOthers, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Margin="2,0,0,4" Text="Other resources in the stash" Style="{StaticResource SecondaryTextStyle}" />
-                            <Border HorizontalAlignment="Left" Style="{StaticResource ResourcePanelStyle}" Margin="0">
+                            <Border Style="{StaticResource ResourcePanelStyle}" Margin="0">
                                 <ItemsControl ItemsSource="{Binding Others}" Focusable="False" ItemTemplate="{StaticResource ResourceSlotTemplate}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <WrapPanel MaxWidth="640" />
+                                            <WrapPanel />
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                 </ItemsControl>
