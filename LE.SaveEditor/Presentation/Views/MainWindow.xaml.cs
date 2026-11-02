@@ -27,9 +27,9 @@ public partial class MainWindow : Window
         // Unsaved changes are lost with the window: ask first.
         Closing += (_, e) => e.Cancel = !viewModel.ConfirmClose();
 
-        // Maximizing is not supported: block it in the window procedure once the HWND exists.
-        SourceInitialized += (_, _) => DisableMaximize();
-        StateChanged += (_, _) => PreventMaximizedState();
+        // Maximize/restore is allowed, resizing is not: block the "Size" command once the HWND exists.
+        SourceInitialized += (_, _) => DisableResize();
+        StateChanged += (_, _) => OnWindowStateChanged();
         // Resource references (not brush instances) so the title follows runtime theme changes.
         Activated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "WindowForegroundBrush");
         Deactivated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "TitleBarInactiveForegroundBrush");
@@ -38,6 +38,10 @@ public partial class MainWindow : Window
     #region Caption buttons
 
     private void OnMinimizeExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
+
+    private void OnMaximizeExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.MaximizeWindow(this);
+
+    private void OnRestoreExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.RestoreWindow(this);
 
     private void OnCloseExecuted(object sender, ExecutedRoutedEventArgs e) => SystemCommands.CloseWindow(this);
 
@@ -67,15 +71,16 @@ public partial class MainWindow : Window
 
     #endregion
 
-    #region Maximize disabled
+    #region Resizing disabled, maximize allowed
 
     private const int WM_SYSCOMMAND = 0x0112;
-    private const int WM_NCLBUTTONDBLCLK = 0x00A3;
     private const int WM_INITMENUPOPUP = 0x0117;
-    private const int SC_MAXIMIZE = 0xF030;
-    private const int HTCAPTION = 2;
+    private const int SC_SIZE = 0xF000;
     private const uint MF_BYCOMMAND = 0x0000;
     private const uint MF_GRAYED = 0x0001;
+    private const int SM_CXSIZEFRAME = 32;
+    private const int SM_CYSIZEFRAME = 33;
+    private const int SM_CXPADDEDBORDER = 92;
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
@@ -83,43 +88,68 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")]
     private static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
 
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
+
     /// <summary>
-    /// Blocks maximizing in the window procedure (title bar double-click, Win+Up, the Alt+Space menu entry, which is
-    /// also greyed out). The window style is left alone on purpose: removing WS_MAXIMIZEBOX from a WindowChrome window
-    /// makes Windows paint its classic caption buttons and frame line over the custom title bar whenever the frame is
-    /// repainted (at start-up, when a dialog closes, after saving).
+    /// Drag-resizing is already off (WindowChrome.ResizeBorderThickness is 0, so the edges are not resize grips).
+    /// This also blocks keyboard resizing through the Alt+Space "Size" entry, which is greyed out.
+    /// ResizeMode stays CanResize on purpose: it is what keeps Maximize working (button, title bar double-click,
+    /// Win+Up, Aero Snap to the top edge).
     /// </summary>
-    private void DisableMaximize()
+    private void DisableResize()
     {
         if (PresentationSource.FromVisual(this) is HwndSource source)
-            source.AddHook(BlockMaximize);
+            source.AddHook(BlockResize);
+
+        UpdateMaximizeRestoreButton();
     }
 
-    private static IntPtr BlockMaximize(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private static IntPtr BlockResize(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         switch (msg)
         {
-            case WM_SYSCOMMAND when ((int)wParam.ToInt64() & 0xFFF0) == SC_MAXIMIZE:
-            case WM_NCLBUTTONDBLCLK when wParam.ToInt64() == HTCAPTION:
+            case WM_SYSCOMMAND when ((int)wParam.ToInt64() & 0xFFF0) == SC_SIZE:
                 handled = true;
                 break;
             case WM_INITMENUPOPUP:
-                // The system menu is about to open: grey out "Maximize" (the menu itself is still shown by Windows).
-                EnableMenuItem(GetSystemMenu(hwnd, false), SC_MAXIMIZE, MF_BYCOMMAND | MF_GRAYED);
+                // The system menu is about to open: grey out "Size" (the menu itself is still shown by Windows).
+                EnableMenuItem(GetSystemMenu(hwnd, false), SC_SIZE, MF_BYCOMMAND | MF_GRAYED);
                 break;
         }
 
         return IntPtr.Zero;
     }
 
-    /// <summary>
-    /// Safety net for paths that do not go through WM_SYSCOMMAND (e.g. dragging the window to the top edge with
-    /// Aero Snap): put the window back to normal.
-    /// </summary>
-    private void PreventMaximizedState()
+    private void OnWindowStateChanged()
     {
+        UpdateMaximizeRestoreButton();
+
+        // A maximized WindowChrome window is placed partly off-screen by the size of its (invisible) frame,
+        // which would clip the title bar and the window edges: pad the content by that amount instead.
         if (WindowState == WindowState.Maximized)
-            WindowState = WindowState.Normal;
+        {
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var padded = GetSystemMetrics(SM_CXPADDEDBORDER);
+            var x = (GetSystemMetrics(SM_CXSIZEFRAME) + padded) / dpi.DpiScaleX;
+            var y = (GetSystemMetrics(SM_CYSIZEFRAME) + padded) / dpi.DpiScaleY;
+            RootBorder.Margin = new Thickness(x, y, x, y);
+            RootBorder.BorderThickness = new Thickness(0);
+        }
+        else
+        {
+            RootBorder.Margin = new Thickness(0);
+            RootBorder.BorderThickness = new Thickness(1);
+        }
+    }
+
+    /// <summary>Shows "Maximize" (U+E922) in the normal state and "Restore" (U+E923) while maximized.</summary>
+    private void UpdateMaximizeRestoreButton()
+    {
+        var maximized = WindowState == WindowState.Maximized;
+        MaximizeRestoreButton.Content = maximized ? "\uE923" : "\uE922";
+        MaximizeRestoreButton.ToolTip = maximized ? "Restore" : "Maximize";
+        MaximizeRestoreButton.Command = maximized ? SystemCommands.RestoreWindowCommand : SystemCommands.MaximizeWindowCommand;
     }
 
     #endregion
