@@ -19,13 +19,23 @@ public sealed partial class CharacterViewModel : ViewModelBase
         IDialogService dialogService,
         IIconProvider iconProvider,
         IItemBaseCatalog itemBaseCatalog,
-        IToastService toastService)
+        IToastService toastService,
+        StashMaterialsViewModel? stash = null)
     {
         Character = character;
+        Stash = stash;
         Blessings = new BlessingsViewModel(character);
-        Inventory = new InventoryViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService);
+        Inventory = new InventoryViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService, stash);
         Inventory.Changed += (_, _) => RefreshHasUnsavedChanges();
+        if (stash is not null)
+        {
+            stash.Changed += (_, _) => RefreshHasUnsavedChanges();
+            RefreshHasUnsavedChanges();
+        }
     }
+
+    /// <summary>Material storage of the stash the character uses (shared with the other characters of that stash).</summary>
+    public StashMaterialsViewModel? Stash { get; }
 
     public CharacterSave Character { get; }
 
@@ -35,7 +45,7 @@ public sealed partial class CharacterViewModel : ViewModelBase
     /// <summary>"Inventory" tab.</summary>
     public InventoryViewModel Inventory { get; }
 
-    /// <summary>Something was changed that is not written to the save file yet.</summary>
+    /// <summary>Something was changed that is not written to the save file or the character's stash file yet.</summary>
     [ObservableProperty]
     private bool _hasUnsavedChanges;
 
@@ -51,7 +61,7 @@ public sealed partial class CharacterViewModel : ViewModelBase
     {
         try
         {
-            HasUnsavedChanges = GetUpdates().Count > 0;
+            HasUnsavedChanges = GetUpdates().Count > 0 || Stash?.HasChanges == true;
         }
         catch (ArgumentException)
         {

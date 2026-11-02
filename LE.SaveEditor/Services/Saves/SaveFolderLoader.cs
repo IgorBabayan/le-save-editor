@@ -4,6 +4,7 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.Saves;
 
+/// <summary>Reads the characters and the material storage of the stashes in a save folder.</summary>
 public sealed class SaveFolderLoader(ISaveFolderScanner scanner, ICharacterSaveParser parser) : ISaveFolderLoader
 {
     public async Task<SaveFolderContent> LoadAsync(string folderPath, CancellationToken cancellationToken = default)
@@ -31,6 +32,22 @@ public sealed class SaveFolderLoader(ISaveFolderScanner scanner, ICharacterSaveP
         }
 
         characters.Sort((a, b) => a.Slot.CompareTo(b.Slot));
-        return new SaveFolderContent(folderPath, characters, files.StashFiles, errors);
+
+        // The material storage ("Crafting Materials") of each stash; tab files hold only stash items.
+        var stashes = new List<StashSave>();
+        foreach (var file in files.StashFiles.Where(StashLocator.IsMainStashFile))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                stashes.Add(await StashSaveParser.ReadAsync(file, cancellationToken).ConfigureAwait(false));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+            {
+                errors.Add(new SaveFileError(file, ex.Message));
+            }
+        }
+
+        return new SaveFolderContent(folderPath, characters, files.StashFiles, errors, stashes);
     }
 }

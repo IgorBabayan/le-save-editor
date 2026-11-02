@@ -619,13 +619,33 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         OnAffixesChanged();
     }
 
-    /// <summary>Puts the affixes of an equipped item back into slots of the same kind, in order.</summary>
+    /// <summary>
+    /// Puts the affixes of an equipped item back into slots of the same kind, in order. Affix values depend on the item
+    /// type, so an affix kept from a base of another type takes the values of the selected one at the same rolls.
+    /// </summary>
     private void RestoreAffixes(IReadOnlyList<BuiltAffix> affixes)
     {
         foreach (var affix in affixes)
         {
             var slot = AffixSlots.FirstOrDefault(s => s.Kind == affix.Slot && !s.HasAffix);
-            slot?.Set(affix.Affix, affix.Tier, affix.Values);
+            if (slot is null)
+                continue;
+
+            var definition = SelectedBase is { } item ? _catalog.FindAffix(affix.Affix.Id, item.BaseTypeId) ?? affix.Affix : affix.Affix;
+            if (ReferenceEquals(definition, affix.Affix))
+            {
+                slot.Set(definition, affix.Tier, affix.Values);
+                continue;
+            }
+
+            var tier = Math.Clamp(affix.Tier, 1, definition.Tiers.Count);
+            var oldStats = affix.TierData.Stats;
+            var values = definition.Tiers[tier - 1].Stats
+                .Select((stat, i) => i < oldStats.Count && i < affix.Values.Count
+                    ? ItemStatViewModel.FromRoll(stat, ItemStatViewModel.ToRoll(oldStats[i], affix.Values[i]))
+                    : stat.Max)
+                .ToList();
+            slot.Set(definition, tier, values);
         }
 
         OnAffixesChanged();
@@ -673,11 +693,12 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>
     /// Normal without affixes, Magic with 1–2, Rare with 3–4, Exalted as soon as one affix is tier 6 or higher
-    /// (idols: Normal or Magic). Prefixes, suffixes and sealed affixes count; the corruption does not change the rarity.
+    /// (idols: Normal or Magic). Only prefixes and suffixes count: like in the game, the sealed affix and the corruption do
+    /// not change the rarity (one prefix, one suffix and a sealed affix is still Magic).
     /// </summary>
     private ItemRarity RarityFromAffixes()
     {
-        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted).ToList();
+        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted && !s.IsSealed).ToList();
 
         // Idols are never rare or exalted: any affix makes them magic.
         if (Slot.IsIdol)

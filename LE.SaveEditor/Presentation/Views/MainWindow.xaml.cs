@@ -27,8 +27,8 @@ public partial class MainWindow : Window
         // Unsaved changes are lost with the window: ask first.
         Closing += (_, e) => e.Cancel = !viewModel.ConfirmClose();
 
-        // Maximizing is not supported: block it in the window procedure once the HWND exists.
-        SourceInitialized += (_, _) => DisableMaximize();
+        // Neither resizing nor maximizing is supported: block both in the window procedure once the HWND exists.
+        SourceInitialized += (_, _) => DisableResizeAndMaximize();
         StateChanged += (_, _) => PreventMaximizedState();
         // Resource references (not brush instances) so the title follows runtime theme changes.
         Activated += (_, _) => TitleText.SetResourceReference(TextBlock.ForegroundProperty, "WindowForegroundBrush");
@@ -67,11 +67,12 @@ public partial class MainWindow : Window
 
     #endregion
 
-    #region Maximize disabled
+    #region Resizing and maximizing disabled
 
     private const int WM_SYSCOMMAND = 0x0112;
     private const int WM_NCLBUTTONDBLCLK = 0x00A3;
     private const int WM_INITMENUPOPUP = 0x0117;
+    private const int SC_SIZE = 0xF000;
     private const int SC_MAXIMIZE = 0xF030;
     private const int HTCAPTION = 2;
     private const uint MF_BYCOMMAND = 0x0000;
@@ -84,28 +85,31 @@ public partial class MainWindow : Window
     private static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
 
     /// <summary>
-    /// Blocks maximizing in the window procedure (title bar double-click, Win+Up, the Alt+Space menu entry, which is
-    /// also greyed out). The window style is left alone on purpose: removing WS_MAXIMIZEBOX from a WindowChrome window
-    /// makes Windows paint its classic caption buttons and frame line over the custom title bar whenever the frame is
-    /// repainted (at start-up, when a dialog closes, after saving).
+    /// Drag-resizing is already off (WindowChrome.ResizeBorderThickness is 0, so the edges are not resize grips).
+    /// This hook also blocks keyboard resizing (Alt+Space "Size") and maximizing (title bar double-click, Win+Up,
+    /// Alt+Space "Maximize"); both menu entries are greyed out. The window style is left alone on purpose: removing
+    /// WS_MAXIMIZEBOX/WS_THICKFRAME from a WindowChrome window makes Windows paint its classic caption buttons and
+    /// frame line over the custom title bar whenever the frame is repainted.
     /// </summary>
-    private void DisableMaximize()
+    private void DisableResizeAndMaximize()
     {
         if (PresentationSource.FromVisual(this) is HwndSource source)
-            source.AddHook(BlockMaximize);
+            source.AddHook(BlockResizeAndMaximize);
     }
 
-    private static IntPtr BlockMaximize(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private static IntPtr BlockResizeAndMaximize(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         switch (msg)
         {
-            case WM_SYSCOMMAND when ((int)wParam.ToInt64() & 0xFFF0) == SC_MAXIMIZE:
+            case WM_SYSCOMMAND when ((int)wParam.ToInt64() & 0xFFF0) is SC_SIZE or SC_MAXIMIZE:
             case WM_NCLBUTTONDBLCLK when wParam.ToInt64() == HTCAPTION:
                 handled = true;
                 break;
             case WM_INITMENUPOPUP:
-                // The system menu is about to open: grey out "Maximize" (the menu itself is still shown by Windows).
-                EnableMenuItem(GetSystemMenu(hwnd, false), SC_MAXIMIZE, MF_BYCOMMAND | MF_GRAYED);
+                // The system menu is about to open: grey out "Size" and "Maximize" (the menu itself is still shown).
+                var menu = GetSystemMenu(hwnd, false);
+                EnableMenuItem(menu, SC_SIZE, MF_BYCOMMAND | MF_GRAYED);
+                EnableMenuItem(menu, SC_MAXIMIZE, MF_BYCOMMAND | MF_GRAYED);
                 break;
         }
 

@@ -7,7 +7,8 @@ using Microsoft.Data.Sqlite;
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>.
+/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>
+/// (plus the indexed property lists).
 /// </summary>
 /// <remarks>
 /// Every row keeps its element of maxroll's <c>data.json</c> as JSON. An item type looks like
@@ -28,11 +29,23 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <summary>What was read from base.db.</summary>
     /// <param name="Uniques">Unique and set items.</param>
     /// <param name="HasStatNames">
-    /// The <c>Properties</c> and <c>AbilityProperties</c> tables exist (databases made before them show "Property 10" or
-    /// internal skill affix names).
+    /// The <c>Properties</c>, <c>AbilityProperties</c> and <c>PlayerProperties</c> tables exist (databases made before them
+    /// show "Property 10", internal skill affix names or affix names in place of player properties).
     /// </param>
-    /// <param name="Affixes">Equipment and idol affixes.</param>
-    private sealed record Catalog(IReadOnlyList<ItemBase> Bases, IReadOnlyList<ItemBase> Uniques, IReadOnlyList<AffixDefinition> Affixes, bool HasStatNames);
+    /// <param name="Affixes">Equipment and idol affixes as the data gives them (not scaled to an item type).</param>
+    /// <param name="AffixEffectModifiers">Per item type (<c>baseTypeID</c>) its <c>affixEffectModifier</c>.</param>
+    /// <param name="Materials">Runes, glyphs, affix shards and resources (key items).</param>
+    private sealed record Catalog(
+        IReadOnlyList<ItemBase> Bases,
+        IReadOnlyList<ItemBase> Uniques,
+        IReadOnlyList<AffixDefinition> Affixes,
+        bool HasStatNames,
+        IReadOnlyDictionary<int, double> AffixEffectModifiers,
+        IReadOnlyList<CraftingMaterial> Materials)
+    {
+        /// <summary>Affixes scaled to an item type, by affix id and item type, so each is built once.</summary>
+        public Dictionary<(int AffixId, int BaseTypeId), AffixDefinition> Scaled { get; } = [];
+    }
 
     public bool IsAvailable => GetAll().Count > 0;
 
@@ -77,7 +90,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         lock (_sync)
             catalog = _catalog ??= Load();
 
-        return catalog.Affixes.Where(a => a.CanRollOnType(baseTypeId)).ToList();
+        lock (_sync)
+            return catalog.Affixes.Where(a => a.CanRollOnType(baseTypeId)).Select(a => ScaledFor(catalog, a, baseTypeId)).ToList();
     }
 
     public ItemBase? FindBase(int baseTypeId, int subTypeId) =>
@@ -88,10 +102,89 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
     public AffixDefinition? FindAffix(int affixId, int? baseTypeId = null)
     {
+        var catalog = GetCatalog();
+
         // Equipment and idol affixes are separate lists in the data; prefer the one that can roll on the item.
-        var matches = GetCatalog().Affixes.Where(a => a.Id == affixId).ToList();
-        return (baseTypeId is { } type ? matches.FirstOrDefault(a => a.CanRollOnType(type)) : null)
-               ?? matches.FirstOrDefault();
+        var matches = catalog.Affixes.Where(a => a.Id == affixId).ToList();
+        var affix = (baseTypeId is { } type ? matches.FirstOrDefault(a => a.CanRollOnType(type)) : null)
+                    ?? matches.FirstOrDefault();
+        if (affix is null || baseTypeId is not { } itemType)
+            return affix;
+
+        lock (_sync)
+            return ScaledFor(catalog, affix, itemType);
+    }
+
+    public IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind) =>
+        GetCatalog().Materials
+            .Where(m => m.Kind == kind)
+            // Materials that still drop first, then by name.
+            .OrderBy(m => m.CannotDrop)
+            .ThenBy(m => m.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+    public CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId) =>
+        GetCatalog().Materials.FirstOrDefault(m => m.Kind == kind && m.SubTypeId == subTypeId);
+
+    /// <summary>
+    /// <paramref name="affix"/> with the values it has on item type <paramref name="baseTypeId"/>. The game scales every
+    /// tier by <c>(1 + affixEffectModifier of the item type) / (1 + standardAffixEffectModifier of the affix)</c>: the
+    /// tiers are written for the item type whose modifier the affix names, e.g. Increased Bow Attack Speed (0) is 75%
+    /// stronger on a bow (0.75), Crit Chance and Bow Attack Speed (0.75) is not. Called under <c>_sync</c>.
+    /// </summary>
+    private static AffixDefinition ScaledFor(Catalog catalog, AffixDefinition affix, int baseTypeId)
+    {
+        if (catalog.Scaled.TryGetValue((affix.Id, baseTypeId), out var scaled))
+            return scaled;
+
+        // In 32-bit floats like the game, so values on a rounding edge land on the same side (0.5 × 1.17 is 58.4999…%,
+        // shown as 58%, not 59%).
+        var typeModifier = (float)catalog.AffixEffectModifiers.GetValueOrDefault(baseTypeId);
+        var standard = 1f + (float)affix.StandardEffectModifier;
+        var factor = standard > 0 ? (1f + typeModifier) / standard : 1f;
+
+        scaled = factor == 1f
+            ? affix
+            : affix with
+            {
+                Tiers = affix.Tiers
+                    .Select(t => t with { Stats = t.Stats.Select(s => Scale(s, factor)).ToList() })
+                    .ToList()
+            };
+        catalog.Scaled[(affix.Id, baseTypeId)] = scaled;
+        return scaled;
+    }
+
+    /// <summary>
+    /// <paramref name="stat"/> times <paramref name="factor"/>, rounded to as many decimals as the data gives (whole
+    /// numbers stay whole, 0.13 keeps two decimals), which is what the game shows: 131 Health on an amulet (×1.17) is
+    /// 153, 13% Bow Attack Speed on a bow (×1.75) is 23%.
+    /// </summary>
+    private static ItemImplicit Scale(ItemImplicit stat, float factor)
+    {
+        var decimals = Math.Max(DecimalsOf(stat.Min), DecimalsOf(stat.Max));
+        double Round(double value) => Math.Round((double)((float)value * factor), decimals, MidpointRounding.AwayFromZero);
+
+        return stat with
+        {
+            Min = Round(stat.Min),
+            Max = Round(stat.Max),
+            TemplateMin = Round(stat.TemplateMin),
+            TemplateMax = Round(stat.TemplateMax)
+        };
+    }
+
+    /// <summary>Decimals <paramref name="value"/> is written with in the data (0 … 4).</summary>
+    private static int DecimalsOf(double value)
+    {
+        for (var decimals = 0; decimals < 4; decimals++)
+        {
+            var scaled = value * Math.Pow(10, decimals);
+            if (Math.Abs(scaled - Math.Round(scaled)) < 1e-6)
+                return decimals;
+        }
+
+        return 4;
     }
 
     private Catalog GetCatalog()
@@ -116,7 +209,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return new Catalog([], [], [], false);
+            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
 
         try
         {
@@ -133,26 +226,50 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
             var properties = ReadProperties(connection);
             var abilityProperties = ReadAbilityProperties(connection);
-            var names = new ImplicitNames(properties, ReadAilments(connection), abilityProperties, ReadIdolAltarProperties(connection));
+            var playerProperties = ReadIndexedProperties(connection, "PlayerProperties", "Player property");
+            var names = new ImplicitNames(
+                properties,
+                ReadAilments(connection),
+                abilityProperties,
+                ReadIndexedProperties(connection, "IdolAltarProperties", "Idol altar property"),
+                playerProperties);
             var icons = ReadIcons(connection);
 
             var result = new List<ItemBase>();
+            var affixEffectModifiers = new Dictionary<int, double>();
+            var materials = new List<CraftingMaterial>();
             foreach (var (key, name, json) in ReadRows(connection, "SELECT Key, Name, Json FROM ItemTypes"))
             {
                 using var document = TryParse(json);
-                if (document?.RootElement is { ValueKind: JsonValueKind.Object } itemType)
-                    result.AddRange(ParseItemType(key, name, itemType, names, icons));
+                if (document?.RootElement is not { ValueKind: JsonValueKind.Object } itemType)
+                    continue;
+
+                var bases = ParseItemType(key, name, itemType, names, icons);
+                result.AddRange(bases);
+                materials.AddRange(ParseCraftingMaterials(itemType, icons));
+                // Affix values on this item type are scaled by its affixEffectModifier (see ScaledFor).
+                if ((GetInt(itemType, "baseTypeID") ?? bases.FirstOrDefault()?.BaseTypeId) is { } typeId
+                    && GetDouble(itemType, "affixEffectModifier") is { } modifier)
+                    affixEffectModifiers[typeId] = modifier;
             }
 
             var uniques = ReadUniques(connection, result, names, icons);
-            var affixes = LimitToUniques(ReadAffixes(connection, names), uniques);
-            // A database without skill properties (made before them) shows skill affixes by internal name: outdated too.
-            return new Catalog(result, uniques, affixes, properties.Count > 0 && abilityProperties.Count > 0);
+            var allAffixes = ReadAffixes(connection, names);
+            var affixes = LimitToUniques(allAffixes, uniques);
+            // A database without skill or player properties (made before them) shows skill affixes by internal name and
+            // player properties by the affix name: outdated too.
+            return new Catalog(
+                result,
+                uniques,
+                affixes,
+                properties.Count > 0 && abilityProperties.Count > 0 && playerProperties.Count > 0,
+                affixEffectModifiers,
+                NameShards(materials, allAffixes, icons));
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             // A missing or broken database means an empty builder, never a crash.
-            return new Catalog([], [], [], false);
+            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
         }
     }
 
@@ -195,6 +312,102 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    // ===== Crafting materials =====
+
+    /// <summary>Rich-text tags of material descriptions (<c>&lt;color=#fff&gt;</c>, <c>&lt;font="Caladea SDF"&gt;</c>, ...).</summary>
+    private static readonly Regex RichTextTag = new(@"<[^<>]+>", RegexOptions.Compiled);
+
+    /// <summary>The hint every crafting material ends with ("Press [F] to open the Crafting Panel.").</summary>
+    private static readonly Regex CraftingPanelHint = new(@"Press \[?F\]? to open the Crafting Panel\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Regex BlankLines = new(@"\n{3,}", RegexOptions.Compiled);
+
+    /// <summary>
+    /// The runes (<c>baseTypeID</c> 102), glyphs (103), affix shards (101) or resources (104, "Key Items") of an item
+    /// type; empty for any other type.
+    /// A sub item looks like <c>{"name":"Rune of Removal","displayName":"","subTypeID":2,"levelRequirement":15,
+    /// "cannotDrop":false,"description":"&lt;color=#fff&gt;Removes a random affix ..."}</c>; the <c>name</c> of a shard is
+    /// its affix, and its <c>subTypeID</c> the <c>affixId</c>.
+    /// </summary>
+    private static List<CraftingMaterial> ParseCraftingMaterials(JsonElement itemType, IconIndex icons)
+    {
+        var result = new List<CraftingMaterial>();
+        if (GetInt(itemType, "baseTypeID") is not { } baseTypeId
+            || CraftingMaterialKindExtensions.FromBaseTypeId(baseTypeId) is not { } kind
+            || Find(itemType, "subItems") is not { ValueKind: JsonValueKind.Array } subItems)
+            return result;
+
+        var typeName = GetString(itemType, "BaseTypeName") ?? kind.DisplayName;
+        var shardIcon = icons.Find(typeName, "affix-shard", "affix shard");
+        foreach (var subItem in subItems.EnumerateArray())
+        {
+            if (subItem.ValueKind != JsonValueKind.Object || GetInt(subItem, "subTypeID") is not { } subTypeId)
+                continue;
+
+            var internalName = GetString(subItem, "name");
+            var name = GetString(subItem, "displayName") ?? internalName;
+            if (name is null)
+                continue;
+
+            result.Add(new CraftingMaterial(
+                kind,
+                subTypeId,
+                name,
+                CleanDescription(GetString(subItem, "description")),
+                GetInt(subItem, "levelRequirement") ?? 0,
+                GetBool(subItem, "cannotDrop") ?? false,
+                kind == CraftingMaterialKind.AffixShard ? shardIcon : icons.Find(typeName, internalName, name)));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Shards with the shown name, type, category and prefix / suffix icon of their affix (the <c>affixId</c> is the
+    /// shard's sub type). Shards of affixes the editor does not read keep the internal name and the plain shard icon.
+    /// </summary>
+    private static List<CraftingMaterial> NameShards(
+        List<CraftingMaterial> materials,
+        IReadOnlyList<AffixDefinition> affixes,
+        IconIndex icons)
+    {
+        var shardIcons = new Dictionary<AffixType, string?>
+        {
+            [AffixType.Prefix] = icons.Find("Affix Shard", "prefix-shard"),
+            [AffixType.Suffix] = icons.Find("Affix Shard", "suffix-shard")
+        };
+
+        var byId = new Dictionary<int, AffixDefinition>();
+        foreach (var affix in affixes)
+            byId.TryAdd(affix.Id, affix);
+
+        var result = materials
+            .Select(m => m.Kind == CraftingMaterialKind.AffixShard && byId.TryGetValue(m.SubTypeId, out var affix)
+                ? m with
+                {
+                    Name = affix.Name,
+                    AffixType = affix.Type,
+                    GroupName = affix.GroupName,
+                    IconPath = shardIcons[affix.Type] ?? m.IconPath
+                }
+                : m)
+            .ToList();
+        return result;
+    }
+
+    /// <summary>
+    /// <paramref name="description"/> as plain text: without rich-text tags and the crafting panel hint, trimmed.
+    /// </summary>
+    private static string CleanDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return string.Empty;
+
+        var text = RichTextTag.Replace(description, string.Empty);
+        text = CraftingPanelHint.Replace(text, string.Empty).Replace("\r\n", "\n");
+        return BlankLines.Replace(text, "\n\n").Trim();
     }
 
     private static List<ItemImplicit> ParseImplicits(JsonElement subItem, ImplicitNames names) =>
@@ -446,7 +659,10 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 ClassCategories.FirstOrDefault(c => string.Equals(c, groupName, StringComparison.OrdinalIgnoreCase)),
                 GetInt(affix, "levelRequirement") ?? 0,
                 canRollOn,
-                tiers));
+                tiers)
+            {
+                StandardEffectModifier = GetDouble(affix, "standardAffixEffectModifier") ?? 0
+            });
         }
 
         return result;
@@ -619,11 +835,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// databases made before it.
     /// </param>
     /// <param name="idolAltarProperties">Idol altar properties in order (<c>IdolAltarProperties</c> table), or empty.</param>
+    /// <param name="playerProperties">Player properties in order (<c>PlayerProperties</c> table), or empty.</param>
     private sealed class ImplicitNames(
         Dictionary<int, PropertyInfo> properties,
         Dictionary<int, string> ailments,
         Dictionary<int, IReadOnlyList<PropertyInfo>> abilityProperties,
-        IReadOnlyList<PropertyInfo> idolAltarProperties)
+        IReadOnlyList<PropertyInfo> idolAltarProperties,
+        IReadOnlyList<PropertyInfo> playerProperties)
     {
         /// <summary>Tag bits (the game's <c>AT</c> flags) in the order their words go before the property name.</summary>
         private static readonly (long Bit, string Word)[] PrefixTags =
@@ -645,11 +863,17 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         /// <summary>An idol altar property: <c>tags</c> is the index in the idol altar property list.</summary>
         private const int IdolAltarProperty = 130;
 
+        /// <summary>
+        /// A player property: <c>tags</c> is the index in the player property list (e.g. 134: "Chance to cast Icicle on
+        /// Bow Hit" of Reign of Winter).
+        /// </summary>
+        private const int PlayerProperty = 98;
+
         public PropertyInfo? GetProperty(int property) => properties.GetValueOrDefault(property);
 
         /// <summary>
-        /// The skill property (58) or idol altar property (130) a modifier refers to; <c>null</c> for other properties or
-        /// when unknown.
+        /// The skill property (58), idol altar property (130) or player property (98) a modifier refers to; <c>null</c> for
+        /// other properties or when unknown.
         /// </summary>
         public PropertyInfo? GetIndexedProperty(int property, long tags, int specialTag) => property switch
         {
@@ -657,6 +881,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                                  && abilityProperties.TryGetValue((int)tags, out var list)
                                  && specialTag >= 0 && specialTag < list.Count => list[specialTag],
             IdolAltarProperty when tags >= 0 && tags < idolAltarProperties.Count => idolAltarProperties[(int)tags],
+            PlayerProperty when tags >= 0 && tags < playerProperties.Count => playerProperties[(int)tags],
             _ => null
         };
 
@@ -665,7 +890,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         /// "Level of Skills" with a special tag (its tags then select a single skill).
         /// </summary>
         public bool IsNamed(int property, int specialTag, long tags) =>
-            property is AbilityProperty or IdolAltarProperty
+            property is AbilityProperty or IdolAltarProperty or PlayerProperty
                 ? GetIndexedProperty(property, tags, specialTag) is not null
                 : properties.ContainsKey(property)
                   && !(property == LevelOfSkillsProperty && specialTag != 0);
@@ -776,12 +1001,12 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         GetBool(property, "nameIncludesModifier") ?? false);
 
     /// <summary>
-    /// <c>idolAltarProperties</c>: a list of properties (no ids) that idol altar affixes refer to by index
-    /// (<c>tags</c> of property 130). Rows are keyed by their position; databases made before the table have none.
+    /// <c>idolAltarProperties</c> / <c>playerProperties</c>: lists of properties (no ids) that affixes refer to by index
+    /// (<c>tags</c> of property 130 / 98). Rows are keyed by their position; databases made before the table have none.
     /// </summary>
-    private static List<PropertyInfo> ReadIdolAltarProperties(SqliteConnection connection)
+    private static List<PropertyInfo> ReadIndexedProperties(SqliteConnection connection, string table, string label)
     {
-        var rows = ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM IdolAltarProperties")
+        var rows = ReadRowsOrEmpty(connection, $"SELECT Key, Name, Json FROM {table}")
             .Select(r => (Index: int.TryParse(r.Key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i) ? i : -1, r.Json))
             .Where(r => r.Index >= 0)
             .OrderBy(r => r.Index)
@@ -792,13 +1017,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         {
             // Keep positions: a gap would shift every later property.
             while (result.Count < index)
-                result.Add(new PropertyInfo($"Idol altar property {result.Count}", false, false, false, false));
+                result.Add(new PropertyInfo($"{label} {result.Count}", false, false, false, false));
 
             using var document = TryParse(json);
             result.Add(document?.RootElement is { ValueKind: JsonValueKind.Object } property
                        && GetString(property, "propertyName") is { } name
                 ? ReadPropertyInfo(property, name)
-                : new PropertyInfo($"Idol altar property {index}", false, false, false, false));
+                : new PropertyInfo($"{label} {index}", false, false, false, false));
         }
 
         return result;

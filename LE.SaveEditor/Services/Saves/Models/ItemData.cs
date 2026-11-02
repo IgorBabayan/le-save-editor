@@ -14,7 +14,10 @@ namespace LE.SaveEditor.Services.Saves.Models;
 /// <param name="Affixes">Affixes in the order they are stored.</param>
 /// <param name="FormatVersion">First byte of the data (2 or 6).</param>
 /// <param name="InstanceId">The 4 bytes after the version in format 6 (empty in format 2), kept to write the item back.</param>
-/// <param name="Flags">The byte after the rarity (0 on plain, unique and set items, 128 on legendaries), kept as stored.</param>
+/// <param name="Flags">
+/// The byte after the rarity, kept as stored: bit <c>0x10</c> marks a corrupted item (see <see cref="IsCorrupted"/>);
+/// legendaries made in the Temporal Sanctum have <c>0x80</c>. Other bits are not known.
+/// </param>
 /// <param name="Tail">
 /// The last byte: legendary potential of a unique / set item, 0 after the affixes of other items; <c>null</c> when the
 /// data ends without it.
@@ -34,11 +37,17 @@ public sealed record ItemData(
     byte? Tail = null)
 {
     public bool IsUnique => UniqueId is not null;
+
+    /// <summary>The item was corrupted (Rune of Corruption), with or without a corruption affix.</summary>
+    public bool IsCorrupted => (Flags & LE.SaveEditor.Services.Saves.ItemDataReader.CorruptedItemFlag) != 0;
 }
 
 /// <summary>One stored affix.</summary>
 /// <param name="AffixId">The game's <c>affixId</c>.</param>
 /// <param name="Tier">Tier as the game shows it, 1-based ("T5").</param>
 /// <param name="Roll">Roll inside the tier, 0 = tier minimum, 255 = tier maximum.</param>
-/// <param name="IsSealed">The affix is sealed (glyph of insight).</param>
-public sealed record ItemAffixData(int AffixId, int Tier, byte Roll, bool IsSealed);
+/// <param name="IsSealed">The affix is sealed with a Glyph of Insight.</param>
+/// <param name="IsCorrupted">
+/// The affix was added by corruption. It can be any affix, also an ordinary prefix / suffix (e.g. Cold Penetration).
+/// </param>
+public sealed record ItemAffixData(int AffixId, int Tier, byte Roll, bool IsSealed, bool IsCorrupted = false);

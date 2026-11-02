@@ -20,7 +20,8 @@ public interface IItemBaseCatalog
 
     /// <summary>
     /// Affixes that can be crafted on item type <paramref name="baseTypeId"/>: for equipment its prefixes, suffixes,
-    /// experimental, personal, set, variant and corrupted affixes; for an idol type its idol affixes.
+    /// experimental, personal, set, variant and corrupted affixes; for an idol type its idol affixes. Tier ranges are
+    /// the values the affixes have on that item type (the game scales them, e.g. 75% higher on bows).
     /// </summary>
     IReadOnlyList<AffixDefinition> GetAffixes(int baseTypeId);
 
@@ -32,9 +33,19 @@ public interface IItemBaseCatalog
 
     /// <summary>
     /// The affix with <paramref name="affixId"/> (<c>affixId</c>), or <c>null</c>. When equipment and idol affixes share
-    /// the id, the one that can roll on <paramref name="baseTypeId"/> wins.
+    /// the id, the one that can roll on <paramref name="baseTypeId"/> wins. With <paramref name="baseTypeId"/> the tier
+    /// ranges are scaled to that item type, like <see cref="GetAffixes"/>.
     /// </summary>
     AffixDefinition? FindAffix(int affixId, int? baseTypeId = null);
+
+    /// <summary>
+    /// Crafting materials of <paramref name="kind"/> (runes, glyphs, affix shards or resources), ordered by name; empty when
+    /// <c>base.db</c> is missing.
+    /// </summary>
+    IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind);
+
+    /// <summary>The crafting material with these ids, or <c>null</c> when <c>base.db</c> does not know it.</summary>
+    CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId);
 
     /// <summary>Forgets what was read, so a database written by the generator is picked up.</summary>
     void ClearCache();

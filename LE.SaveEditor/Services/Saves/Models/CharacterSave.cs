@@ -13,6 +13,18 @@ public sealed record CharacterSave
 
     /// <summary>Solo Self-Found character (<c>soloChallenge</c> in the save file).</summary>
     public bool SoloSelfFound { get; init; }
+
+    /// <summary>
+    /// Solo challenge character with a stash of its own (<c>soloCharacterChallenge</c>), see
+    /// <see cref="LE.SaveEditor.Services.Saves.StashLocator"/>.
+    /// </summary>
+    public bool SoloCharacterChallenge { get; init; }
+
+    /// <summary>The character's <c>id</c> (its slot as text, e.g. "2"); a solo stash names it.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Cycle the character was made in (<c>cycle</c>); legacy characters have an old one.</summary>
+    public int Cycle { get; init; }
     public required CharacterClass CharacterClass { get; init; }
 
     /// <summary>Raw <c>chosenMastery</c> value from the file (index within the class).</summary>

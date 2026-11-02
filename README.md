@@ -30,11 +30,43 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   to move them inside their grid.
 - Right-click an empty backpack cell to build a new item there (equipment or an idol), or an empty cell of the idol
   grid to build a new idol. The idol grid is 5 × 5 without its corners; idols stored over a corner are left untouched.
+- Crafting materials: the "Crafting materials" box shows the material storage of the character's stash, like the
+  game's Crafting Materials panel (shards, runes, glyphs). Each kind has its own "Edit" action: a dialog lists the
+  materials of that kind with their amounts; change an amount, remove a material (or set it to 0), or add one picked
+  from the game database. The changes are written to the stash file when the character is saved (the stash file is
+  backed up like character saves). Characters that share a stash (e.g. softcore characters of a cycle) share the
+  changes. The stash of a character is found by name: `STASH_CYCLE_<cycle>_<type>` (type 0 = softcore,
+  1 = hardcore) or `STASH_CYCLE_<cycle>_2_<character id>` for a solo challenge character; legacy characters use
+  `STASH_<type>` (`STASH_2_<id>`). Affix shards are stored in `savedShards` (`{"shardType": affixId, "quantity": n}`),
+  runes and glyphs in `materialsList` (an item `[2, 102 | 103, subTypeID]` with a quantity).
+- Resources: the "Resources" section below the inventory shows the keys and consumables of the character's stash,
+  laid out like the game's Resources tab — keys (Harbinger Eye; Temporal Sanctum, Lightless Arbor and Soulfire Bastion
+  keys; Arena Key of Memory and Arena Key) and consumables (Portal and Scale charms; Crystallized Heart and the
+  primordial Horn, Fang, Feather and Petal; Temporal Keystones and Timeglass Fragments). Type an amount into a slot
+  (0 removes the resource); empty slots are dimmed. Resources the game's tab does not show (lizard tails, tokens, ...)
+  are listed under "Other resources" while the stash holds some, and "Edit all…" edits every resource, or adds any
+  resource of the game database, in the material storage dialog. Resources are stored in the stash's `keysList` like
+  runes (`[2, 104, subTypeID]` with a quantity) and written with the other stash changes when the character is saved.
+- Runes and glyphs lying in the backpack: click one, or right-click it and choose "Edit…", to turn it into another
+  material of the same kind; "Remove" deletes it on the next save. They take one cell and can be dragged like other
+  items. Their names, descriptions and icons come from the game database; materials it does not know are shown as
+  "Rune" or "Glyph" placeholders and stay in the save untouched. A rune or glyph item is stored as
+  `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). Resources (keys, charms, ... — `baseTypeID` 104) lying in
+  the backpack are shown and changed the same way.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
-- The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. A normal
-  affix used as the corruption is stored after the other affixes; reading it back, a prefix or suffix beyond the
-  two of its kind is shown as the corruption (so an item with one prefix and a prefix corruption reads as two prefixes).
+- The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption
+  is stored the way the game stores it (corrupted item flag, corruption affix marked in the affix count), so it shows
+  as corrupted in the game, also when it is a normal affix like Cold Penetration. Adding a corruption to a unique
+  makes it a legendary, as the Rune of Corruption does. Items corrupted in the game without a new affix stay corrupted.
+- Items saved by older editor versions stored a normal-affix corruption as one more prefix / suffix (the game shows
+  it as such). A third prefix or suffix is shown in the corruption slot; applying the item again stores it as a real
+  corruption.
+- Affix values are shown as the game shows them on the item: the game scales every affix by the item type
+  (e.g. Increased Bow Attack Speed is 75% higher on a bow, Health 17% higher on an amulet, unless the affix is
+  written for that type), so tiers and ranges in the builder and tooltip match the game.
+- Rarity counts only prefixes and suffixes: a sealed affix and the corruption do not make an item rare. The tooltip
+  shows the sealed affix under "Sealed prefix" or "Sealed suffix".
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).
@@ -44,6 +76,8 @@ The save button in the title bar (or `Ctrl+S`) writes the changes of the selecte
 equipped items, idols and the backpack (edited, moved, added or removed items) — into its `1CHARACTERSLOT_*` file.
 It is enabled while the character has changes; changes of several characters are kept while switching
 between them, and closing the editor or reloading the save folder asks before discarding them.
+The reload button in the title bar (or `F5`) reads the save files again, e.g. after playing; it asks first
+when there are unsaved changes and keeps the selected character.
 
 - Only the changed entries of `savedItems` are rewritten. Every other field, unknown properties and the
   entry order stay as the game wrote them. The JSON is written compact on one line after the `EPOCH` marker,
@@ -61,7 +95,7 @@ Console tool that builds the editor's game data from maxroll's planner data
 `%APPDATA%\LE.SaveEditor` (next to `settings.json`):
 
 - `base.db` — SQLite (EF Core) with the tables `Classes`, `Affixes`, `ItemTypes`,
-  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
+  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `PlayerProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
   plus `Key`, `Name` and a SHA-256 `Hash`; `__DataMigrations` records every build/update.
   `Icons` has one row per image (`Group` + `Name`, `Path` = `uniques/spirit_xylem`).
 - `Icons/<group>/<name>.png` — from `https://assets-ng.maxroll.gg/last-epoch/webp/<group>/<name>.webp`,

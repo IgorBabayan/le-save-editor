@@ -42,4 +42,19 @@ public interface IDialogService
     /// <paramref name="applied"/> is called with the item when the user applies it.
     /// </summary>
     void ShowItemInspector(EquipmentSlot slot, CharacterClass characterClass, object? anchor, Action<BuiltItem> applied);
+
+    /// <summary>
+    /// Shows the modal crafting material picker: a rune, a glyph, an affix shard or a resource, starting on the
+    /// <paramref name="kind"/> tab, or on <paramref name="current"/> when an existing material is edited.
+    /// </summary>
+    /// <returns>The picked material, or <c>null</c> if the user cancelled.</returns>
+    CraftingMaterial? ShowCraftingMaterialPicker(CraftingMaterialKind kind, CraftingMaterial? current);
+
+    /// <summary>
+    /// Shows the modal material storage dialog for <paramref name="kind"/>: the amount of each material in
+    /// <paramref name="amounts"/> (by sub type) can be changed, materials removed and new ones added.
+    /// </summary>
+    /// <param name="stashName">File name of the stash, shown in the dialog.</param>
+    /// <returns>The amounts to store by sub type (materials at 0 left out), or <c>null</c> if the user cancelled.</returns>
+    IReadOnlyDictionary<int, int>? ShowCraftingMaterialStorage(CraftingMaterialKind kind, IReadOnlyDictionary<int, int> amounts, string stashName);
 }

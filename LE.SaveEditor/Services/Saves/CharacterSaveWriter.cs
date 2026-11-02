@@ -24,14 +24,22 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
     private const string BackupTimestampFormat = "yyyyMMdd-HHmmss";
 
     /// <summary>Contains <c>_temp</c>, so <see cref="SaveFolderScanner"/> never lists a leftover as a character.</summary>
-    private const string TempSuffix = ".editor_temp";
+    internal const string TempSuffix = ".editor_temp";
 
-    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+    internal static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
         AllowTrailingCommas = true,
         CommentHandling = JsonCommentHandling.Skip
+    };
+
+    /// <summary>Compact like the game's own saves: no indentation or line breaks inside the JSON.</summary>
+    internal static readonly JsonSerializerOptions CompactJson = new()
+    {
+        WriteIndented = false,
+        // Write names and texts as they are instead of \u-escaping quotes, '+', '<', accents, ...
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     [GeneratedRegex(@"\.\d{8}-\d{6}\.bak$", RegexOptions.IgnoreCase)]
@@ -79,13 +87,7 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
 
         ApplyToSavedItems(root, updates);
 
-        // Compact like the game's own saves: no indentation or line breaks inside the JSON.
-        var json = root.ToJsonString(new JsonSerializerOptions
-        {
-            WriteIndented = false,
-            // Write names and texts as they are instead of \u-escaping quotes, '+', '<', accents, ...
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        });
+        var json = root.ToJsonString(CompactJson);
 
         return prefix + json + suffix;
     }
@@ -199,9 +201,12 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
         return array;
     }
 
-    /// <summary>Puts <paramref name="tempPath"/> in place of <paramref name="path"/>, keeping the old file as a backup.</summary>
+    /// <summary>
+    /// Puts <paramref name="tempPath"/> in place of <paramref name="path"/>, keeping the old file as a backup (also used
+    /// for stash files, see <see cref="StashSaveWriter"/>).
+    /// </summary>
     /// <returns>Path of the backup.</returns>
-    private static string ReplaceWithBackup(string tempPath, string path)
+    internal static string ReplaceWithBackup(string tempPath, string path)
     {
         var backupPath = $"{path}.{DateTime.Now.ToString(BackupTimestampFormat, CultureInfo.InvariantCulture)}.bak";
         try

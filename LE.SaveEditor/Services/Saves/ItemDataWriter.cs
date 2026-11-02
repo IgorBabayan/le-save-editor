@@ -4,7 +4,8 @@ namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
 /// Encodes an equipment item into the <c>data</c> bytes of a save: the inverse of <see cref="ItemDataReader"/>,
-/// whose remarks describe the layout. <c>Write(Read(data))</c> gives back <c>data</c> for every item the reader decodes.
+/// whose remarks describe the layout. <c>Write(Read(data))</c> gives back <c>data</c> for every item the reader decodes
+/// (special affixes are always stored first, in the order the game uses).
 /// </summary>
 public static class ItemDataWriter
 {
@@ -46,31 +47,55 @@ public static class ItemDataWriter
             bytes.Add((byte)(uniqueId & 0xFF));
             AddPadded(bytes, item.UniqueRolls, ItemDataReader.UniqueRollCount, 0);
 
-            // Uniques and set items end with their legendary potential; legendaries carry affixes and a closing 0.
+            // Uniques and set items end with their legendary potential; only legendaries carry affixes.
             if (item.RarityCode == ItemDataReader.LegendaryRarity)
-                AddAffixes(bytes, item.Affixes);
+            {
+                AddAffixes(bytes, item.Affixes, isLegendary: true);
+            }
+            else
+            {
+                bytes.Add(item.Tail ?? 0);
+                return [.. bytes];
+            }
         }
         else
         {
             bytes.Add(ToByte(item.ForgingPotential ?? 0, nameof(item.ForgingPotential)));
-            AddAffixes(bytes, item.Affixes);
+            AddAffixes(bytes, item.Affixes, isLegendary: false);
         }
 
-        bytes.Add(item.Tail ?? 0);
+        // The game's format 6 ends after the last affix; format 2 (and the editor's older saves) close with a 0.
+        if (item.Tail is { } tail)
+            bytes.Add(tail);
         return [.. bytes];
     }
 
-    /// <summary>Affix count (bit 7 = the first affix is sealed) followed by 3 bytes per affix, the sealed one first.</summary>
-    private static void AddAffixes(List<byte> bytes, IReadOnlyList<ItemAffixData> affixes)
+    /// <summary>
+    /// Affix count followed by 3 bytes per affix, the special ones marked in the count: on a plain base the sealed affix
+    /// (0x80) and the corruption (0x40) come first; on a legendary the corruption (0x80) comes last.
+    /// </summary>
+    private static void AddAffixes(List<byte> bytes, IReadOnlyList<ItemAffixData> affixes, bool isLegendary)
     {
-        var sealedAffixes = affixes.Where(a => a.IsSealed).ToList();
+        var sealedAffixes = affixes.Where(a => a.IsSealed && !a.IsCorrupted).ToList();
+        var corruptions = affixes.Where(a => a.IsCorrupted).ToList();
         if (sealedAffixes.Count > 1)
             throw new ArgumentException("An item can have only one sealed affix.", nameof(affixes));
+        if (isLegendary && sealedAffixes.Count > 0)
+            throw new ArgumentException("A legendary item cannot have a sealed affix.", nameof(affixes));
+        if (corruptions.Count > 1)
+            throw new ArgumentException("An item can have only one corruption affix.", nameof(affixes));
         if (affixes.Count > ItemDataReader.AffixCountMask)
             throw new ArgumentException($"An item can have at most {ItemDataReader.AffixCountMask} affixes.", nameof(affixes));
 
-        var ordered = sealedAffixes.Concat(affixes.Where(a => !a.IsSealed)).ToList();
-        bytes.Add((byte)(ordered.Count | (sealedAffixes.Count > 0 ? ItemDataReader.SealedFlag : 0)));
+        var others = affixes.Where(a => !a.IsCorrupted && !a.IsSealed);
+        var ordered = isLegendary
+            ? others.Concat(corruptions).ToList()
+            : sealedAffixes.Concat(corruptions).Concat(others).ToList();
+
+        var flags = isLegendary
+            ? corruptions.Count > 0 ? ItemDataReader.SealedFlag : 0
+            : (sealedAffixes.Count > 0 ? ItemDataReader.SealedFlag : 0) | (corruptions.Count > 0 ? ItemDataReader.CorruptionFlag : 0);
+        bytes.Add((byte)(ordered.Count | flags));
 
         foreach (var affix in ordered)
         {

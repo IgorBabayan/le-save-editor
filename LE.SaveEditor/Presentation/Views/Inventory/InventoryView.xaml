@@ -4,6 +4,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
+             xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
+             xmlns:behaviors="clr-namespace:LE.SaveEditor.Presentation.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=inventoryVm:InventoryViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="800" d:DesignWidth="900">
@@ -15,6 +17,46 @@
             <Setter Property="Grid.Row" Value="{Binding Row}" />
             <Setter Property="Grid.ColumnSpan" Value="{Binding Width}" />
             <Setter Property="Grid.RowSpan" Value="{Binding Height}" />
+        </Style>
+
+        <!-- Tile of a crafting material in the backpack: its icon, or the initials of its name without one. -->
+        <Style x:Key="CraftingMaterialButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Image Margin="4"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       Source="{Binding MaterialIcon}"
+                                       Visibility="{Binding HasMaterialIcon, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding MaterialShortLabel}"
+                                           Visibility="{Binding HasMaterialIcon, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <DataTemplate x:Key="GridItemTemplate" DataType="{x:Type inventoryVm:BackpackItemViewModel}">
@@ -29,7 +71,31 @@
                             CommandParameter="{Binding}" />
                 </Grid>
 
-                <!-- Keys and items or idols missing from base.db keep their cells taken. -->
+                <!-- Runes, glyphs, affix shards and resources: their icon; a click opens the crafting material picker. -->
+                <Grid Visibility="{Binding IsMaterial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Margin="2"
+                            Style="{StaticResource CraftingMaterialButtonStyle}"
+                            Command="{Binding DataContext.EditCraftingMaterialCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}">
+                        <!-- Tooltip: name, kind and what the material does. -->
+                        <Button.ToolTip>
+                            <ToolTip>
+                                <StackPanel MaxWidth="320">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding MaterialName}" />
+                                    <TextBlock FontSize="11"
+                                               Style="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding MaterialKindName}" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding MaterialDescription}"
+                                               Visibility="{Binding HasMaterialDescription, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                </StackPanel>
+                            </ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+                </Grid>
+
+                <!-- Items, idols or materials missing from base.db keep their cells taken. -->
                 <Border Margin="2"
                         CornerRadius="6"
                         BorderThickness="1"
@@ -37,7 +103,7 @@
                         Background="{DynamicResource ControlBackgroundBrush}"
                         SnapsToDevicePixels="True"
                         ToolTip="{Binding PlaceholderToolTip}"
-                        Visibility="{Binding IsEquipment, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        Visibility="{Binding IsPlaceholder, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                FontSize="11"
@@ -53,6 +119,122 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
+        <!-- ===== Resources section ===== -->
+
+        <!-- One resource: its icon (dimmed while the stash holds none) and, in a strip below it, its amount to type in. -->
+        <DataTemplate x:Key="ResourceSlotTemplate" DataType="{x:Type inventoryVm:ResourceSlotViewModel}">
+            <Border x:Name="Bd"
+                    Width="68"
+                    Height="84"
+                    Margin="4"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                    Background="{DynamicResource ControlBackgroundBrush}"
+                    SnapsToDevicePixels="True"
+                    ToolTipService.ShowDuration="30000">
+                <Border.ToolTip>
+                    <ToolTip>
+                        <TextBlock MaxWidth="320" TextWrapping="Wrap" Text="{Binding ToolTip}" />
+                    </ToolTip>
+                </Border.ToolTip>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Image x:Name="Icon"
+                           Grid.Row="0"
+                           Margin="8,6,8,4"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           Source="{Binding Icon}"
+                           Visibility="{Binding HasIcon, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <TextBlock x:Name="Initials"
+                               Grid.Row="0"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Text="{Binding Initials}"
+                               Visibility="{Binding HasIcon, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                    <TextBox Grid.Row="1"
+                             MinHeight="0"
+                             Margin="3,0,3,3"
+                             Padding="2,1"
+                             HorizontalAlignment="Stretch"
+                             TextAlignment="Center"
+                             FontSize="12"
+                             FontWeight="SemiBold"
+                             BorderThickness="0"
+                             Background="{DynamicResource TitleBarBackgroundBrush}"
+                             IsReadOnly="{Binding IsEditable, Converter={StaticResource InverseBooleanConverter}}"
+                             ToolTip="Amount in the stash (0 removes the resource when saved)"
+                             behaviors:NumericInput.IsEnabled="True"
+                             behaviors:NumericInput.Maximum="{x:Static inventoryVm:CraftingMaterialStorageViewModel.MaxQuantity}"
+                             behaviors:SelectOnClick.IsEnabled="True"
+                             Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged, TargetNullValue=0}" />
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                    <Setter TargetName="Icon" Property="Opacity" Value="0.35" />
+                    <Setter TargetName="Initials" Property="Opacity" Value="0.35" />
+                </DataTrigger>
+                <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+                </Trigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- A row (or column) of resource slots. -->
+        <Style x:Key="ResourceRowStyle" TargetType="ItemsControl">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="ItemTemplate" Value="{StaticResource ResourceSlotTemplate}" />
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ResourceColumnStyle" TargetType="ItemsControl" BasedOn="{StaticResource ResourceRowStyle}">
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A panel of the Resources section (the game's framed boxes). -->
+        <Style x:Key="ResourcePanelStyle" TargetType="Border">
+            <Setter Property="Margin" Value="3" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+        </Style>
+
+        <!-- Vertical label on the left of a group ("KEYS", "CONSUMABLES"). -->
+        <Style x:Key="ResourceGroupLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="LayoutTransform">
+                <Setter.Value>
+                    <RotateTransform Angle="-90" />
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
@@ -279,6 +461,7 @@
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
+                                    <!-- One kind: its name, how many the material storage holds and its own edit action. -->
                                     <DataTemplate DataType="{x:Type inventoryVm:CraftingMaterialViewModel}">
                                         <StackPanel Margin="4,0" HorizontalAlignment="Center">
                                             <TextBlock HorizontalAlignment="Center"
@@ -288,7 +471,24 @@
                                                        HorizontalAlignment="Center"
                                                        FontSize="16"
                                                        FontWeight="SemiBold"
+                                                       ToolTip="In the material storage"
                                                        Text="{Binding Amount, StringFormat='{}{0:N0}', TargetNullValue='—'}" />
+                                            <Button Margin="0,6,0,0"
+                                                    HorizontalAlignment="Center"
+                                                    Style="{StaticResource TextLinkButtonStyle}"
+                                                    ToolTip="{Binding EditToolTip}"
+                                                    ToolTipService.ShowOnDisabled="True"
+                                                    Command="{Binding DataContext.EditCraftingMaterialsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <wpf:MaterialIcon Width="14"
+                                                                      Height="14"
+                                                                      Margin="0,0,4,0"
+                                                                      VerticalAlignment="Center"
+                                                                      Kind="PencilOutline" />
+                                                    <TextBlock VerticalAlignment="Center" Text="Edit" />
+                                                </StackPanel>
+                                            </Button>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -298,7 +498,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ===== Sections: backpack ("Items"); resources and woven echoes are not parsed yet ===== -->
+            <!-- ===== Sections: backpack ("Items"), resources (keys and consumables of the stash); woven echoes are not parsed yet ===== -->
             <TabControl Grid.Row="1"
                         Margin="0,24,0,0"
                         Padding="0,12,0,0"
@@ -404,10 +604,122 @@
                     </StackPanel>
                 </TabItem>
 
+                <!-- ===== Resources: keys and consumables the stash keeps (keysList), laid out like the game's tab.
+                     Type an amount into a slot; changes are written to the stash file when the character is saved. ===== -->
                 <TabItem Header="Resources">
-                    <Border Style="{StaticResource InventorySectionBorderStyle}">
-                        <TextBlock Text="Resources will appear here." Style="{StaticResource EmptyPageTextStyle}" />
-                    </Border>
+                    <StackPanel DataContext="{Binding Resources}">
+                        <Border Padding="6"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" />
+                                    <ColumnDefinition Width="3*" MinWidth="440" />
+                                    <ColumnDefinition Width="*" MinWidth="120" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- ===== Keys ===== -->
+                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Style="{StaticResource ResourcePanelStyle}" Padding="0">
+                                    <TextBlock Text="KEYS" Style="{StaticResource ResourceGroupLabelStyle}" />
+                                </Border>
+                                <!-- Harbinger Eye -->
+                                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding HarbingerKeys}" Style="{StaticResource ResourceRowStyle}" />
+                                </Border>
+                                <!-- Dungeon keys, one panel each -->
+                                <ItemsControl Grid.Row="1" Grid.Column="1"
+                                              Focusable="False"
+                                              ItemsSource="{Binding DungeonKeys}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type inventoryVm:ResourceSlotViewModel}">
+                                            <Border Style="{StaticResource ResourcePanelStyle}">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  Content="{Binding}"
+                                                                  ContentTemplate="{StaticResource ResourceSlotTemplate}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- Arena keys -->
+                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Style="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding ArenaKeys}" Style="{StaticResource ResourceColumnStyle}" />
+                                </Border>
+
+                                <!-- ===== Consumables ===== -->
+                                <Border Grid.Row="2" Grid.RowSpan="2" Grid.Column="0" Style="{StaticResource ResourcePanelStyle}" Padding="0">
+                                    <TextBlock Text="CONSUMABLES" Style="{StaticResource ResourceGroupLabelStyle}" />
+                                </Border>
+                                <!-- Portal and Scale charms -->
+                                <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding Charms}" Style="{StaticResource ResourceRowStyle}" />
+                                </Border>
+                                <!-- Crystallized Heart and the primordial materials -->
+                                <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding PrimordialMaterials}" Style="{StaticResource ResourceRowStyle}" />
+                                </Border>
+                                <!-- Temporal Keystones and Timeglass Fragments -->
+                                <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource ResourcePanelStyle}">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Content="{Binding TimelineMaterials[0]}"
+                                                      ContentTemplate="{StaticResource ResourceSlotTemplate}" />
+                                </Border>
+                                <Border Grid.Row="3" Grid.Column="2" Style="{StaticResource ResourcePanelStyle}">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Content="{Binding TimelineMaterials[1]}"
+                                                      ContentTemplate="{StaticResource ResourceSlotTemplate}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Resources the game's tab does not show, while the stash holds some. -->
+                        <StackPanel Margin="0,12,0,0"
+                                    Visibility="{Binding HasOthers, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Margin="2,0,0,4" Text="Other resources in the stash" Style="{StaticResource SecondaryTextStyle}" />
+                            <Border Style="{StaticResource ResourcePanelStyle}" Margin="0">
+                                <ItemsControl ItemsSource="{Binding Others}" Focusable="False" ItemTemplate="{StaticResource ResourceSlotTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Margin="2,8,0,0" Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Summary}" Style="{StaticResource SecondaryTextStyle}" />
+                            <Button Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource TextLinkButtonStyle}"
+                                    ToolTip="Edit every resource in the stash, or add one from the game database"
+                                    Command="{Binding EditAllCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <wpf:MaterialIcon Width="14" Height="14" Margin="0,0,4,0" VerticalAlignment="Center" Kind="PencilOutline" />
+                                    <TextBlock VerticalAlignment="Center" Text="Edit all…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="Resources are missing from the game database: names and icons show once it is generated or updated (database button in the title bar)."
+                                   Style="{StaticResource SecondaryTextStyle}"
+                                   Visibility="{Binding IsDatabaseMissing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </StackPanel>
                 </TabItem>
 
                 <TabItem Header="Woven echoes">

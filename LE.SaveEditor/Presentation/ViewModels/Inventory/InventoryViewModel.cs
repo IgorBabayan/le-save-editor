@@ -11,9 +11,12 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
 /// followed by the "Items", "Resources" and "Woven echoes" sections.
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
-/// (all read from <c>savedItems</c>); the other sections start empty. Clicking an equipment slot, an idol or a backpack
+/// (all read from <c>savedItems</c>), the "Resources" section the keys and consumables of the character's stash
+/// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty. Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
-/// builds a new item there.
+/// builds a new item there. The "Crafting materials" box shows the material storage of the character's stash (affix
+/// shards, runes, glyphs) with an edit action per kind; runes and glyphs lying in the backpack are changed with the
+/// crafting material picker of their kind and removed like other items.
 /// <see cref="GetUpdates"/> collects what changed since the save was read, for saving.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
@@ -34,10 +37,12 @@ public sealed partial class InventoryViewModel : ViewModelBase
         IDialogService dialogService,
         IIconProvider iconProvider,
         IItemBaseCatalog itemBaseCatalog,
-        IToastService toastService)
+        IToastService toastService,
+        StashMaterialsViewModel? stash = null)
     {
         Character = character;
         _dialogService = dialogService;
+        Stash = stash;
 
         EquipmentSlotViewModel Create(EquipmentSlot slot) => new(slot, iconProvider);
         Helmet = Create(EquipmentSlot.Helmet);
@@ -63,7 +68,11 @@ public sealed partial class InventoryViewModel : ViewModelBase
                     Changed?.Invoke(this, EventArgs.Empty);
             };
         Backpack.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        if (stash is not null)
+            stash.Changed += (_, _) => UpdateCraftingMaterials();
+        UpdateCraftingMaterials();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
     }
 
     /// <summary>All equipment slots.</summary>
@@ -91,12 +100,24 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// <summary>The idol grid (<see cref="IdolGridSize"/> × <see cref="IdolGridSize"/> without its corners) with the character's idols.</summary>
     public BackpackViewModel Idols { get; }
 
-    /// <summary>Totals shown in the "Crafting materials" box.</summary>
+    /// <summary>The "Resources" section: keys and consumables the character's stash keeps (<c>keysList</c>).</summary>
+    public ResourcesViewModel Resources { get; }
+
+    /// <summary>
+    /// The material storage of the stash the character uses (the game's "Crafting Materials" panel); <c>null</c> when
+    /// the save folder has no stash file for it.
+    /// </summary>
+    public StashMaterialsViewModel? Stash { get; }
+
+    /// <summary>
+    /// The "Crafting materials" box, in the game's order: per kind (shards, runes, glyphs) how many the material storage
+    /// holds, and its own action to edit them.
+    /// </summary>
     public IReadOnlyList<CraftingMaterialViewModel> CraftingMaterials { get; } =
     [
-        new("Shards"),
-        new("Glyphs"),
-        new("Runes")
+        new(CraftingMaterialKind.AffixShard, "Shards"),
+        new(CraftingMaterialKind.Rune, "Runes"),
+        new(CraftingMaterialKind.Glyph, "Glyphs")
     ];
 
     /// <summary>
@@ -136,7 +157,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         if (!grid.Items.Contains(item))
             return;
 
-        var name = item.Equipment?.Item?.Base.Name ?? (item.IsIdol ? "this idol" : "this item");
+        var name = item.DisplayName;
         if (!_dialogService.Confirm("Remove item", $"Remove {name} from the {grid.Layout.Name}? It is deleted from the save when you save."))
             return;
 
@@ -160,6 +181,46 @@ public sealed partial class InventoryViewModel : ViewModelBase
             Character.CharacterClass,
             request.Anchor,
             built => grid.AddItem(built, request.Column, request.Row));
+    }
+
+    /// <summary>
+    /// The edit action of a kind in the "Crafting materials" box: opens the material storage dialog for that kind; the
+    /// applied amounts are written to the stash file on the next save.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanEditCraftingMaterials))]
+    private void EditCraftingMaterials(CraftingMaterialViewModel? kind)
+    {
+        if (kind is null || Stash is not { } stash)
+            return;
+
+        if (_dialogService.ShowCraftingMaterialStorage(kind.Kind, stash.GetAmounts(kind.Kind), stash.Stash.FileName) is { } amounts)
+            stash.SetAmounts(kind.Kind, amounts);
+    }
+
+    private bool CanEditCraftingMaterials(CraftingMaterialViewModel? kind) => kind is not null && Stash is not null;
+
+    /// <summary>Shows the totals of the material storage in the "Crafting materials" box.</summary>
+    private void UpdateCraftingMaterials()
+    {
+        foreach (var material in CraftingMaterials)
+        {
+            material.Amount = Stash?.Total(material.Kind);
+            material.StashName = Stash?.Stash.FileName;
+        }
+    }
+
+    /// <summary>
+    /// A crafting material in the backpack was clicked (or "Edit…" chosen): opens the crafting material picker of its
+    /// kind on it; the picked material replaces it in its cell.
+    /// </summary>
+    [RelayCommand]
+    private void EditCraftingMaterial(BackpackItemViewModel? item)
+    {
+        if (item?.Material is not { } current || !Backpack.Items.Contains(item))
+            return;
+
+        if (_dialogService.ShowCraftingMaterialPicker(current.Kind, current) is { } material)
+            Backpack.ChangeMaterial(item, material);
     }
 
     /// <summary>
@@ -247,5 +308,28 @@ public sealed partial class InventoryViewModel : ViewModelBase
 /// <param name="Grid">The grid to build in (backpack or idol grid); <c>null</c> for the backpack.</param>
 public sealed record NewBackpackItemRequest(EquipmentSlot Slot, int Column, int Row, object? Anchor, BackpackViewModel? Grid = null);
 
-/// <summary>A crafting material total; <see cref="Amount"/> is <c>null</c> until it is read from the save.</summary>
-public sealed record CraftingMaterialViewModel(string Name, int? Amount = null);
+/// <summary>
+/// One kind in the "Crafting materials" box: its name, how many materials of the kind the material storage holds and,
+/// in the view, the action that edits them.
+/// </summary>
+public sealed partial class CraftingMaterialViewModel(CraftingMaterialKind kind, string name) : ObservableObject
+{
+    public CraftingMaterialKind Kind { get; } = kind;
+
+    /// <summary>Label of the box column, e.g. "Shards".</summary>
+    public string Name { get; } = name;
+
+    /// <summary>Materials of the kind in the material storage; <c>null</c> when the character has no stash file.</summary>
+    [ObservableProperty]
+    private int? _amount;
+
+    /// <summary>File name of the stash the amounts come from; <c>null</c> without one.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EditToolTip))]
+    private string? _stashName;
+
+    /// <summary>Tooltip of the edit action.</summary>
+    public string EditToolTip => StashName is { } stash
+        ? $"Edit the {Kind.PluralName.ToLowerInvariant()} in the material storage ({stash})"
+        : "No stash file was found for this character in the save folder";
+}

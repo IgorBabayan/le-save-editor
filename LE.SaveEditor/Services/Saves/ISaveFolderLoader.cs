@@ -2,7 +2,7 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.Saves;
 
-/// <summary>Scans a save folder and parses every character file in it.</summary>
+/// <summary>Scans a save folder and parses every character file and the material storage of every stash file in it.</summary>
 public interface ISaveFolderLoader
 {
     /// <summary>Never throws for individual bad files; they are reported in <see cref="SaveFolderContent.Errors"/>.</summary>

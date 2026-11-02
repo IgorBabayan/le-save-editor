@@ -12,20 +12,21 @@
         xmlns:characterViews="clr-namespace:LE.SaveEditor.Presentation.Views.Characters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
-        Title="Last Epoch Save Editor" Height="1150" Width="1140"
-        MinHeight="300" MinWidth="500"
+        Title="Last Epoch Save Editor" Height="1225" Width="1140"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource WindowForegroundBrush}">
 
     <!--
         WindowChrome removes the native title bar but keeps native behaviour:
-        resize borders, Aero Snap, drag to move, Alt+Space menu.
-        Maximizing is disabled (see MainWindow.xaml.cs, DisableMaximize).
+        Aero Snap, drag to move, Alt+Space menu.
+        The window can be neither resized nor maximized: ResizeBorderThickness is 0 (no resize grips on the edges),
+        and the "Size"/"Maximize" commands are blocked (see MainWindow.xaml.cs, DisableResizeAndMaximize).
+        The Maximize caption button is still shown, but always disabled.
     -->
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="32"
-                            ResizeBorderThickness="6"
+                            ResizeBorderThickness="0"
                             CornerRadius="0"
                             GlassFrameThickness="0"
                             UseAeroCaptionButtons="False" />
@@ -118,6 +119,7 @@
 
     <Window.InputBindings>
         <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+        <KeyBinding Gesture="F5" Command="{Binding ReloadCommand}" />
     </Window.InputBindings>
 
     <Border x:Name="RootBorder"
@@ -154,6 +156,15 @@
                             AutomationProperties.Name="Save changes"
                             Command="{Binding SaveCommand}">
                         <wpf:MaterialIcon Kind="ContentSaveOutline" Width="18" Height="18" />
+                    </Button>
+
+                    <!-- Reads the save files again (e.g. after the game wrote them); asks before discarding unsaved changes. -->
+                    <Button x:Name="ReloadButton"
+                            Style="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip="Reload save files (F5)"
+                            AutomationProperties.Name="Reload save files"
+                            Command="{Binding ReloadCommand}">
+                        <wpf:MaterialIcon Kind="Refresh" Width="18" Height="18" />
                     </Button>
 
                     <!-- Generates the game database, or updates it if it already exists (LE.SaveEditor.DB). -->
@@ -367,6 +378,12 @@
                             ToolTip="Minimize"
                             Content="&#xE921;"
                             Command="{x:Static SystemCommands.MinimizeWindowCommand}" />
+                    <!-- Shown for the familiar caption layout, but maximizing is not supported: always disabled. -->
+                    <Button Style="{StaticResource CaptionButtonStyle}"
+                            Content="&#xE922;"
+                            IsEnabled="False"
+                            ToolTip="Maximize is not available"
+                            ToolTipService.ShowOnDisabled="True" />
                     <Button Style="{StaticResource CloseCaptionButtonStyle}"
                             ToolTip="Close"
                             Content="&#xE8BB;"

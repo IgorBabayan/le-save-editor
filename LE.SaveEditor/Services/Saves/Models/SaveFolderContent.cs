@@ -10,11 +10,13 @@ public sealed record SaveFolderFiles(IReadOnlyList<string> CharacterFiles, IRead
 public sealed record SaveFileError(string FilePath, string Message);
 
 /// <summary>Result of loading a save folder.</summary>
+/// <param name="Stashes">The material storage of every stash file that has one (not the stash tab files).</param>
 public sealed record SaveFolderContent(
     string FolderPath,
     IReadOnlyList<CharacterSave> Characters,
     IReadOnlyList<string> StashFiles,
-    IReadOnlyList<SaveFileError> Errors)
+    IReadOnlyList<SaveFileError> Errors,
+    IReadOnlyList<StashSave> Stashes)
 {
-    public static SaveFolderContent Empty(string folderPath) => new(folderPath, [], [], []);
+    public static SaveFolderContent Empty(string folderPath) => new(folderPath, [], [], [], []);
 }
