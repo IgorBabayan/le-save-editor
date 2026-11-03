@@ -97,10 +97,10 @@ public sealed partial class InventoryViewModel : ViewModelBase
             stash.Changed += (_, _) =>
             {
                 UpdateCraftingMaterials();
-                UpdateGold();
+                UpdateCurrencies();
             };
         UpdateCraftingMaterials();
-        UpdateGold();
+        UpdateCurrencies();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
         Blessings = new BlessingsViewModel(character, itemBaseCatalog, iconProvider, stash);
@@ -224,8 +224,69 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// </summary>
     public StashMaterialsViewModel? Stash { get; }
 
-    /// <summary>The character has a stash file, so its gold can be changed.</summary>
+    /// <summary>The character has a stash file, so its gold and ancient bones can be changed.</summary>
     public bool HasStash => Stash is not null;
+
+    /// <summary>The character's stash has a Circle of Fortune entry, so its favor can be changed.</summary>
+    public bool HasFavor => Stash?.HasFavor == true;
+
+    /// <summary>Set while the gold, favor and ancient bones are filled from the stash, so they are not written back.</summary>
+    private bool _updatingCurrencies;
+
+    /// <summary>
+    /// Circle of Fortune favor of the character's stash (shared by every character using it); written to the stash file
+    /// when the character is saved.
+    /// </summary>
+    [ObservableProperty]
+    private int _favor;
+
+    /// <summary>Tooltip of the favor box: where the favor is kept.</summary>
+    public string FavorToolTip => Stash switch
+    {
+        null => "No stash file was found for this character in the save folder, so its favor cannot be edited.",
+        { HasFavor: false } stash =>
+            $"{stash.Stash.FileName} has no Circle of Fortune entry yet (no character of the stash has met the guild), so there is no favor to edit.",
+        var stash =>
+            $"Circle of Fortune favor kept in {stash.Stash.FileName}, shared by every character using that stash. Written when the character is saved."
+    };
+
+    partial void OnFavorChanged(int value)
+    {
+        var clamped = Math.Clamp(value, 0, StashMaterialsViewModel.MaxFavor);
+        if (clamped != value)
+        {
+            Favor = clamped;
+            return;
+        }
+
+        if (!_updatingCurrencies)
+            Stash?.SetFavor(value);
+    }
+
+    /// <summary>
+    /// Ancient bones of the character's stash (shared by every character using it); written to the stash file when the
+    /// character is saved.
+    /// </summary>
+    [ObservableProperty]
+    private int _ancientBones;
+
+    /// <summary>Tooltip of the ancient bones box: where the bones are kept.</summary>
+    public string AncientBonesToolTip => Stash is { } stash
+        ? $"Ancient bones kept in {stash.Stash.FileName}, shared by every character using that stash. Written when the character is saved."
+        : "No stash file was found for this character in the save folder, so its ancient bones cannot be edited.";
+
+    partial void OnAncientBonesChanged(int value)
+    {
+        var clamped = Math.Clamp(value, 0, StashMaterialsViewModel.MaxAncientBones);
+        if (clamped != value)
+        {
+            AncientBones = clamped;
+            return;
+        }
+
+        if (!_updatingCurrencies)
+            Stash?.SetAncientBones(value);
+    }
 
     /// <summary>
     /// Gold of the character's stash (shared by every character using it); written to the stash file when the character
@@ -233,9 +294,6 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty]
     private int _gold;
-
-    /// <summary>Set while <see cref="Gold"/> is filled from the stash, so it is not written back.</summary>
-    private bool _updatingGold;
 
     /// <summary>Tooltip of the gold box: where the gold is kept.</summary>
     public string GoldToolTip => Stash is { } stash
@@ -251,21 +309,23 @@ public sealed partial class InventoryViewModel : ViewModelBase
             return;
         }
 
-        if (!_updatingGold)
+        if (!_updatingCurrencies)
             Stash?.SetGold(value);
     }
 
-    /// <summary>Shows the gold of the stash (0 without one).</summary>
-    private void UpdateGold()
+    /// <summary>Shows the gold, favor and ancient bones of the stash (0 without one).</summary>
+    private void UpdateCurrencies()
     {
-        _updatingGold = true;
+        _updatingCurrencies = true;
         try
         {
+            Favor = Stash?.Favor ?? 0;
+            AncientBones = Stash?.AncientBones ?? 0;
             Gold = Stash?.Gold ?? 0;
         }
         finally
         {
-            _updatingGold = false;
+            _updatingCurrencies = false;
         }
     }
 

@@ -2,6 +2,9 @@ using LE.SaveEditor.Services.GameData.Items;
 
 namespace LE.SaveEditor.Services.Saves.Models;
 
+/// <summary>The amounts the stash keeps outside its storage: gold, Circle of Fortune favor and ancient bones.</summary>
+public readonly record struct StashCurrencies(int Gold, int Favor, int AncientBones);
+
 /// <summary>A crafting material in the material storage: its kind and sub type (for a shard, the <c>affixId</c>).</summary>
 public readonly record struct CraftingMaterialKey(CraftingMaterialKind Kind, int SubTypeId);
 
@@ -12,8 +15,9 @@ public readonly record struct CraftingMaterialKey(CraftingMaterialKind Kind, int
 /// quantity, e.g. <c>"data": [2, 102, 3]</c> = Rune of Discovery). The resources of the game's "Resources" inventory tab
 /// (keys, charms, primordial materials, ...) are the <c>keysList</c> entries: an item in format 6 in container 100 at the
 /// resource's slot (<c>"data": [6, id, id, id, id, 104, 4], "inventoryPosition": {"x": 0, "y": 4}, "containerID": 100</c>
-/// = Temporal Sanctum Key). The stash also keeps the gold of its characters (<c>"gold": 2191</c>) and the blessings
-/// they have discovered (<c>"unlockedBlessings": [111, 8, ...]</c>, blessing <c>subTypeID</c>s).
+/// = Temporal Sanctum Key). The stash also keeps the gold of its characters (<c>"gold": 2191</c>), their ancient bones
+/// (<c>"ancientBones": 0</c>), their Circle of Fortune favor (<c>"factions": {"0": {"favor": 104, ...}}</c>) and the
+/// blessings they have discovered (<c>"unlockedBlessings": [111, 8, ...]</c>, blessing <c>subTypeID</c>s).
 /// </summary>
 public sealed record StashSave
 {
@@ -31,6 +35,18 @@ public sealed record StashSave
 
     /// <summary><c>gold</c>: the gold of the stash, which every character using it shares.</summary>
     public int Gold { get; init; }
+
+    /// <summary><c>ancientBones</c>: the ancient bones of the stash, which every character using it shares.</summary>
+    public int AncientBones { get; init; }
+
+    /// <summary>
+    /// <c>factions["0"].favor</c>: the Circle of Fortune favor of the stash; <c>null</c> when the stash has no Circle of
+    /// Fortune entry (none of its characters has met the guild yet), so there is no favor to edit.
+    /// </summary>
+    public int? Favor { get; init; }
+
+    /// <summary>Gold, ancient bones and favor of the stash.</summary>
+    public StashCurrencies Currencies => new(Gold, Favor ?? 0, AncientBones);
 
     /// <summary>
     /// <c>unlockedBlessings</c>: blessings (<c>subTypeID</c> of item type 34) the characters of the stash have discovered.

@@ -6,11 +6,15 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.Saves;
 
-/// <summary>Writes changes of the gold, the material storage and the discovered blessings back into a stash file.</summary>
+/// <summary>
+/// Writes changes of the gold, the Circle of Fortune favor, the ancient bones, the material storage and the discovered
+/// blessings back into a stash file.
+/// </summary>
 public interface IStashSaveWriter
 {
     /// <summary>
-    /// Writes <paramref name="amounts"/> (every material the storage should hold) and <paramref name="gold"/> into
+    /// Writes <paramref name="amounts"/> (every material the storage should hold) and <paramref name="currencies"/> (gold,
+    /// favor, ancient bones) into
     /// <paramref name="stash"/>'s file, and adds <paramref name="discoveredBlessings"/> to its <c>unlockedBlessings</c>, keeping
     /// everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
     /// </summary>
@@ -22,7 +26,7 @@ public interface IStashSaveWriter
     Task<StashSaveResult> SaveAsync(
         StashSave stash,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
-        int gold,
+        StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
         CancellationToken cancellationToken = default);
 }
@@ -37,7 +41,8 @@ public sealed record StashSaveResult(StashSave Stash, string BackupPath);
 /// <c>[2, baseTypeID, subTypeID]</c> at position −4, −4, as the game stores them) or <c>keysList</c> (a resource item as
 /// the game stores it there: <c>[6, id, id, id, id, 104, subTypeID]</c> in container 100 at position 0, subTypeID; the
 /// game drops resource entries in any other shape when it loads the stash, so such entries are rewritten). A changed
-/// gold amount is written into <c>gold</c>; blessings the stash has not discovered yet are added at the end of
+/// gold amount is written into <c>gold</c>, changed ancient bones into <c>ancientBones</c> and a changed favor into the
+/// Circle of Fortune entry (<c>factions["0"].favor</c>, only when the stash has that entry); blessings the stash has not discovered yet are added at the end of
 /// <c>unlockedBlessings</c> (otherwise the game shows them as "Undiscovered"). Every other field and entry stays as
 /// the game wrote it; the file is written compact, through a temporary file, keeping the old one as a backup.
 /// </summary>
@@ -52,7 +57,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
     public async Task<StashSaveResult> SaveAsync(
         StashSave stash,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
-        int gold,
+        StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
         CancellationToken cancellationToken = default)
     {
@@ -61,7 +66,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         if (!string.Equals(CharacterSaveParser.ComputeContentHash(content), stash.ContentHash, StringComparison.Ordinal))
             throw new SaveFileChangedException(path);
 
-        var newContent = Apply(content, stash.Amounts, amounts, stash.Gold, gold, discoveredBlessings);
+        var newContent = Apply(content, stash.Amounts, amounts, stash.Currencies, currencies, discoveredBlessings);
 
         // Never write something the editor itself cannot read back.
         var saved = StashSaveParser.Parse(path, newContent);
@@ -83,19 +88,20 @@ public sealed class StashSaveWriter : IStashSaveWriter
         string content,
         IReadOnlyDictionary<CraftingMaterialKey, int> original,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts) =>
-        Apply(content, original, amounts, 0, 0);
+        Apply(content, original, amounts, default, default);
 
     /// <summary>
     /// The file content with the materials whose amount differs between <paramref name="original"/> and
-    /// <paramref name="amounts"/>, the gold when <paramref name="gold"/> differs from <paramref name="originalGold"/>, and the
-    /// <paramref name="discoveredBlessings"/> missing from <c>unlockedBlessings</c>, written into it.
+    /// <paramref name="amounts"/>, the gold, favor and ancient bones of <paramref name="currencies"/> that differ from
+    /// <paramref name="originalCurrencies"/>, and the <paramref name="discoveredBlessings"/> missing from
+    /// <c>unlockedBlessings</c>, written into it.
     /// </summary>
     public static string Apply(
         string content,
         IReadOnlyDictionary<CraftingMaterialKey, int> original,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
-        int originalGold,
-        int gold,
+        StashCurrencies originalCurrencies,
+        StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null)
     {
         var start = content.IndexOf('{');
@@ -112,14 +118,10 @@ public sealed class StashSaveWriter : IStashSaveWriter
             .Select(key => (Key: key, Quantity: Math.Max(0, amounts.GetValueOrDefault(key))))
             .Where(c => c.Quantity != original.GetValueOrDefault(c.Key))
             .ToDictionary(c => c.Key, c => c.Quantity);
-        gold = Math.Max(0, gold);
-        var goldChanged = gold != Math.Max(0, originalGold);
+        var currenciesChanged = ApplyCurrencies(root, originalCurrencies, currencies);
         var blessingsAdded = AddBlessings(root, discoveredBlessings);
-        if (changes.Count == 0 && !goldChanged && !blessingsAdded)
+        if (changes.Count == 0 && !currenciesChanged && !blessingsAdded)
             return content;
-
-        if (goldChanged)
-            root[StashSaveParser.GoldField] = gold;
 
         if (changes.Count == 0)
             return content[..start] + root.ToJsonString(CharacterSaveWriter.CompactJson) + content[(end + 1)..];
@@ -257,6 +259,41 @@ public sealed class StashSaveWriter : IStashSaveWriter
             ["containerID"] = KeyContainerId,
             ["formatVersion"] = 2
         };
+    }
+
+    /// <summary>
+    /// Writes the gold, ancient bones and favor of <paramref name="currencies"/> that differ from
+    /// <paramref name="original"/>; <c>true</c> when something was written. Favor is only written into an existing Circle
+    /// of Fortune entry (<c>factions["0"]</c>): the editor never makes a character a member of the guild.
+    /// </summary>
+    private static bool ApplyCurrencies(JsonObject root, StashCurrencies original, StashCurrencies currencies)
+    {
+        var changed = false;
+
+        var gold = Math.Max(0, currencies.Gold);
+        if (gold != Math.Max(0, original.Gold))
+        {
+            root[StashSaveParser.GoldField] = gold;
+            changed = true;
+        }
+
+        var bones = Math.Max(0, currencies.AncientBones);
+        if (bones != Math.Max(0, original.AncientBones))
+        {
+            root[StashSaveParser.AncientBonesField] = bones;
+            changed = true;
+        }
+
+        var favor = Math.Max(0, currencies.Favor);
+        if (favor != Math.Max(0, original.Favor)
+            && root[StashSaveParser.FactionsField] is JsonObject factions
+            && factions[StashSaveParser.CircleOfFortuneFactionId] is JsonObject circle)
+        {
+            circle[StashSaveParser.FavorField] = favor;
+            changed = true;
+        }
+
+        return changed;
     }
 
     /// <summary>

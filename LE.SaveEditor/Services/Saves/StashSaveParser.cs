@@ -6,7 +6,7 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Reads the gold, the material storage and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
+/// Reads the gold, the ancient bones, the Circle of Fortune favor, the material storage and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
 /// else in it is ignored.
 /// </summary>
 public static class StashSaveParser
@@ -22,6 +22,18 @@ public static class StashSaveParser
 
     /// <summary>Gold of the stash.</summary>
     internal const string GoldField = "gold";
+
+    /// <summary>Ancient bones of the stash.</summary>
+    internal const string AncientBonesField = "ancientBones";
+
+    /// <summary>Factions of the stash, by faction id (<c>{"0": {"rank": 1, "reputation": 8, "favor": 104, ...}}</c>).</summary>
+    internal const string FactionsField = "factions";
+
+    /// <summary>Key of the Circle of Fortune in <see cref="FactionsField"/>.</summary>
+    internal const string CircleOfFortuneFactionId = "0";
+
+    /// <summary>Favor of a faction entry.</summary>
+    internal const string FavorField = "favor";
 
     /// <summary>Blessings (<c>subTypeID</c>s) the characters of the stash have discovered.</summary>
     internal const string UnlockedBlessingsField = "unlockedBlessings";
@@ -59,6 +71,8 @@ public static class StashSaveParser
             StashType = GetInt(root, "stashType"),
             SoloCharacterId = root.TryGetProperty("soloChallengeCharacterId", out var solo) ? AsText(solo) : null,
             Gold = ReadGold(root),
+            AncientBones = ReadAmount(root, AncientBonesField),
+            Favor = ReadFavor(root),
             UnlockedBlessings = ReadUnlockedBlessings(root),
             Amounts = amounts,
             ContentHash = CharacterSaveParser.ComputeContentHash(content)
@@ -142,15 +156,33 @@ public static class StashSaveParser
     }
 
     /// <summary><c>gold</c>, limited to 0 … <see cref="int.MaxValue"/>; 0 when the file has none.</summary>
-    internal static int ReadGold(JsonElement root)
+    internal static int ReadGold(JsonElement root) => ReadAmount(root, GoldField);
+
+    /// <summary>
+    /// <c>factions["0"].favor</c> (Circle of Fortune), limited to 0 … <see cref="int.MaxValue"/>; <c>null</c> when the
+    /// stash has no Circle of Fortune entry.
+    /// </summary>
+    internal static int? ReadFavor(JsonElement root)
     {
-        if (!root.TryGetProperty(GoldField, out var gold) || gold.ValueKind != JsonValueKind.Number)
+        if (!root.TryGetProperty(FactionsField, out var factions)
+            || factions.ValueKind != JsonValueKind.Object
+            || !factions.TryGetProperty(CircleOfFortuneFactionId, out var circle)
+            || circle.ValueKind != JsonValueKind.Object)
+            return null;
+
+        return ReadAmount(circle, FavorField);
+    }
+
+    /// <summary>A whole amount <paramref name="name"/> of <paramref name="element"/>, limited to 0 … <see cref="int.MaxValue"/>; 0 when missing.</summary>
+    internal static int ReadAmount(JsonElement element, string name)
+    {
+        if (!element.TryGetProperty(name, out var amount) || amount.ValueKind != JsonValueKind.Number)
             return 0;
 
-        if (gold.TryGetInt64(out var whole))
+        if (amount.TryGetInt64(out var whole))
             return (int)Math.Clamp(whole, 0, int.MaxValue);
 
-        return gold.TryGetDouble(out var real) ? (int)Math.Clamp(real, 0, int.MaxValue) : 0;
+        return amount.TryGetDouble(out var real) ? (int)Math.Clamp(real, 0, int.MaxValue) : 0;
     }
 
     private static string? AsText(JsonElement value) => value.ValueKind switch
