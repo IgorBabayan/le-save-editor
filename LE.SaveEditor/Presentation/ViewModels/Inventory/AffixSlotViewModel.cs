@@ -25,26 +25,14 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
     private readonly Action<AffixSlotViewModel> _choose;
     private readonly Action<AffixSlotViewModel> _remove;
 
-    /// <param name="onlyCorruptedAffixes">
-    /// The corruption slot takes only corruption-only affixes, no normal ones (idol altars: their corruption is one of
-    /// the corrupted altar affixes).
-    /// </param>
-    public AffixSlotViewModel(
-        AffixSlotKind kind,
-        Action<AffixSlotViewModel> choose,
-        Action<AffixSlotViewModel> remove,
-        bool onlyCorruptedAffixes = false)
+    public AffixSlotViewModel(AffixSlotKind kind, Action<AffixSlotViewModel> choose, Action<AffixSlotViewModel> remove)
     {
         Kind = kind;
         _choose = choose;
         _remove = remove;
-        OnlyCorruptedAffixes = onlyCorruptedAffixes;
     }
 
     public AffixSlotKind Kind { get; }
-
-    /// <summary>The corruption slot takes only corruption-only affixes (idol altars).</summary>
-    public bool OnlyCorruptedAffixes { get; }
 
     public string Label => Kind switch
     {
@@ -74,16 +62,15 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
     /// <summary>
     /// <c>true</c> when <paramref name="affix"/> may go into this slot: prefixes / suffixes take affixes of their type
     /// that are not corruption-only; the corruption slot takes corruption-only affixes and normal prefixes / suffixes
-    /// (a corruption can also be an ordinary affix, e.g. Cold Penetration on an amulet), or only the corruption-only
-    /// ones when the slot takes <see cref="OnlyCorruptedAffixes"/>. A unique's own legendary affixes go only into the
-    /// unique affix slots, and those take nothing else.
+    /// (a corruption can also be an ordinary affix, e.g. Cold Penetration on an amulet, or Increased Effect of Suffixes
+    /// for Idols in Refracted Slots on an idol altar). A unique's own legendary affixes go only into the unique affix
+    /// slots, and those take nothing else.
     /// </summary>
     public bool Accepts(AffixDefinition affix) => Kind switch
     {
         AffixSlotKind.Unique => affix.OnlyOnUniques.Count > 0,
         _ when affix.OnlyOnUniques.Count > 0 => false,
-        AffixSlotKind.Corrupted => affix.Category == AffixCategory.Corrupted
-                                   || (!OnlyCorruptedAffixes && affix.Category == AffixCategory.Normal),
+        AffixSlotKind.Corrupted => affix.Category is AffixCategory.Corrupted or AffixCategory.Normal,
         _ => affix.Category != AffixCategory.Corrupted && affix.Type == AcceptedType
     };
 

@@ -78,7 +78,8 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   corners and centre with the quest locks. Idols that no longer fit move to a free slot, then to the backpack; an
   idol that fits nowhere is left in the save where it was. Altar layouts are the ones maxroll's planner uses (the game
   data has none). An altar is always corrupted (it is saved with the corrupted item flag): it takes two prefixes and two
-  suffixes from the altar affixes and a corruption from the corrupted altar affixes; altars are 2 × 2 and can also be
+  suffixes from the altar affixes and a corruption (the corrupted altar affixes are offered first, then the normal
+  altar affixes, e.g. Increased Effect of Suffixes for Idols in Refracted Slots); altars are 2 × 2 and can also be
   built in the backpack.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).
