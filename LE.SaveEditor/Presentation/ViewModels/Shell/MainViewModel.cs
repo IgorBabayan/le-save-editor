@@ -275,14 +275,15 @@ public partial class MainViewModel(
         try
         {
             var updates = details.GetUpdates();
+            var waypoints = details.GetWaypointScenes();
             var stash = details.Stash is { HasChanges: true } changedStash ? changedStash : null;
-            if (updates.Count == 0 && stash is null)
+            if (updates.Count == 0 && waypoints is null && stash is null)
                 return;
 
             var backups = new List<string>();
-            if (updates.Count > 0)
+            if (updates.Count > 0 || waypoints is not null)
             {
-                var result = await characterSaveWriter.SaveAsync(character, updates);
+                var result = await characterSaveWriter.SaveAsync(character, updates, waypoints);
                 backups.Add(Path.GetFileName(result.BackupPath));
                 ReplaceCharacter(character, result.Character);
             }

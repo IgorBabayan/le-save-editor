@@ -51,6 +51,7 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             LastPlayed = dto.LastPlayed,
             SavedItems = ReadSavedItems(dto.SavedItems),
             SavedQuests = ReadSavedQuests(dto.SavedQuests),
+            UnlockedWaypointScenes = ReadStrings(dto.UnlockedWaypointScenes),
             ContentHash = ComputeContentHash(content)
         };
     }
@@ -121,6 +122,22 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
         return result;
     }
 
+    /// <summary>The texts of a JSON array of strings, skipping anything else; empty when it is not an array.</summary>
+    private static IReadOnlyList<string> ReadStrings(JsonElement array)
+    {
+        if (array.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var result = new List<string>();
+        foreach (var value in array.EnumerateArray())
+        {
+            if (value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text)
+                result.Add(text);
+        }
+
+        return result;
+    }
+
     private static byte[]? ReadBytes(JsonElement array)
     {
         var bytes = new byte[array.GetArrayLength()];
@@ -174,5 +191,8 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
 
         /// <summary>Kept as raw JSON and read by <see cref="ReadSavedQuests"/>, so a bad entry never fails the save.</summary>
         [JsonPropertyName("savedQuests")] public JsonElement SavedQuests { get; init; }
+
+        /// <summary>Kept as raw JSON and read by <see cref="ReadStrings"/>, so a bad entry never fails the save.</summary>
+        [JsonPropertyName("unlockedWaypointScenes")] public JsonElement UnlockedWaypointScenes { get; init; }
     }
 }

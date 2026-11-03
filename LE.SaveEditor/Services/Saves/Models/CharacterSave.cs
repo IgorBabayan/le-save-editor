@@ -44,6 +44,12 @@ public sealed record CharacterSave
     public IReadOnlyList<SavedQuest> SavedQuests { get; init; } = [];
 
     /// <summary>
+    /// Scenes of the waypoints the character has unlocked (<c>unlockedWaypointScenes</c>), in the order of the file
+    /// (see <see cref="LE.SaveEditor.Services.GameData.Waypoints.WaypointCatalog"/>).
+    /// </summary>
+    public IReadOnlyList<string> UnlockedWaypointScenes { get; init; } = [];
+
+    /// <summary>
     /// Fingerprint of the file content this character was read from
     /// (<see cref="LE.SaveEditor.Services.Saves.CharacterSaveParser.ComputeContentHash"/>); saving refuses to overwrite
     /// a file whose content no longer matches it.

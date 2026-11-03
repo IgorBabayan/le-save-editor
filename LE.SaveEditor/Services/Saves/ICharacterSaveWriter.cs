@@ -6,9 +6,11 @@ namespace LE.SaveEditor.Services.Saves;
 public interface ICharacterSaveWriter
 {
     /// <summary>
-    /// Applies <paramref name="updates"/> to the <c>savedItems</c> of <paramref name="character"/>'s file and writes it,
+    /// Applies <paramref name="updates"/> to the <c>savedItems</c> of <paramref name="character"/>'s file (and, when
+    /// given, replaces its <c>unlockedWaypointScenes</c> with <paramref name="unlockedWaypointScenes"/>) and writes it,
     /// keeping everything else in the file as it is. The previous file is kept as a <c>.bak</c> backup next to it.
     /// </summary>
+    /// <param name="unlockedWaypointScenes">The waypoints the character has unlocked; <c>null</c> leaves them as they are.</param>
     /// <returns>The character as read back from the written file, and the path of the backup.</returns>
     /// <exception cref="SaveFileChangedException">The file changed after it was read (e.g. the game saved it).</exception>
     /// <exception cref="System.IO.IOException">The file cannot be read or written.</exception>
@@ -17,6 +19,7 @@ public interface ICharacterSaveWriter
     Task<CharacterSaveResult> SaveAsync(
         CharacterSave character,
         IReadOnlyCollection<SavedItemUpdate> updates,
+        IReadOnlyList<string>? unlockedWaypointScenes = null,
         CancellationToken cancellationToken = default);
 }
 

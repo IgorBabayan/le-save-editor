@@ -10,11 +10,12 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Writes <c>savedItems</c> changes into a character save. The file is read again and only the changed entries of
-/// <c>savedItems</c> are touched: every other field, unknown properties of the entries and the entry order stay as the
-/// game wrote them. The JSON is written compact on one line, like the game writes it (the <c>EPOCH</c> marker and
-/// anything after the JSON body are kept), to a temporary file that then replaces the save, keeping the old file as a
-/// timestamped backup. Numbers keep the text they were read with (<c>0.0</c> stays <c>0.0</c>).
+/// Writes <c>savedItems</c> and <c>unlockedWaypointScenes</c> changes into a character save. The file is read again and
+/// only the changed entries of <c>savedItems</c> (and the waypoint list, when it changed) are touched: every other field,
+/// unknown properties of the entries and the entry order stay as the game wrote them. The JSON is written compact on one
+/// line, like the game writes it (the <c>EPOCH</c> marker and anything after the JSON body are kept), to a temporary file
+/// that then replaces the save, keeping the old file as a timestamped backup. Numbers keep the text they were read with
+/// (<c>0.0</c> stays <c>0.0</c>).
 /// </summary>
 public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : ICharacterSaveWriter
 {
@@ -48,6 +49,7 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
     public async Task<CharacterSaveResult> SaveAsync(
         CharacterSave character,
         IReadOnlyCollection<SavedItemUpdate> updates,
+        IReadOnlyList<string>? unlockedWaypointScenes = null,
         CancellationToken cancellationToken = default)
     {
         var path = character.FilePath;
@@ -57,7 +59,7 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
         if (!string.Equals(CharacterSaveParser.ComputeContentHash(content), character.ContentHash, StringComparison.Ordinal))
             throw new SaveFileChangedException(path);
 
-        var newContent = Apply(content, updates);
+        var newContent = Apply(content, updates, unlockedWaypointScenes);
 
         // Never write something the editor itself cannot read back.
         var saved = parser.Parse(path, newContent);
@@ -70,8 +72,14 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
         return new CharacterSaveResult(saved, backupPath);
     }
 
-    /// <summary>The file content with <paramref name="updates"/> applied to its <c>savedItems</c>.</summary>
-    public static string Apply(string content, IReadOnlyCollection<SavedItemUpdate> updates)
+    /// <summary>
+    /// The file content with <paramref name="updates"/> applied to its <c>savedItems</c> and, when given, its
+    /// <c>unlockedWaypointScenes</c> replaced by <paramref name="unlockedWaypointScenes"/>.
+    /// </summary>
+    public static string Apply(
+        string content,
+        IReadOnlyCollection<SavedItemUpdate> updates,
+        IReadOnlyList<string>? unlockedWaypointScenes = null)
     {
         // Keep whatever surrounds the JSON body ("EPOCH" in front, a final line break) exactly as it is.
         var start = content.IndexOf('{');
@@ -86,6 +94,7 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
             throw new JsonException("The save file holds no JSON object.");
 
         ApplyToSavedItems(root, updates);
+        ApplyWaypoints(root, unlockedWaypointScenes);
 
         var json = root.ToJsonString(CompactJson);
 
@@ -153,6 +162,22 @@ public sealed partial class CharacterSaveWriter(ICharacterSaveParser parser) : I
 
         foreach (var item in added)
             savedItems.Add(CreateEntry(item));
+    }
+
+    /// <summary>
+    /// Replaces <c>unlockedWaypointScenes</c> with <paramref name="scenes"/> (each scene once, in the given order). The
+    /// property keeps its place in the file; a save without it gets it added.
+    /// </summary>
+    private static void ApplyWaypoints(JsonObject root, IReadOnlyList<string>? scenes)
+    {
+        if (scenes is null)
+            return;
+
+        var array = new JsonArray();
+        foreach (var scene in scenes.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.Ordinal))
+            array.Add(scene);
+
+        root["unlockedWaypointScenes"] = array;
     }
 
     /// <summary>Changes only the fields that differ, so unknown properties and untouched values stay as written.</summary>
