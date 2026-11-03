@@ -340,7 +340,8 @@
                                Text="Idols"
                                Style="{StaticResource SectionHeaderTextStyle}" />
 
-                    <!-- Idol grid: 5 × 5 cells without the corners (60 px pitch, matching the item layer).
+                    <!-- Idol grid: 5 × 5 cells without the corners and the centre (60 px pitch, matching the item layer);
+                         slots still locked in game show a lock.
                          Click an idol to edit it, drag it to move it, right-click an empty cell to build a new one. -->
                     <Border Padding="6"
                             HorizontalAlignment="Center"
@@ -369,13 +370,29 @@
                                                 BorderThickness="1"
                                                 BorderBrush="{DynamicResource ControlBorderBrush}"
                                                 Background="{DynamicResource ControlBackgroundBrush}"
-                                                SnapsToDevicePixels="True" />
+                                                SnapsToDevicePixels="True">
+                                            <TextBlock x:Name="LockGlyph"
+                                                       Visibility="Collapsed"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontFamily="{DynamicResource IconFont}"
+                                                       FontSize="20"
+                                                       Opacity="0.6"
+                                                       Foreground="{DynamicResource ControlBorderBrush}"
+                                                       Text="&#xE72E;" />
+                                        </Border>
                                         <DataTemplate.Triggers>
-                                            <!-- Blocked cells can never hold an idol. -->
+                                            <!-- Blocked cells (corners, centre) can never hold an idol. -->
                                             <DataTrigger Binding="{Binding IsBlocked}" Value="True">
                                                 <Setter TargetName="Cell" Property="Background" Value="Transparent" />
                                                 <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
                                                 <Setter TargetName="Cell" Property="Opacity" Value="0.5" />
+                                            </DataTrigger>
+                                            <!-- Locked slots: not unlocked in game yet, so no idol goes there. -->
+                                            <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                <Setter TargetName="Cell" Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+                                                <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                                <Setter TargetName="LockGlyph" Property="Visibility" Value="Visible" />
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
                                     </DataTemplate>

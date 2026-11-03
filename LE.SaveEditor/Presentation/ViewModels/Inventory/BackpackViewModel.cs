@@ -17,6 +17,10 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <param name="Rows">Height in cells.</param>
 /// <param name="Name">Name used in messages ("backpack", "idol grid").</param>
 /// <param name="BlockedCells">Cells that can never hold an item (column, row counted from the top).</param>
+/// <param name="LockedCells">
+/// Cells the game keeps locked until the character unlocks them (idol slots opened by quests); like blocked cells they
+/// take no item, but they are drawn as locked slots rather than as gaps.
+/// </param>
 /// <param name="OnlySlot">The only item kind the grid takes (<see cref="EquipmentSlot.Idol"/>), or <c>null</c> for any item.</param>
 /// <param name="RelocateOnLoad">
 /// Items of the save whose stored cell has no room go to the first free spot (backpack); otherwise they are left out
@@ -29,7 +33,8 @@ public sealed record ItemGridLayout(
     string Name,
     IReadOnlySet<(int Column, int Row)> BlockedCells,
     EquipmentSlot? OnlySlot,
-    bool RelocateOnLoad)
+    bool RelocateOnLoad,
+    IReadOnlySet<(int Column, int Row)>? LockedCells = null)
 {
     /// <summary>Container of idols in <c>savedItems</c>.</summary>
     public const int IdolContainerId = 29;
@@ -43,15 +48,37 @@ public sealed record ItemGridLayout(
         new HashSet<(int, int)>(), null, RelocateOnLoad: true);
 
     /// <summary>
-    /// The idol grid: 5 × 5 cells without the four corners, as in the game; only idols. Idols stored over a corner are
-    /// left as they are.
+    /// The idol grid as in the game: 5 × 5 cells without the four corners and the centre (20 idol slots); only idols.
+    /// The slots of the top row and of the left and right columns are still locked, matching the character's
+    /// unlocked slots in game: the 3 × 4 block below the top row (without the centre) is open. Idols stored over a
+    /// blocked or locked cell are left as they are.
     /// </summary>
     public static ItemGridLayout Idols { get; } = new(
         IdolContainerId, IdolGridSize, IdolGridSize, "idol grid",
-        new HashSet<(int, int)> { (0, 0), (IdolGridSize - 1, 0), (0, IdolGridSize - 1), (IdolGridSize - 1, IdolGridSize - 1) },
-        EquipmentSlot.Idol, RelocateOnLoad: false);
+        new HashSet<(int, int)>
+        {
+            (0, 0), (IdolGridSize - 1, 0), (0, IdolGridSize - 1), (IdolGridSize - 1, IdolGridSize - 1),
+            (IdolGridSize / 2, IdolGridSize / 2)
+        },
+        EquipmentSlot.Idol, RelocateOnLoad: false,
+        LockedCells: new HashSet<(int, int)>
+        {
+            (1, 0), (2, 0), (3, 0),
+            (0, 1), (0, 2), (0, 3),
+            (IdolGridSize - 1, 1), (IdolGridSize - 1, 2), (IdolGridSize - 1, 3)
+        });
+
+    /// <summary>Cells the game keeps locked (see <see cref="LockedCells"/>); empty when none.</summary>
+    public IReadOnlySet<(int Column, int Row)> Locked => LockedCells ?? EmptyCells;
+
+    private static readonly IReadOnlySet<(int Column, int Row)> EmptyCells = new HashSet<(int, int)>();
 
     public bool IsBlocked(int column, int row) => BlockedCells.Contains((column, row));
+
+    public bool IsLocked(int column, int row) => Locked.Contains((column, row));
+
+    /// <summary>Whether the cell can ever hold an item now: neither blocked nor locked.</summary>
+    public bool IsUsable(int column, int row) => !IsBlocked(column, row) && !IsLocked(column, row);
 
     /// <summary>Whether an item of type <paramref name="baseTypeId"/> may be kept in this grid.</summary>
     public bool Accepts(int baseTypeId) => OnlySlot is not { } slot || slot.AcceptsBaseType(baseTypeId);
@@ -123,8 +150,9 @@ public sealed partial class BackpackViewModel : ViewModelBase
     /// <summary>Items in the save that had no room in the grid (overlapping or outside of it) and are not shown.</summary>
     public int SkippedCount { get; private set; }
 
-    /// <summary>Number of cells no item covers (blocked cells do not count).</summary>
-    public int FreeCells => ColumnCount * RowCount - Layout.BlockedCells.Count - Items.Sum(i => i.Width * i.Height);
+    /// <summary>Number of cells no item covers (blocked and locked cells do not count).</summary>
+    public int FreeCells =>
+        ColumnCount * RowCount - Layout.BlockedCells.Count - Layout.Locked.Count - Items.Sum(i => i.Width * i.Height);
 
     /// <summary>Line under the grid, e.g. "5 items · 87 free cells".</summary>
     public string Summary
@@ -208,11 +236,11 @@ public sealed partial class BackpackViewModel : ViewModelBase
 
     /// <summary>
     /// Whether no item covers the cell in <paramref name="column"/>, <paramref name="row"/> and it is inside the grid
-    /// and not blocked.
+    /// and neither blocked nor locked.
     /// </summary>
     public bool IsCellFree(int column, int row) =>
         column >= 0 && column < ColumnCount && row >= 0 && row < RowCount
-        && !Layout.IsBlocked(column, row)
+        && Layout.IsUsable(column, row)
         && !Items.Any(i => i.Covers(column, row));
 
     /// <summary>Whether at least one item type of <paramref name="slot"/> still fits somewhere in the grid.</summary>
@@ -442,7 +470,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
         for (var r = row; r < row + footprint.Height; r++)
         for (var c = column; c < column + footprint.Width; c++)
         {
-            if (Layout.IsBlocked(c, r) || Items.Any(other => !ReferenceEquals(other, ignore) && other.Covers(c, r)))
+            if (!Layout.IsUsable(c, r) || Items.Any(other => !ReferenceEquals(other, ignore) && other.Covers(c, r)))
                 return false;
         }
 
@@ -467,11 +495,14 @@ public sealed partial class BackpackViewModel : ViewModelBase
         var cells = new List<BackpackCellViewModel>(layout.Columns * layout.Rows);
         for (var row = 0; row < layout.Rows; row++)
         for (var column = 0; column < layout.Columns; column++)
-            cells.Add(new BackpackCellViewModel(column, row, layout.IsBlocked(column, row)));
+            cells.Add(new BackpackCellViewModel(column, row, layout.IsBlocked(column, row), layout.IsLocked(column, row)));
 
         return cells;
     }
 }
 
-/// <summary>One background cell of a grid; <see cref="IsBlocked"/> cells can never hold an item.</summary>
-public sealed record BackpackCellViewModel(int Column, int Row, bool IsBlocked = false);
+/// <summary>
+/// One background cell of a grid; <see cref="IsBlocked"/> cells can never hold an item and <see cref="IsLocked"/> cells
+/// not until the game unlocks them.
+/// </summary>
+public sealed record BackpackCellViewModel(int Column, int Row, bool IsBlocked = false, bool IsLocked = false);

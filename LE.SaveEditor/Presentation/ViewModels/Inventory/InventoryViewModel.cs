@@ -102,7 +102,10 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// <summary>The "Items" section: the backpack grid with the items the character carries.</summary>
     public BackpackViewModel Backpack { get; }
 
-    /// <summary>The idol grid (<see cref="IdolGridSize"/> × <see cref="IdolGridSize"/> without its corners) with the character's idols.</summary>
+    /// <summary>
+    /// The idol grid (<see cref="IdolGridSize"/> × <see cref="IdolGridSize"/> without its corners and centre, locked slots
+    /// as in game) with the character's idols.
+    /// </summary>
     public BackpackViewModel Idols { get; }
 
     /// <summary>The "Resources" section: keys and consumables the character's stash keeps (<c>keysList</c>).</summary>
