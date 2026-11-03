@@ -354,10 +354,10 @@
                                Style="{StaticResource SectionHeaderTextStyle}" />
 
                     <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                        <!-- Idol altar slot: its altar gives the idol grid its shape and refracted slots.
+                        <!-- Idol altar slot, centred beside the idol grid: its altar gives the grid its shape and refracted slots.
                              Click to build or edit the altar, right-click to edit or remove it. -->
                         <StackPanel Margin="0,0,12,0"
-                                    VerticalAlignment="Top"
+                                    VerticalAlignment="Center"
                                     Background="Transparent"
                                     MouseRightButtonUp="EquipmentGrid_OnMouseRightButtonUp">
                             <Button Width="96" Height="96" Margin="0"
