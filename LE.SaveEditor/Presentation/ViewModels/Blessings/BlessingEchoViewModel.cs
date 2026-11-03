@@ -157,6 +157,14 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
         return data.SequenceEqual(_source.Data) ? null : SavedItemUpdate.Replace(_source, _source with { Data = data });
     }
 
+    /// <summary>Puts <paramref name="option"/> (one of this echo's <see cref="Options"/>) in the slot.</summary>
+    [RelayCommand]
+    private void Pick(BlessingOptionViewModel? option)
+    {
+        if (option is not null && Options.Contains(option))
+            Selected = option;
+    }
+
     /// <summary>Empties the slot.</summary>
     [RelayCommand(CanExecute = nameof(HasBlessing))]
     private void Remove() => Selected = null;
@@ -177,6 +185,15 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
         }
 
         RaiseChanged();
+    }
+
+    partial void OnSelectedChanged(BlessingOptionViewModel? oldValue, BlessingOptionViewModel? newValue)
+    {
+        // The highlighted row of the list.
+        if (oldValue is not null)
+            oldValue.IsSelected = false;
+        if (newValue is not null)
+            newValue.IsSelected = true;
     }
 
     partial void OnSelectedChanged(BlessingOptionViewModel? value)
@@ -261,8 +278,12 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
 }
 
 /// <summary>A blessing that can be picked for an echo.</summary>
-public sealed class BlessingOptionViewModel(ItemBase blessing, string group, IIconProvider iconProvider)
+public sealed partial class BlessingOptionViewModel(ItemBase blessing, string group, IIconProvider iconProvider) : ViewModelBase
 {
+    /// <summary>The option is the blessing in the echo's slot (highlighted in the list).</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
     public ItemBase Base { get; } = blessing;
 
     /// <summary><see cref="BlessingEchoViewModel.NormalGroup"/>, <see cref="BlessingEchoViewModel.GrandGroup"/> or <see cref="BlessingEchoViewModel.OtherGroup"/>.</summary>

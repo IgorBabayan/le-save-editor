@@ -74,6 +74,50 @@
             </Setter>
         </Style>
 
+        <!-- A blessing row: hover highlight, and the accent bar and selection background while it is the echo's blessing. -->
+        <Style x:Key="BlessingOptionButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="4,1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                CornerRadius="4"
+                                Background="Transparent"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Border x:Name="Indicator"
+                                        Width="3"
+                                        Margin="0,8"
+                                        HorizontalAlignment="Left"
+                                        CornerRadius="1.5"
+                                        Background="{DynamicResource AccentBrush}"
+                                        Visibility="Collapsed" />
+                                <ContentPresenter Margin="12,8,10,8"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                            </Trigger>
+                            <!-- Declared last so it wins over hover. -->
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}" />
+                                <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- A group of the blessing list; its rows hide while the header is collapsed (see the code-behind). -->
         <Style x:Key="BlessingGroupItemStyle" TargetType="GroupItem">
             <Setter Property="Template">
@@ -164,6 +208,7 @@
                 <ListBox ItemsSource="{Binding Echoes}"
                          SelectedItem="{Binding SelectedEcho, Mode=OneWay}"
                          SelectionChanged="EchoList_OnSelectionChanged"
+                         IsSynchronizedWithCurrentItem="False"
                          Style="{StaticResource PlainListBoxStyle}"
                          ItemContainerStyle="{StaticResource ListRowItemStyle}"
                          PreviewMouseWheel="List_OnPreviewMouseWheel">
@@ -284,18 +329,23 @@
 
                     <!-- Blessings the timeline grants, normal ones first, then the Grand ones. -->
                     <TextBlock Margin="2,16,0,4" Text="Choose a blessing" Style="{StaticResource SecondaryTextStyle}" />
-                    <ListBox ItemsSource="{Binding OptionsView}"
-                             SelectedItem="{Binding Selected, Mode=OneWay}"
-                             SelectionChanged="OptionList_OnSelectionChanged"
-                             Style="{StaticResource PlainListBoxStyle}"
-                             ItemContainerStyle="{StaticResource ListRowItemStyle}"
-                             PreviewMouseWheel="List_OnPreviewMouseWheel">
+                    <!--
+                        Plain rows that pick the blessing with a command, not a ListBox: a list bound to a collection view
+                        follows the view's current item, which selected (and so picked) the first blessing of every echo
+                        that was opened.
+                    -->
+                    <ItemsControl x:Name="OptionList"
+                                  Focusable="False"
+                                  ItemsSource="{Binding OptionsView}">
                         <!-- Collapsible groups: Blessings, Grand blessings, Other. -->
-                        <ListBox.GroupStyle>
+                        <ItemsControl.GroupStyle>
                             <GroupStyle ContainerStyle="{StaticResource BlessingGroupItemStyle}" />
-                        </ListBox.GroupStyle>
-                        <ListBox.ItemTemplate>
+                        </ItemsControl.GroupStyle>
+                        <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type blessingsVm:BlessingOptionViewModel}">
+                                <Button Style="{StaticResource BlessingOptionButtonStyle}"
+                                        Command="{Binding DataContext.PickCommand, ElementName=OptionList}"
+                                        CommandParameter="{Binding}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -321,9 +371,10 @@
                                                    Style="{StaticResource SecondaryTextStyle}" />
                                     </StackPanel>
                                 </Grid>
+                                </Button>
                             </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </Border>
 

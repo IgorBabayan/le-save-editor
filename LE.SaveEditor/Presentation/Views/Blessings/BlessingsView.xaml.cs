@@ -28,16 +28,6 @@ public partial class BlessingsView : UserControl
             blessings.SelectedEcho = echo;
     }
 
-    /// <summary>A blessing picked for the selected echo (only one of that echo's own options is taken).</summary>
-    private void OptionList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ListBox { DataContext: BlessingEchoViewModel echo }
-            && e.AddedItems.Count > 0
-            && e.AddedItems[0] is BlessingOptionViewModel option
-            && echo.Options.Contains(option))
-            echo.Selected = option;
-    }
-
     /// <summary>Blessing groups the user collapsed; kept while switching echoes, so a collapsed group stays collapsed.</summary>
     private readonly HashSet<string> _collapsedGroups = new(StringComparer.Ordinal);
 
