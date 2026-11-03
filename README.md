@@ -71,6 +71,14 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
 - Rarity counts only prefixes and suffixes: a sealed affix and the corruption do not make an item rare. The tooltip
   shows the sealed affix under "Sealed prefix" or "Sealed suffix".
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
+- Idol altars: the "Idol altar" slot left of the idol grid holds the character's altar (container 123). Click it to
+  build or change the altar in the item inspector, right-click it to edit or remove it. The idol grid takes the shape
+  of the altar at once: its blocked cells, and its refracted slots highlighted (idols over a refracted slot get a
+  refracted frame); with an altar every slot of its shape is open, without one the grid is the standard 5 × 5 without
+  corners and centre with the quest locks. Idols that no longer fit move to a free slot, then to the backpack; an
+  idol that fits nowhere is left in the save where it was. Altar layouts are the ones maxroll's planner uses (the game
+  data has none). An altar takes two prefixes and two suffixes from the altar affixes, the corrupted altar affixes
+  included (altars are always corrupted); altars are 2 × 2 and can also be built in the backpack.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).
 

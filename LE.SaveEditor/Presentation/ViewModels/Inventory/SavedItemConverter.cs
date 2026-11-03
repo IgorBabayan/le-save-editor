@@ -38,12 +38,13 @@ public static class SavedItemConverter
             var tier = Math.Clamp(stored.Tier, 1, affix.Tiers.Count);
             // The game keeps one roll per affix; every stat of the tier follows it.
             var values = affix.Tiers[tier - 1].Stats.Select(stat => ItemStatViewModel.FromRoll(stat, stored.Roll)).ToList();
-            var kind = SlotKindOf(affix, stored);
+            var kind = slot.IsIdolAltar ? AltarSlotKindOf(affix) : SlotKindOf(affix, stored);
 
             // Older editor versions wrote a normal affix used as the corruption as one more prefix / suffix (the game
             // shows it as such). A prefix / suffix that no longer fits its two slots goes into the corruption slot, so
-            // applying the item again stores it as a real corruption.
-            if (kind is AffixSlotKind.Prefix or AffixSlotKind.Suffix
+            // applying the item again stores it as a real corruption. Idol altars have no corruption slot.
+            if (!slot.IsIdolAltar
+                && kind is AffixSlotKind.Prefix or AffixSlotKind.Suffix
                 && counts.GetValueOrDefault(kind) >= MaxAffixesPerType
                 && counts.GetValueOrDefault(AffixSlotKind.Corrupted) == 0)
                 kind = AffixSlotKind.Corrupted;
@@ -60,6 +61,13 @@ public static class SavedItemConverter
 
     private static double FromRoll(ItemImplicit stat, IReadOnlyList<byte> rolls, int index) =>
         ItemStatViewModel.FromRoll(stat, index < rolls.Count ? rolls[index] : ItemStatViewModel.MaxRoll);
+
+    /// <summary>
+    /// An idol altar's affixes are its prefixes and suffixes, the corrupted altar affixes too: altars are always
+    /// corrupted and have no separate corruption.
+    /// </summary>
+    private static AffixSlotKind AltarSlotKindOf(AffixDefinition affix) =>
+        affix.Type == AffixType.Prefix ? AffixSlotKind.Prefix : AffixSlotKind.Suffix;
 
     private static AffixSlotKind SlotKindOf(AffixDefinition affix, ItemAffixData stored) => affix switch
     {
@@ -148,11 +156,12 @@ public static class SavedItemConverter
 
         // The unique's own affixes before the others (the game shows them on top); the writer puts the sealed affix and
         // the corruption where the game expects them (first on a plain base, the corruption last on a legendary).
+        var isAltar = item.Slot.IsIdolAltar || itemBase.BaseTypeId == EquipmentSlotExtensions.IdolAltarBaseTypeId;
         IReadOnlyList<ItemAffixData> affixes = item.Rarity is ItemRarity.Unique or ItemRarity.Set
             ? []
             : item.Affixes
                 .OrderBy(a => a.Slot == AffixSlotKind.Unique ? 0 : 1)
-                .Select(a => ToAffixData(a, original))
+                .Select(a => ToAffixData(a, original, isAltar))
                 .ToList();
         var hasCorruption = affixes.Any(a => a.IsCorrupted);
 
@@ -177,7 +186,7 @@ public static class SavedItemConverter
             affixes,
             formatVersion,
             original?.InstanceId,
-            FlagsOf(item, original, sameKind, hasCorruption),
+            isAltar ? AltarFlagsOf(original, sameBase) : FlagsOf(item, original, sameKind, hasCorruption),
             TailOf(item, original, sameKind, sameBase, formatVersion));
     }
 
@@ -200,6 +209,12 @@ public static class SavedItemConverter
     }
 
     /// <summary>
+    /// An idol altar keeps the flags the game stored for it; a new one has none (the game treats every altar as
+    /// corrupted, it needs no flag for it).
+    /// </summary>
+    private static int AltarFlagsOf(ItemData? original, bool sameBase) => sameBase ? original!.Flags : 0;
+
+    /// <summary>
     /// Uniques and set items end with their legendary potential (kept for the same unique). Items with affixes keep how
     /// the stored data ended; a new one ends after its affixes in format 6 and with a 0 in format 2.
     /// </summary>
@@ -219,11 +234,17 @@ public static class SavedItemConverter
     /// <summary>The flags byte the game writes on legendary items.</summary>
     private const int LegendaryFlags = 0x80;
 
-    private static ItemAffixData ToAffixData(BuiltAffix affix, ItemData? original)
+    /// <param name="isAltar">
+    /// The item is an idol altar: its affixes are stored as plain prefixes / suffixes, except that one the game marked as
+    /// the corruption keeps that mark.
+    /// </param>
+    private static ItemAffixData ToAffixData(BuiltAffix affix, ItemData? original, bool isAltar = false)
     {
         var stats = affix.TierData.Stats;
-        var isSealed = affix.Slot is AffixSlotKind.SealedPrefix or AffixSlotKind.SealedSuffix;
-        var isCorrupted = affix.Slot == AffixSlotKind.Corrupted;
+        var isSealed = !isAltar && affix.Slot is AffixSlotKind.SealedPrefix or AffixSlotKind.SealedSuffix;
+        var isCorrupted = isAltar
+            ? original?.Affixes.Any(a => a.AffixId == affix.Affix.Id && a.IsCorrupted) == true
+            : affix.Slot == AffixSlotKind.Corrupted;
 
         // The game keeps one roll per affix that every stat follows: keep the stored one while it still gives the values.
         var stored = original?.Affixes.FirstOrDefault(a => a.AffixId == affix.Affix.Id && a.Tier == affix.Tier);

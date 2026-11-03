@@ -11,6 +11,10 @@
              d:DesignHeight="800" d:DesignWidth="900">
 
     <UserControl.Resources>
+        <!-- Refracted idol slots of an idol altar: the same in every theme, like the rarity colors. -->
+        <SolidColorBrush x:Key="RefractedBorderBrush" Color="#4FC3F7" />
+        <SolidColorBrush x:Key="RefractedFillBrush" Color="#334FC3F7" />
+
         <!-- An item of a grid (backpack, idol grid), placed over the cells of its footprint. -->
         <Style x:Key="GridItemContainerStyle" TargetType="ContentPresenter">
             <Setter Property="Grid.Column" Value="{Binding Column}" />
@@ -94,6 +98,15 @@
                         </Button.ToolTip>
                     </Button>
                 </Grid>
+
+                <!-- An idol over a refracted slot of the idol altar gets a refracted frame. -->
+                <Border Margin="1"
+                        CornerRadius="7"
+                        BorderThickness="2"
+                        BorderBrush="{StaticResource RefractedBorderBrush}"
+                        IsHitTestVisible="False"
+                        SnapsToDevicePixels="True"
+                        Visibility="{Binding IsInRefractedSlot, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                 <!-- Items, idols or materials missing from base.db keep their cells taken. -->
                 <Border Margin="2"
@@ -340,109 +353,131 @@
                                Text="Idols"
                                Style="{StaticResource SectionHeaderTextStyle}" />
 
-                    <!-- Idol grid: 5 × 5 cells without the corners and the centre (60 px pitch, matching the item layer);
-                         slots still locked in game show a lock.
-                         Click an idol to edit it, drag it to move it, right-click an empty cell to build a new one. -->
-                    <Border Padding="6"
-                            HorizontalAlignment="Center"
-                            CornerRadius="6"
-                            BorderThickness="1"
-                            BorderBrush="{DynamicResource ControlBorderBrush}"
-                            Background="{DynamicResource TitleBarBackgroundBrush}">
-                        <Grid DataContext="{Binding Idols}">
-                            <ItemsControl x:Name="IdolCells"
-                                          ItemsSource="{Binding Cells}"
-                                          Focusable="False"
-                                          IsHitTestVisible="False">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Rows="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}"
-                                                     Columns="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type inventoryVm:BackpackCellViewModel}">
-                                        <Border x:Name="Cell"
-                                                Width="56"
-                                                Height="56"
-                                                Margin="2"
-                                                CornerRadius="4"
-                                                BorderThickness="1"
-                                                BorderBrush="{DynamicResource ControlBorderBrush}"
-                                                Background="{DynamicResource ControlBackgroundBrush}"
-                                                SnapsToDevicePixels="True">
-                                            <TextBlock x:Name="LockGlyph"
-                                                       Visibility="Collapsed"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontFamily="{DynamicResource IconFont}"
-                                                       FontSize="20"
-                                                       Opacity="0.6"
-                                                       Foreground="{DynamicResource ControlBorderBrush}"
-                                                       Text="&#xE72E;" />
-                                        </Border>
-                                        <DataTemplate.Triggers>
-                                            <!-- Blocked cells (corners, centre) can never hold an idol. -->
-                                            <DataTrigger Binding="{Binding IsBlocked}" Value="True">
-                                                <Setter TargetName="Cell" Property="Background" Value="Transparent" />
-                                                <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
-                                                <Setter TargetName="Cell" Property="Opacity" Value="0.5" />
-                                            </DataTrigger>
-                                            <!-- Locked slots: not unlocked in game yet, so no idol goes there. -->
-                                            <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                <Setter TargetName="Cell" Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
-                                                <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
-                                                <Setter TargetName="LockGlyph" Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <!-- Idol altar slot: its altar gives the idol grid its shape and refracted slots.
+                             Click to build or edit the altar, right-click to edit or remove it. -->
+                        <StackPanel Margin="0,0,12,0"
+                                    VerticalAlignment="Top"
+                                    Background="Transparent"
+                                    MouseRightButtonUp="EquipmentGrid_OnMouseRightButtonUp">
+                            <Button Width="96" Height="96" Margin="0"
+                                    Style="{StaticResource EquipmentSlotButtonStyle}"
+                                    DataContext="{Binding IdolAltar}"
+                                    Command="{Binding DataContext.OpenItemBuilderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}" />
+                        </StackPanel>
 
-                            <!-- Idols, each spanning the cells of its footprint; dragged and built like backpack items. -->
-                            <ItemsControl x:Name="IdolItems"
-                                          ItemsSource="{Binding Items}"
-                                          Background="Transparent"
-                                          Focusable="False"
-                                          ItemContainerStyle="{StaticResource GridItemContainerStyle}"
-                                          ItemTemplate="{StaticResource GridItemTemplate}"
-                                          PreviewMouseLeftButtonDown="GridItems_OnPreviewMouseLeftButtonDown"
-                                          PreviewMouseMove="GridItems_OnPreviewMouseMove"
-                                          PreviewMouseLeftButtonUp="GridItems_OnPreviewMouseLeftButtonUp"
-                                          MouseRightButtonUp="GridItems_OnMouseRightButtonUp"
-                                          LostMouseCapture="GridItems_OnLostMouseCapture">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="60" />
-                                                <ColumnDefinition Width="60" />
-                                                <ColumnDefinition Width="60" />
-                                                <ColumnDefinition Width="60" />
-                                                <ColumnDefinition Width="60" />
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="60" />
-                                                <RowDefinition Height="60" />
-                                                <RowDefinition Height="60" />
-                                                <RowDefinition Height="60" />
-                                                <RowDefinition Height="60" />
-                                            </Grid.RowDefinitions>
-                                        </Grid>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                        <!-- Idol grid: 5 × 5 cells shaped by the idol altar (without one: no corners and centre, slots still
+                             locked in game show a lock); refracted slots of the altar are highlighted.
+                             60 px pitch, matching the item layer.
+                             Click an idol to edit it, drag it to move it, right-click an empty cell to build a new one. -->
+                        <Border Padding="6"
+                                HorizontalAlignment="Center"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource TitleBarBackgroundBrush}">
+                            <Grid DataContext="{Binding Idols}">
+                                <ItemsControl x:Name="IdolCells"
+                                              ItemsSource="{Binding Cells}"
+                                              Focusable="False"
+                                              IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}"
+                                                         Columns="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type inventoryVm:BackpackCellViewModel}">
+                                            <Border x:Name="Cell"
+                                                    Width="56"
+                                                    Height="56"
+                                                    Margin="2"
+                                                    CornerRadius="4"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                    Background="{DynamicResource ControlBackgroundBrush}"
+                                                    SnapsToDevicePixels="True">
+                                                <TextBlock x:Name="LockGlyph"
+                                                           Visibility="Collapsed"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontFamily="{DynamicResource IconFont}"
+                                                           FontSize="20"
+                                                           Opacity="0.6"
+                                                           Foreground="{DynamicResource ControlBorderBrush}"
+                                                           Text="&#xE72E;" />
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <!-- Refracted slots of the idol altar modify the effects of the idols in them. -->
+                                                <DataTrigger Binding="{Binding IsRefracted}" Value="True">
+                                                    <Setter TargetName="Cell" Property="Background" Value="{StaticResource RefractedFillBrush}" />
+                                                    <Setter TargetName="Cell" Property="BorderBrush" Value="{StaticResource RefractedBorderBrush}" />
+                                                    <Setter TargetName="Cell" Property="BorderThickness" Value="2" />
+                                                </DataTrigger>
+                                                <!-- Blocked cells (corners and centre, or the gaps of the altar) can never hold an idol. -->
+                                                <DataTrigger Binding="{Binding IsBlocked}" Value="True">
+                                                    <Setter TargetName="Cell" Property="Background" Value="Transparent" />
+                                                    <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                                    <Setter TargetName="Cell" Property="Opacity" Value="0.5" />
+                                                </DataTrigger>
+                                                <!-- Locked slots: not unlocked in game yet, so no idol goes there. -->
+                                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                    <Setter TargetName="Cell" Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+                                                    <Setter TargetName="Cell" Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                                    <Setter TargetName="LockGlyph" Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                            <!-- Cells the dragged idol would take: green when it fits there, red otherwise. -->
-                            <Canvas IsHitTestVisible="False" ClipToBounds="True">
-                                <Border x:Name="IdolDropPreview"
-                                        Visibility="Collapsed"
-                                        CornerRadius="6"
-                                        BorderThickness="2"
-                                        SnapsToDevicePixels="True" />
-                            </Canvas>
-                        </Grid>
-                    </Border>
+                                <!-- Idols, each spanning the cells of its footprint; dragged and built like backpack items. -->
+                                <ItemsControl x:Name="IdolItems"
+                                              ItemsSource="{Binding Items}"
+                                              Background="Transparent"
+                                              Focusable="False"
+                                              ItemContainerStyle="{StaticResource GridItemContainerStyle}"
+                                              ItemTemplate="{StaticResource GridItemTemplate}"
+                                              PreviewMouseLeftButtonDown="GridItems_OnPreviewMouseLeftButtonDown"
+                                              PreviewMouseMove="GridItems_OnPreviewMouseMove"
+                                              PreviewMouseLeftButtonUp="GridItems_OnPreviewMouseLeftButtonUp"
+                                              MouseRightButtonUp="GridItems_OnMouseRightButtonUp"
+                                              LostMouseCapture="GridItems_OnLostMouseCapture">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="60" />
+                                                    <ColumnDefinition Width="60" />
+                                                    <ColumnDefinition Width="60" />
+                                                    <ColumnDefinition Width="60" />
+                                                    <ColumnDefinition Width="60" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="60" />
+                                                    <RowDefinition Height="60" />
+                                                    <RowDefinition Height="60" />
+                                                    <RowDefinition Height="60" />
+                                                    <RowDefinition Height="60" />
+                                                </Grid.RowDefinitions>
+                                            </Grid>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+
+                                <!-- Cells the dragged idol would take: green when it fits there, red otherwise. -->
+                                <Canvas IsHitTestVisible="False" ClipToBounds="True">
+                                    <Border x:Name="IdolDropPreview"
+                                            Visibility="Collapsed"
+                                            CornerRadius="6"
+                                            BorderThickness="2"
+                                            SnapsToDevicePixels="True" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                     <TextBlock Margin="0,6,0,0"
                                HorizontalAlignment="Center"
                                Opacity="0.7"
@@ -453,6 +488,11 @@
                                Opacity="0.7"
                                Text="{Binding IdolSlotsText}"
                                Style="{StaticResource SecondaryTextStyle}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               Opacity="0.85"
+                               Foreground="{StaticResource RefractedBorderBrush}"
+                               Text="Highlighted slots are refracted: they modify the effects of the idols in them."
+                               Visibility="{Binding Idols.HasRefractedCells, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <TextBlock HorizontalAlignment="Center"
                                Opacity="0.7"
                                Text="Right-click an empty cell to build an idol, or an idol to remove it."

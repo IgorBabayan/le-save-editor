@@ -636,6 +636,10 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 ? categoryName
                 : ((AffixCategory)special).ToString();
 
+            // Idol altars roll their corrupted affixes beside the others: tell them apart in the affix picker.
+            if (canRollOn.Contains(EquipmentSlotExtensions.IdolAltarBaseTypeId) && (AffixCategory)special == AffixCategory.Corrupted)
+                groupName = $"{groupName} (Corrupted)";
+
             var tiers = ParseAffixTiers(affix, name, names);
             if (tiers.Count == 0)
                 continue;
@@ -763,7 +767,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         [12] = "Health Recovery", [13] = "Ward", [14] = "Stun", [15] = "Critical Strike Avoidance", [16] = "Damage Dealt to Mana",
         [17] = "Leech", [18] = "Movement", [19] = "Cooldown", [20] = "Reflect", [21] = "Mana", [22] = "Minion", [23] = "Ailments",
         [24] = "Acolyte", [25] = "Mage", [26] = "Primalist", [27] = "Sentinel", [28] = "Rogue", [35] = "Bow",
-        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [42] = "Corrupted", [44] = "Variant"
+        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [42] = "Corrupted", [43] = "Idol Altars",
+        [44] = "Variant"
     };
 
     // ===== Modifiers (implicits and unique mods) =====

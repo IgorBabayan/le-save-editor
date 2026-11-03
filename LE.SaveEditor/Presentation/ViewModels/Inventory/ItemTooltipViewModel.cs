@@ -44,8 +44,8 @@ public sealed class ItemTooltipViewModel
             .Select((stat, i) => StatEntry(stat, item.ImplicitValues[i]))
             .ToList();
 
-        // Idols cannot be forged: their stored byte is not shown.
-        if (item.ForgingPotential is { } forgingPotential && !item.Slot.IsIdol)
+        // Idols and idol altars cannot be forged: their stored byte is not shown.
+        if (item.ForgingPotential is { } forgingPotential && !item.Slot.IsIdol && !item.Slot.IsIdolAltar)
             ForgingPotentialText = $"{forgingPotential} Forging Potential";
 
         var sections = new List<ItemTooltipSection>();
@@ -62,7 +62,7 @@ public sealed class ItemTooltipViewModel
         AddAffixSection(sections, "CORRUPTED", item, AffixSlotKind.Corrupted);
         Sections = sections;
 
-        Effects = item.Base.Effects;
+        Effects = item.Slot.IsIdolAltar ? AltarEffects(item) : item.Base.Effects;
 
         var requirements = new List<string>();
         if (item.Base.LevelRequirement > 0)
@@ -104,6 +104,20 @@ public sealed class ItemTooltipViewModel
     public IReadOnlyList<string> Requirements { get; }
 
     public bool HasRequirements => Requirements.Count > 0;
+
+    /// <summary>What an idol altar does, as the game's tooltip says, and the idol grid it gives.</summary>
+    private static IReadOnlyList<string> AltarEffects(BuiltItem item)
+    {
+        var lines = new List<string> { "Changes the idol inventory layout and adds refracted slots." };
+        if (IdolAltarLayouts.IsKnown(item.Base.SubTypeId))
+        {
+            var shape = IdolAltarLayouts.ForAltar(item.Base.SubTypeId);
+            lines.Add($"{shape.SlotCount} idol slots, {shape.Refracted.Count} of them refracted");
+        }
+
+        lines.Add("Refracted slots modify the effects of equipped idols.");
+        return lines;
+    }
 
     private static ItemTooltipEntry StatEntry(ItemImplicit stat, double value) =>
         new([ItemStatViewModel.Format(stat, value)], null, [Range(stat)], IsExalted: false);

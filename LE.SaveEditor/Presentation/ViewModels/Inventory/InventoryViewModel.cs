@@ -2,6 +2,7 @@ using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
+using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Saves;
 using LE.SaveEditor.Services.Saves.Models;
 
@@ -14,9 +15,11 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// (all read from <c>savedItems</c>), the "Resources" section the keys and consumables of the character's stash
 /// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty. Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
-/// builds a new item there. The "Crafting materials" box shows the material storage of the character's stash (affix
-/// shards, runes, glyphs) with an edit action per kind; runes and glyphs lying in the backpack are changed with the
-/// crafting material picker of their kind and removed like other items.
+/// builds a new item there. The idol altar slot sits by the idol grid: the altar in it gives the grid its shape and
+/// refracted slots (<see cref="IdolAltarLayouts"/>), and changing or removing it reshapes the grid at once.
+/// The "Crafting materials" box shows the material storage of the character's stash (affix shards, runes, glyphs) with
+/// an edit action per kind; runes and glyphs lying in the backpack are changed with the crafting material picker of
+/// their kind and removed like other items.
 /// <see cref="GetUpdates"/> collects what changed since the save was read, for saving.
 /// </summary>
 public sealed partial class InventoryViewModel : ViewModelBase
@@ -25,6 +28,13 @@ public sealed partial class InventoryViewModel : ViewModelBase
     public const int IdolGridSize = ItemGridLayout.IdolGridSize;
 
     private readonly IDialogService _dialogService;
+    private readonly IToastService _toastService;
+
+    /// <summary>
+    /// <c>subTypeID</c> of the altar the save holds in the altar slot when the editor cannot show it (its base is not in
+    /// <c>base.db</c>): the idol grid still takes its shape until another altar is built in the slot.
+    /// </summary>
+    private readonly int? _hiddenAltarSubTypeId;
 
     /// <summary>The <c>savedItems</c> entry each equipment slot was read from, and the item it showed then.</summary>
     private readonly Dictionary<EquipmentSlot, (SavedItem Source, BuiltItem? Loaded)> _equipped = [];
@@ -42,6 +52,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
     {
         Character = character;
         _dialogService = dialogService;
+        _toastService = toastService;
         Stash = stash;
 
         EquipmentSlotViewModel Create(EquipmentSlot slot) => new(slot, iconProvider);
@@ -56,12 +67,22 @@ public sealed partial class InventoryViewModel : ViewModelBase
         Gloves = Create(EquipmentSlot.Gloves);
         Boots = Create(EquipmentSlot.Boots);
         Relic = Create(EquipmentSlot.Relic);
+        IdolAltar = Create(EquipmentSlot.IdolAltar);
 
         LoadEquippedItems(itemBaseCatalog);
+        if (IdolAltar.Item is null && _equipped.TryGetValue(EquipmentSlot.IdolAltar, out var altar)
+            && ItemDataReader.Read(altar.Source.Data) is { BaseTypeId: EquipmentSlotExtensions.IdolAltarBaseTypeId } altarData)
+            _hiddenAltarSubTypeId = altarData.SubTypeId;
+
         Backpack = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService);
         IdolUnlocks = IdolSlotUnlocks.CountUnlocks(character.SavedQuests);
         Idols = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService,
-            ItemGridLayout.ForIdols(IdolUnlocks));
+            ItemGridLayout.ForIdols(IdolUnlocks, AltarSubTypeId));
+        IdolAltar.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(EquipmentSlotViewModel.Item))
+                OnIdolAltarChanged();
+        };
 
         foreach (var slot in EquipmentSlots)
             slot.PropertyChanged += (_, e) =>
@@ -82,9 +103,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
     }
 
-    /// <summary>All equipment slots.</summary>
+    /// <summary>All equipment slots, the idol altar slot included.</summary>
     public IEnumerable<EquipmentSlotViewModel> EquipmentSlots =>
-        [Helmet, Amulet, Weapon, BodyArmour, OffHand, LeftRing, Belt, RightRing, Gloves, Boots, Relic];
+        [Helmet, Amulet, Weapon, BodyArmour, OffHand, LeftRing, Belt, RightRing, Gloves, Boots, Relic, IdolAltar];
 
     public CharacterSave Character { get; }
 
@@ -101,6 +122,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
     public EquipmentSlotViewModel Boots { get; }
     public EquipmentSlotViewModel Relic { get; }
 
+    /// <summary>The altar slot of the idol inventory; its altar shapes the idol grid.</summary>
+    public EquipmentSlotViewModel IdolAltar { get; }
+
     /// <summary>The "Items" section: the backpack grid with the items the character carries.</summary>
     public BackpackViewModel Backpack { get; }
 
@@ -113,15 +137,75 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// <summary>Idol unlocks the character has earned: completed quests that reward one.</summary>
     public int IdolUnlocks { get; }
 
-    /// <summary>Line under the idol grid, e.g. "11 of 20 idol slots unlocked (4 idol quests completed)".</summary>
+    /// <summary>
+    /// <c>subTypeID</c> of the idol altar that shapes the idol grid: the one in the altar slot, or the one the save holds
+    /// there when the editor cannot show it; <c>null</c> without an altar.
+    /// </summary>
+    private int? AltarSubTypeId => IdolAltar.Item?.Base.SubTypeId ?? _hiddenAltarSubTypeId;
+
+    /// <summary>
+    /// Line under the idol grid: without an altar e.g. "11 of 20 idol slots unlocked (4 idol quests completed)", with
+    /// one e.g. "Twisted Altar: 17 idol slots, 5 refracted".
+    /// </summary>
     public string IdolSlotsText
     {
         get
         {
-            var unlocked = ItemGridLayout.IdolSlotCount - Idols.Layout.Locked.Count;
+            var layout = Idols.Layout;
+            if (layout.AltarSubTypeId is { } altar)
+            {
+                var name = IdolAltar.Item?.Base.Name ?? "Idol altar";
+                var slots = layout.UsableCellCount;
+                var text = $"{name}: {slots} idol {(slots == 1 ? "slot" : "slots")}, {layout.Refracted.Count} refracted";
+                return IdolAltarLayouts.IsKnown(altar) ? text : $"{text} (layout of this altar not known, standard grid shown)";
+            }
+
+            var unlocked = ItemGridLayout.IdolSlotCount - layout.Locked.Count;
             var quests = IdolUnlocks == 1 ? "1 idol quest" : $"{IdolUnlocks} idol quests";
             return $"{unlocked} of {ItemGridLayout.IdolSlotCount} idol slots unlocked ({quests} completed)";
         }
+    }
+
+    /// <summary>
+    /// The idol altar was built, changed or removed: the idol grid takes the shape of the new altar (or the standard
+    /// shape with the quest locks). Idols that keep fitting stay; the others move to a free slot, then to the backpack;
+    /// an idol that fits nowhere stays in the save where it was (not shown until the save is reloaded).
+    /// </summary>
+    private void OnIdolAltarChanged()
+    {
+        var layout = ItemGridLayout.ForIdols(IdolUnlocks, AltarSubTypeId);
+        var before = Idols.Items.ToDictionary(i => i, i => (i.Column, i.Row));
+        var displaced = Idols.ChangeLayout(layout);
+        OnPropertyChanged(nameof(IdolSlotsText));
+
+        var movedInGrid = Idols.Items.Count(i => before.TryGetValue(i, out var cell) && cell != (i.Column, i.Row));
+        var toBackpack = new List<string>();
+        var keptInSave = new List<string>();
+        var lost = new List<string>();
+        foreach (var item in displaced)
+        {
+            if (Backpack.AddFromGrid(item))
+                toBackpack.Add(item.DisplayName);
+            else if (Idols.KeepInSave(item))
+                keptInSave.Add(item.DisplayName);
+            else
+                lost.Add(item.DisplayName);
+        }
+
+        if (movedInGrid > 0)
+            _toastService.Show(movedInGrid == 1
+                ? "1 idol was moved to another slot to fit the new idol grid."
+                : $"{movedInGrid} idols were moved to other slots to fit the new idol grid.");
+        if (toBackpack.Count > 0)
+            _toastService.Show($"No room left in the idol grid, moved to the backpack: {string.Join(", ", toBackpack)}.");
+        if (keptInSave.Count > 0)
+            _toastService.Show(
+                $"No room in the idol grid or the backpack for {string.Join(", ", keptInSave)}; left in the save where it was.",
+                NotificationSeverity.Warning);
+        if (lost.Count > 0)
+            _toastService.Show(
+                $"No room in the idol grid or the backpack for {string.Join(", ", lost)}; the new idol was dropped.",
+                NotificationSeverity.Warning);
     }
 
     /// <summary>The "Resources" section: keys and consumables the character's stash keeps (<c>keysList</c>).</summary>
@@ -368,6 +452,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         EquipmentSlot.Gloves => Gloves,
         EquipmentSlot.Boots => Boots,
         EquipmentSlot.Relic => Relic,
+        EquipmentSlot.IdolAltar => IdolAltar,
         _ => throw new ArgumentOutOfRangeException(nameof(slot), slot, null)
     };
 }

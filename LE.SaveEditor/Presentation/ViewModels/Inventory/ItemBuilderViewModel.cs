@@ -31,7 +31,9 @@ public enum ItemListKind
 /// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
 /// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
 /// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic or Unique: an idol base takes one prefix and one suffix
-/// (idol affixes), a unique idol none.
+/// (idol affixes), a unique idol none. Idol altars (<see cref="EquipmentSlot.IdolAltar"/>) are plain bases with two
+/// prefixes and two suffixes of the altar affixes (the corrupted ones included, as altars are always corrupted); they
+/// have no sealed affix, corruption, unique or set version.
 /// For an item kept in a grid (backpack) a search can also list the items of extra slots (a weapon search finds
 /// off-hands too); without a search only the slot's own items are listed.
 /// </summary>
@@ -52,6 +54,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>Rarities an idol can have.</summary>
     private static readonly ItemRarity[] IdolRarities = [ItemRarity.Normal, ItemRarity.Magic, ItemRarity.Unique];
+
+    /// <summary>Rarities an idol altar can have (it follows its affixes, like a plain base).</summary>
+    private static readonly ItemRarity[] IdolAltarRarities = [ItemRarity.Normal, ItemRarity.Magic, ItemRarity.Rare, ItemRarity.Exalted];
 
     /// <param name="confirm">Asks a Yes/No question (title, message); <c>true</c> for Yes.</param>
     /// <param name="extraSearchSlots">
@@ -77,7 +82,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         IsDatabaseAvailable = catalog.IsAvailable;
         IsDatabaseOutdated = catalog.IsOutdated;
 
-        Rarities = (slot.IsIdol ? IdolRarities : Enum.GetValues<ItemRarity>())
+        Rarities = (slot.IsIdol ? IdolRarities : slot.IsIdolAltar ? IdolAltarRarities : Enum.GetValues<ItemRarity>())
             .Select(r => new RarityOptionViewModel(r))
             .ToList();
         _selectedRarity = Rarities.FirstOrDefault(r => r.Rarity == (current?.Rarity ?? ItemRarity.Normal)) ?? Rarities[0];
@@ -267,7 +272,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public string EmptyBasesText =>
         !IsDatabaseAvailable ? "The game database was not found. Generate it with the database button in the title bar, then reopen the builder."
-        : IsSearching ? Slot.IsIdol ? "No idols or unique idols match the search." : "No bases, unique or set items match the search."
+        : IsSearching ? Slot.IsIdol ? "No idols or unique idols match the search."
+            : Slot.IsIdolAltar ? "No idol altars match the search."
+            : "No bases, unique or set items match the search."
         : !CurrentListOptions.Any(o => !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
         : ShowOnlyUsable && !CurrentListOptions.Any(o => o.IsUsable && !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
         : $"No {ListNoun} match the search.";
@@ -306,9 +313,11 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         {
             var isExtra = slot != Slot;
             var bases = _catalog.GetBases(slot).Select(b => (Item: b, Kind: ItemListKind.Bases, IsExtra: isExtra));
-            var uniques = _catalog.GetUniques(slot, sets: false).Select(b => (Item: b, Kind: ItemListKind.Uniques, IsExtra: isExtra));
-            // Idols have no set rarity, so set idols (if the data has any) would have no list to switch to.
-            var sets = (slot.IsIdol ? [] : _catalog.GetUniques(slot, sets: true))
+            // Idol altars have no unique rarity to switch to.
+            var uniques = (slot.IsIdolAltar ? [] : _catalog.GetUniques(slot, sets: false))
+                .Select(b => (Item: b, Kind: ItemListKind.Uniques, IsExtra: isExtra));
+            // Idols and altars have no set rarity, so set ones (if the data has any) would have no list to switch to.
+            var sets = (slot.HasSetItems ? _catalog.GetUniques(slot, sets: true) : [])
                 .Select(b => (Item: b, Kind: ItemListKind.Sets, IsExtra: isExtra));
             return bases.Concat(uniques).Concat(sets);
         });
@@ -582,12 +591,15 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>
     /// Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets
-    /// corruption; idols 1P / 1S, unique idols none.
+    /// corruption; idols 1P / 1S, unique idols none; idol altars 2P / 2S (corrupted altar affixes included).
     /// </summary>
     private void BuildAffixSlots()
     {
         AffixSlotKind[] listKinds = (Slot.IsIdol, ListKind) switch
         {
+            _ when Slot.IsIdolAltar && ListKind == ItemListKind.Bases =>
+                [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix],
+            _ when Slot.IsIdolAltar => [],
             (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix],
             (true, _) => [],
             (_, ItemListKind.Sets) => [AffixSlotKind.Corrupted],
@@ -606,7 +618,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         AffixSlots.Clear();
         foreach (var kind in kinds)
         {
-            var slot = new AffixSlotViewModel(kind, s => AffixPickerSlot = s, RemoveAffix);
+            var slot = new AffixSlotViewModel(kind, s => AffixPickerSlot = s, RemoveAffix, takesCorruptedAffixes: Slot.IsIdolAltar);
             // A tier change can make the item exalted (or not).
             slot.PropertyChanged += (_, e) =>
             {
