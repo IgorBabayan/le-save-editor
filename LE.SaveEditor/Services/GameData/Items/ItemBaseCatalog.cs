@@ -785,7 +785,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         [12] = "Health Recovery", [13] = "Ward", [14] = "Stun", [15] = "Critical Strike Avoidance", [16] = "Damage Dealt to Mana",
         [17] = "Leech", [18] = "Movement", [19] = "Cooldown", [20] = "Reflect", [21] = "Mana", [22] = "Minion", [23] = "Ailments",
         [24] = "Acolyte", [25] = "Mage", [26] = "Primalist", [27] = "Sentinel", [28] = "Rogue", [35] = "Bow",
-        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [42] = "Corrupted", [43] = "Idol Altars",
+        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [40] = "Weaver", [42] = "Corrupted", [43] = "Idol Altars",
         [44] = "Variant"
     };
 
@@ -837,20 +837,45 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         // Increased / more are always percentages; added values only for properties shown that way (resistances, ...).
         var isPercent = type != ImplicitModifierType.Added || (info?.AddedAsPercentage ?? false);
 
+        var isTenth = info?.AddedAsTenth == true && type == ImplicitModifierType.Added;
         return new ItemImplicit(
             name,
             type,
             Math.Min(first, second),
             Math.Max(first, second),
             isPercent,
-            PercentScale: info?.AddedAsTenth == true && type == ImplicitModifierType.Added ? 10 : 100,
+            PercentScale: isTenth ? 10 : 100,
             ShowPlus: !(info?.DontDisplayPlus ?? false),
-            NameIncludesModifier: info?.NameIncludesModifier ?? false);
+            NameIncludesModifier: info?.NameIncludesModifier ?? false,
+            PercentDecimals: type == ImplicitModifierType.Added && info?.AddedAsPercentage == true
+                ? PercentDecimalsOf(info.RoundingForAdded, isTenth)
+                : null);
     }
+
+    /// <summary><c>roundingForAdded</c> values whose step is a fraction of a percentage when shown as one.</summary>
+    private const int RoundingHundredth = 0, RoundingThousandth = 3;
+
+    /// <summary>
+    /// Decimals the game shows for an added percentage: a step of a hundredth is a whole percent, a thousandth one
+    /// decimal; "tenth of value" properties show one decimal more. <c>null</c> for other roundings (left as they were).
+    /// </summary>
+    private static int? PercentDecimalsOf(int? roundingForAdded, bool isTenth) => roundingForAdded switch
+    {
+        RoundingHundredth => isTenth ? 1 : 0,
+        RoundingThousandth => isTenth ? 2 : 1,
+        _ => null
+    };
 
     // ===== Implicit names =====
 
-    private sealed record PropertyInfo(string Name, bool AddedAsPercentage, bool AddedAsTenth, bool DontDisplayPlus, bool NameIncludesModifier);
+    /// <param name="RoundingForAdded">The property's <c>roundingForAdded</c> (0 hundredth, 1 integer, 2 tenth, 3 thousandth).</param>
+    private sealed record PropertyInfo(
+        string Name,
+        bool AddedAsPercentage,
+        bool AddedAsTenth,
+        bool DontDisplayPlus,
+        bool NameIncludesModifier,
+        int? RoundingForAdded = null);
 
     /// <summary>Builds implicit names like the game: "Minion Spell Fire Damage", "Bleed Chance", "Damage over Time".</summary>
     /// <param name="abilityProperties">
@@ -1021,7 +1046,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         GetBool(property, "displayAddedAsPercentage") ?? false,
         GetBool(property, "displayAddedAsTenthOfValue") ?? false,
         GetBool(property, "dontDisplayPlus") ?? false,
-        GetBool(property, "nameIncludesModifier") ?? false);
+        GetBool(property, "nameIncludesModifier") ?? false,
+        GetInt(property, "roundingForAdded"));
 
     /// <summary>
     /// <c>idolAltarProperties</c> / <c>playerProperties</c>: lists of properties (no ids) that affixes refer to by index

@@ -75,7 +75,11 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   stored like an equipment corruption (corrupted item flag, corruption marked in the affix count) and does not change
   the rarity. Most corrupted idol affixes have a wrong display name in the game data (e.g. "Added Throwing Damage and
   reduced Melee Damage" for Chill Immunity), so they are named after their internal name ("Chill Immunity"). Weaver idols (Minor, Small, Humble, Stout) and Heretical idols (Grand, Large, Ornate, Huge, Adorned) are
-  offered in the builder although the game data marks them as not dropping.
+  offered in the builder although the game data marks them as not dropping. Weaver idols also roll the Weaver affixes
+  (e.g. "Vitality and Added Health Regen", "Physical Resistance and Minion Physical Resistance"), listed first in
+  their prefix and suffix pickers.
+- Added percentages are shown with the decimals the game uses for the property (its `roundingForAdded`), so e.g.
+  1.79% All Resistances on a Humble idol reads "+2%" as in the game.
 - Idol altars: the "Idol altar" slot left of the idol grid holds the character's altar (container 123). Click it to
   build or change the altar in the item inspector, right-click it to edit or remove it. The idol grid takes the shape
   of the altar at once: its blocked cells, and its refracted slots highlighted (idols over a refracted slot get a

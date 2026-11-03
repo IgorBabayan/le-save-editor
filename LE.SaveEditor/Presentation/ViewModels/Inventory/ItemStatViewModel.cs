@@ -155,14 +155,23 @@ public sealed partial class ItemStatViewModel : ViewModelBase
     /// <summary>The number without its "%" sign (the range adds it once after the brackets).</summary>
     private static string FormatPlainNumber(ItemImplicit implicitStat, double value) =>
         implicitStat.IsPercent
-            ? (value * implicitStat.PercentScale).ToString("0.#", CultureInfo.CurrentCulture)
+            ? (value * implicitStat.PercentScale).ToString(PercentFormat(implicitStat), CultureInfo.CurrentCulture)
             : value.ToString(IsWholeRange(implicitStat) ? "0" : "0.##", CultureInfo.CurrentCulture);
 
     private static bool IsWholeRange(ItemImplicit implicitStat) =>
         !implicitStat.IsPercent && implicitStat.Min % 1 == 0 && implicitStat.Max % 1 == 0;
 
+    /// <summary>
+    /// Number format of a percentage: as many decimals as the game shows for the property (1.79% All Resistances is
+    /// "2%"), else up to one decimal.
+    /// </summary>
+    private static string PercentFormat(ItemImplicit implicitStat) =>
+        implicitStat.PercentDecimals is { } decimals and > 0 ? "0." + new string('#', decimals)
+        : implicitStat.PercentDecimals is 0 ? "0"
+        : "0.#";
+
     private static string FormatNumber(ItemImplicit implicitStat, double value) =>
         implicitStat.IsPercent
-            ? (value * implicitStat.PercentScale).ToString("0.#", CultureInfo.CurrentCulture) + "%"
+            ? (value * implicitStat.PercentScale).ToString(PercentFormat(implicitStat), CultureInfo.CurrentCulture) + "%"
             : value.ToString(IsWholeRange(implicitStat) ? "0" : "0.##", CultureInfo.CurrentCulture);
 }

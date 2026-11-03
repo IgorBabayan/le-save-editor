@@ -14,6 +14,10 @@ public enum AffixCategory
     Experimental = 1,
     Personal = 2,
     Set = 3,
+
+    /// <summary>Affixes only Weaver idols roll (Minor, Small, Humble and Stout Weaver idols).</summary>
+    IdolWeaver = 5,
+
     Corrupted = 6,
     Variant = 7
 }

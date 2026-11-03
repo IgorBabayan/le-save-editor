@@ -388,6 +388,13 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// </summary>
     private static readonly string[] ObtainableIdolWords = ["Weaver", "Heretical"];
 
+    /// <summary>Weaver idols as the game data marks them: (<c>baseTypeID</c>, <c>subTypeID</c>).</summary>
+    private static readonly HashSet<(int BaseTypeId, int SubTypeId)> WeaverIdols = [(25, 2), (26, 1), (27, 1), (28, 1)];
+
+    /// <summary>Whether <paramref name="item"/> is a Weaver idol (it rolls the Weaver affixes).</summary>
+    private static bool IsWeaverIdol(ItemBase item) =>
+        !item.IsUnique && WeaverIdols.Contains((item.BaseTypeId, item.SubTypeId));
+
     /// <summary>
     /// Whether <paramref name="option"/> is offered: bases that still drop, plus Weaver and Heretical idols; other legacy
     /// bases stay hidden.
@@ -761,9 +768,12 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             : AffixSlots.Where(s => s != slot && !s.IsCorrupted && s.Affix is not null).Select(s => s.Affix!.Id).ToHashSet();
         var words = AffixSearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+        var isWeaverIdol = IsWeaverIdol(item);
         var options = _catalog.GetAffixes(item.BaseTypeId)
             .Where(a => slot.Accepts(a)
                         && !used.Contains(a.Id)
+                        // Weaver affixes only on Weaver idols, and never as the corruption.
+                        && (a.Category != AffixCategory.IdolWeaver || (isWeaverIdol && !slot.IsCorrupted))
                         // A unique's own legendary affixes (Blood Rage, ...) only for that unique.
                         && a.IsAllowedOn(item)
                         // Class affixes only for the character's own class.
@@ -776,7 +786,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             .OrderBy(a => a.OnlyOnUniques.Count > 0 ? 0 : 1)
             .ThenBy(a => slot.IsCorrupted
                 ? a.Category == AffixCategory.Corrupted ? 0 : 1
-                : a.Category == AffixCategory.Normal ? 0 : 1)
+                : a.Category == AffixCategory.IdolWeaver ? 0 : a.Category == AffixCategory.Normal ? 1 : 2)
             .ThenBy(a => a.GroupName, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase);
 

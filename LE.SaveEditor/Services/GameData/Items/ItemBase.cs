@@ -24,6 +24,11 @@ public enum ImplicitModifierType
 /// </param>
 /// <param name="TemplateMin">Number shown in <see cref="Template"/> at <see cref="Min"/>.</param>
 /// <param name="TemplateMax">Number shown in <see cref="Template"/> at <see cref="Max"/>.</param>
+/// <param name="PercentDecimals">
+/// Decimals the game shows for an added value displayed as a percentage (from the property's <c>roundingForAdded</c>:
+/// 0 for hundredths, 1 for thousandths, one more for "tenth of value" properties), e.g. 1.79% All Resistances shows as
+/// 2%; <c>null</c> to show up to one decimal.
+/// </param>
 public sealed record ItemImplicit(
     string Property,
     ImplicitModifierType Type,
@@ -35,7 +40,8 @@ public sealed record ItemImplicit(
     bool NameIncludesModifier = false,
     string? Template = null,
     double TemplateMin = 0,
-    double TemplateMax = 0);
+    double TemplateMax = 0,
+    int? PercentDecimals = null);
 
 /// <summary>
 /// An item base (sub type) of an item type, e.g. "Iron Cap" of "Helmet", or a unique / set item
