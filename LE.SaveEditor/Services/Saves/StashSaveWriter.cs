@@ -31,8 +31,9 @@ public sealed record StashSaveResult(StashSave Stash, string BackupPath);
 /// Writes the material storage of a stash file. Only materials whose amount changed are touched: a changed amount is
 /// written into the material's entry, a material set to 0 loses its entry, and a new material gets one at the end of
 /// <c>savedShards</c> (<c>{"shardType": affixId, "quantity": n}</c>), <c>materialsList</c> (a rune or glyph item
-/// <c>[2, baseTypeID, subTypeID]</c> at position −4, −4, as the game stores them) or <c>keysList</c> (a resource item,
-/// stored like a rune). Every other field and entry stays as
+/// <c>[2, baseTypeID, subTypeID]</c> at position −4, −4, as the game stores them) or <c>keysList</c> (a resource item as
+/// the game stores it there: <c>[6, id, id, id, id, 104, subTypeID]</c> in container 100 at position 0, subTypeID; the
+/// game drops resource entries in any other shape when it loads the stash, so such entries are rewritten). Every other field and entry stays as
 /// the game wrote it; the file is written compact, through a temporary file, keeping the old one as a backup.
 /// </summary>
 public sealed class StashSaveWriter : IStashSaveWriter
@@ -93,6 +94,10 @@ public sealed class StashSaveWriter : IStashSaveWriter
         if (changes.Count == 0)
             return content;
 
+        // Resources written by older editor versions ([2, 104, sub] at −4, −4, no container) are dropped by the game.
+        if (root[StashSaveParser.KeyList] is JsonArray keys)
+            RepairKeyEntries(keys);
+
         foreach (var list in new[] { StashSaveParser.ShardList, StashSaveParser.MaterialList, StashSaveParser.KeyList })
         {
             // A list the file lacks is only created when a material is added to it.
@@ -102,6 +107,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
 
             if (list == StashSaveParser.ShardList)
                 ApplyTo(GetArray(root, list), listChanges, ShardKey, CreateShardEntry);
+            else if (list == StashSaveParser.KeyList)
+                ApplyTo(GetArray(root, list), listChanges, entry => MaterialKey(entry, list), CreateKeyEntry);
             else
                 ApplyTo(GetArray(root, list), listChanges, entry => MaterialKey(entry, list), CreateMaterialEntry);
         }
@@ -192,7 +199,63 @@ public sealed class StashSaveWriter : IStashSaveWriter
         ["quantity"] = quantity
     };
 
-    /// <summary>A rune, glyph or resource entry with the properties (and their order) the game writes.</summary>
+    /// <summary>Container of the entries of <c>keysList</c> (the Resources tab).</summary>
+    private const int KeyContainerId = 100;
+
+    /// <summary>
+    /// A resource entry as the game writes it into <c>keysList</c>: format 6 with a new instance id, container 100 and
+    /// the Resources-tab slot of the resource (x 0, y = sub type).
+    /// </summary>
+    private static JsonObject CreateKeyEntry(CraftingMaterialKey key, int quantity)
+    {
+        var id = new byte[ItemDataReader.InstanceIdLength];
+        Random.Shared.NextBytes(id);
+        id[0] &= 0x7F;
+
+        var data = new JsonArray(ItemDataReader.Version6);
+        foreach (var b in id)
+            data.Add((int)b);
+        data.Add((int)key.Kind);
+        data.Add(key.SubTypeId);
+
+        return new JsonObject
+        {
+            ["itemData"] = null,
+            ["data"] = data,
+            ["inventoryPosition"] = new JsonObject { ["x"] = 0, ["y"] = key.SubTypeId },
+            ["quantity"] = quantity,
+            ["containerID"] = KeyContainerId,
+            ["formatVersion"] = 2
+        };
+    }
+
+    /// <summary>
+    /// Rewrites resource entries of <paramref name="keys"/> that are not in the game's shape (format 6, container 100,
+    /// position 0, sub type) into it, keeping their amount; entries in the game's shape and anything else stay as they are.
+    /// </summary>
+    private static void RepairKeyEntries(JsonArray keys)
+    {
+        for (var i = 0; i < keys.Count; i++)
+        {
+            if (keys[i] is not JsonObject entry
+                || MaterialKey(entry, StashSaveParser.KeyList) is not { } key
+                || IsGameKeyEntry(entry, key))
+                continue;
+
+            var quantity = entry["quantity"] is JsonValue value && value.TryGetValue<int>(out var n) ? n : 1;
+            keys[i] = CreateKeyEntry(key, Math.Max(1, quantity));
+        }
+    }
+
+    private static bool IsGameKeyEntry(JsonObject entry, CraftingMaterialKey key) =>
+        entry["data"] is JsonArray { Count: > 0 } data
+        && data[0] is JsonValue version && version.TryGetValue<int>(out var v) && v == ItemDataReader.Version6
+        && entry["containerID"] is JsonValue container && container.TryGetValue<int>(out var c) && c == KeyContainerId
+        && entry["inventoryPosition"] is JsonObject position
+        && position["x"] is JsonValue x && x.TryGetValue<int>(out var px) && px == 0
+        && position["y"] is JsonValue y && y.TryGetValue<int>(out var py) && py == key.SubTypeId;
+
+    /// <summary>A rune or glyph entry with the properties (and their order) the game writes.</summary>
     private static JsonObject CreateMaterialEntry(CraftingMaterialKey key, int quantity) => new()
     {
         ["itemData"] = null,

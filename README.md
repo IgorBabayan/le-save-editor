@@ -45,8 +45,11 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   primordial Horn, Fang, Feather and Petal; Temporal Keystones and Timeglass Fragments). Type an amount into a slot
   (0 removes the resource); empty slots are dimmed. Resources the game's tab does not show (lizard tails, tokens, ...)
   are listed under "Other resources" while the stash holds some, and "Edit all…" edits every resource, or adds any
-  resource of the game database, in the material storage dialog. Resources are stored in the stash's `keysList` like
-  runes (`[2, 104, subTypeID]` with a quantity) and written with the other stash changes when the character is saved.
+  resource of the game database, in the material storage dialog. Resources are stored in the stash's `keysList` as
+  the game stores them: an item in format 6 (`[6, id, id, id, id, 104, subTypeID]`) in container 100 at position
+  x 0, y = subTypeID, with a quantity. They are written with the other stash changes when the character is saved;
+  resource entries in another shape (written by older editor versions) are dropped by the game, so the editor
+  rewrites them into this shape when it saves the stash.
 - Runes and glyphs lying in the backpack: click one, or right-click it and choose "Edit…", to turn it into another
   material of the same kind; "Remove" deletes it on the next save. They take one cell and can be dragged like other
   items. Their names, descriptions and icons come from the game database; materials it does not know are shown as

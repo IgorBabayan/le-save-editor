@@ -57,9 +57,9 @@ public sealed partial class ResourcesViewModel : ViewModelBase
 
         HarbingerKeys = Create(HarbingerEye);
         DungeonKeys = Create(TemporalSanctumKey, LightlessArborKey, SoulfireBastionKey);
-        ArenaKeys = Create(ArenaKeyOfMemory, ArenaKey);
+        ArenaKeys = Create(ArenaKey, ArenaKeyOfMemory);
         Charms = Create(PortalCharm, ScaleCharm);
-        PrimordialMaterials = Create(CrystallizedHeart, PrimordialHorn, PrimordialFang, PrimordialFeather, PrimordialPetal);
+        PrimordialMaterials = Create(CrystallizedHeart, PrimordialFang, PrimordialHorn, PrimordialFeather, PrimordialPetal);
         TimelineMaterials = Create(TemporalKeystone, TimeglassFragment);
 
         if (stash is not null)
