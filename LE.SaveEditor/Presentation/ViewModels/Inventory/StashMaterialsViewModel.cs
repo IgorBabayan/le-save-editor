@@ -4,26 +4,66 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// The material storage of one stash file with the changes made in the editor. Every character that uses the stash
+/// The gold, Circle of Fortune favor, ancient bones, faction ranks and the material storage of one stash file with the changes made in the editor. Every character that uses the stash
 /// shares this instance (softcore characters of a cycle share their stash), so a change shows for all of them and is
 /// written once.
 /// </summary>
 public sealed class StashMaterialsViewModel(StashSave stash)
 {
+    /// <summary>Most gold the editor writes (the game keeps it in a 32-bit number).</summary>
+    public const int MaxGold = int.MaxValue;
+
+    /// <summary>Most Circle of Fortune favor the editor writes (the game keeps it in a 32-bit number).</summary>
+    public const int MaxFavor = int.MaxValue;
+
+    /// <summary>Most ancient bones the editor writes (the game keeps them in a 32-bit number).</summary>
+    public const int MaxAncientBones = int.MaxValue;
+
     private Dictionary<CraftingMaterialKey, int> _amounts = new(stash.Amounts);
+    private int _gold = stash.Gold;
+    private int _favor = stash.Favor ?? 0;
+    private int _ancientBones = stash.AncientBones;
+    private Dictionary<string, int> _factionRanks = new(stash.FactionRanks, StringComparer.Ordinal);
 
     /// <summary>The stash as read from (or last written to) its file.</summary>
     public StashSave Stash { get; private set; } = stash;
 
-    /// <summary>The amounts changed, or the stash was saved.</summary>
+    /// <summary>The amounts, the gold, the favor, the ancient bones or a faction rank changed, or the stash was saved.</summary>
     public event EventHandler? Changed;
 
     /// <summary>Every material of the storage with its current amount (with entries the game keeps at 0).</summary>
     public IReadOnlyDictionary<CraftingMaterialKey, int> Amounts => _amounts;
 
-    /// <summary>Some amount differs from the file.</summary>
+    /// <summary>Gold of the stash with the change made in the editor.</summary>
+    public int Gold => _gold;
+
+    /// <summary>The stash has a Circle of Fortune entry, so its favor can be changed.</summary>
+    public bool HasFavor => Stash.Favor is not null;
+
+    /// <summary>Circle of Fortune favor of the stash with the change made in the editor (0 without an entry).</summary>
+    public int Favor => _favor;
+
+    /// <summary>Ancient bones of the stash with the change made in the editor.</summary>
+    public int AncientBones => _ancientBones;
+
+    /// <summary>Gold, favor and ancient bones with the changes made in the editor.</summary>
+    public StashCurrencies Currencies => new(_gold, _favor, _ancientBones);
+
+    /// <summary>Rank of every faction the stash has an entry for, with the changes made in the editor (by faction key).</summary>
+    public IReadOnlyDictionary<string, int> FactionRanks => _factionRanks;
+
+    /// <summary>The faction <paramref name="factionId"/> is unlocked: the stash has an entry for it.</summary>
+    public bool HasFaction(string factionId) => Stash.FactionRanks.ContainsKey(factionId);
+
+    /// <summary>Rank of the faction <paramref name="factionId"/> with the change made in the editor; <c>null</c> when it is locked.</summary>
+    public int? GetFactionRank(string factionId) =>
+        _factionRanks.TryGetValue(factionId, out var rank) ? rank : null;
+
+    /// <summary>The gold, the favor, the ancient bones, a faction rank or some amount differs from the file.</summary>
     public bool HasChanges =>
-        _amounts.Keys.Concat(Stash.Amounts.Keys).Distinct()
+        Currencies != Stash.Currencies
+        || _factionRanks.Any(r => Stash.FactionRanks.GetValueOrDefault(r.Key) != r.Value)
+        || _amounts.Keys.Concat(Stash.Amounts.Keys).Distinct()
             .Any(key => _amounts.GetValueOrDefault(key) != Stash.Amounts.GetValueOrDefault(key));
 
     /// <summary>How many materials of <paramref name="kind"/> the storage holds now.</summary>
@@ -74,11 +114,65 @@ public sealed class StashMaterialsViewModel(StashSave stash)
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>Sets the gold of the stash (limited to 0 … <see cref="MaxGold"/>); nothing happens when it is the current one.</summary>
+    public void SetGold(int gold)
+    {
+        gold = Math.Clamp(gold, 0, MaxGold);
+        if (gold == _gold)
+            return;
+
+        _gold = gold;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Sets the Circle of Fortune favor of the stash (limited to 0 … <see cref="MaxFavor"/>); nothing happens when it is the
+    /// current one or the stash has no Circle of Fortune entry.
+    /// </summary>
+    public void SetFavor(int favor)
+    {
+        favor = Math.Clamp(favor, 0, MaxFavor);
+        if (!HasFavor || favor == _favor)
+            return;
+
+        _favor = favor;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Sets the ancient bones of the stash (limited to 0 … <see cref="MaxAncientBones"/>); nothing happens when it is the current one.</summary>
+    public void SetAncientBones(int ancientBones)
+    {
+        ancientBones = Math.Clamp(ancientBones, 0, MaxAncientBones);
+        if (ancientBones == _ancientBones)
+            return;
+
+        _ancientBones = ancientBones;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Sets the rank of the faction <paramref name="factionId"/> (limited to 0 … <paramref name="maxRank"/>); nothing
+    /// happens when it is the current one or the stash has no entry for the faction (it is not unlocked).
+    /// </summary>
+    public void SetFactionRank(string factionId, int rank, int maxRank)
+    {
+        rank = Math.Clamp(rank, 0, Math.Max(0, maxRank));
+        if (!_factionRanks.TryGetValue(factionId, out var current) || current == rank)
+            return;
+
+        _factionRanks = new Dictionary<string, int>(_factionRanks, StringComparer.Ordinal) { [factionId] = rank };
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>The stash was written: <paramref name="saved"/> (read back from the file) is the new state.</summary>
     public void MarkSaved(StashSave saved)
     {
         Stash = saved;
         _amounts = new Dictionary<CraftingMaterialKey, int>(saved.Amounts);
+        _gold = saved.Gold;
+        _favor = saved.Favor ?? 0;
+        _ancientBones = saved.AncientBones;
+        _factionRanks = new Dictionary<string, int>(saved.FactionRanks, StringComparer.Ordinal);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

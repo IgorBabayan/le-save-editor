@@ -2,12 +2,13 @@ using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using LE.SaveEditor.Services.GameData.Blessings;
 using Microsoft.Data.Sqlite;
 
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>
+/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c>, <c>Timelines</c> and <c>Icons</c> tables of <c>base.db</c>
 /// (plus the indexed property lists).
 /// </summary>
 /// <remarks>
@@ -35,14 +36,18 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <param name="Affixes">Equipment and idol affixes as the data gives them (not scaled to an item type).</param>
     /// <param name="AffixEffectModifiers">Per item type (<c>baseTypeID</c>) its <c>affixEffectModifier</c>.</param>
     /// <param name="Materials">Runes, glyphs, affix shards and resources (key items).</param>
+    /// <param name="Timelines">Monolith timelines with the blessings they grant.</param>
     private sealed record Catalog(
         IReadOnlyList<ItemBase> Bases,
         IReadOnlyList<ItemBase> Uniques,
         IReadOnlyList<AffixDefinition> Affixes,
         bool HasStatNames,
         IReadOnlyDictionary<int, double> AffixEffectModifiers,
-        IReadOnlyList<CraftingMaterial> Materials)
+        IReadOnlyList<CraftingMaterial> Materials,
+        IReadOnlyList<Timeline> Timelines)
     {
+        public static Catalog Empty { get; } = new([], [], [], false, new Dictionary<int, double>(), [], []);
+
         /// <summary>Affixes scaled to an item type, by affix id and item type, so each is built once.</summary>
         public Dictionary<(int AffixId, int BaseTypeId), AffixDefinition> Scaled { get; } = [];
     }
@@ -125,6 +130,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
     public CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId) =>
         GetCatalog().Materials.FirstOrDefault(m => m.Kind == kind && m.SubTypeId == subTypeId);
+
+    public IReadOnlyList<Timeline> GetTimelines() => GetCatalog().Timelines;
 
     /// <summary>
     /// <paramref name="affix"/> with the values it has on item type <paramref name="baseTypeId"/>. The game scales every
@@ -209,7 +216,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
+            return Catalog.Empty;
 
         try
         {
@@ -227,18 +234,21 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             var properties = ReadProperties(connection);
             var abilityProperties = ReadAbilityProperties(connection);
             var playerProperties = ReadIndexedProperties(connection, "PlayerProperties", "Player property");
+            // Read up front: drop rate modifiers name the item type they apply to ("Increased Grand Idol Drop Rate").
+            var itemTypeRows = ReadRows(connection, "SELECT Key, Name, Json FROM ItemTypes").ToList();
             var names = new ImplicitNames(
                 properties,
                 ReadAilments(connection),
                 abilityProperties,
                 ReadIndexedProperties(connection, "IdolAltarProperties", "Idol altar property"),
-                playerProperties);
+                playerProperties,
+                ReadItemTypeNames(itemTypeRows));
             var icons = ReadIcons(connection);
 
             var result = new List<ItemBase>();
             var affixEffectModifiers = new Dictionary<int, double>();
             var materials = new List<CraftingMaterial>();
-            foreach (var (key, name, json) in ReadRows(connection, "SELECT Key, Name, Json FROM ItemTypes"))
+            foreach (var (key, name, json) in itemTypeRows)
             {
                 using var document = TryParse(json);
                 if (document?.RootElement is not { ValueKind: JsonValueKind.Object } itemType)
@@ -264,12 +274,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 affixes,
                 properties.Count > 0 && abilityProperties.Count > 0 && playerProperties.Count > 0,
                 affixEffectModifiers,
-                NameShards(materials, allAffixes, icons));
+                NameShards(materials, allAffixes, icons),
+                ReadTimelines(connection, result));
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             // A missing or broken database means an empty builder, never a crash.
-            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
+            return Catalog.Empty;
         }
     }
 
@@ -312,6 +323,95 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    /// <summary>Display name of every item type by its <c>baseTypeID</c>, e.g. 29 → "Grand Idol".</summary>
+    private static Dictionary<int, string> ReadItemTypeNames(IEnumerable<(string Key, string? Name, string Json)> rows)
+    {
+        var result = new Dictionary<int, string>();
+        foreach (var (key, rowName, json) in rows)
+        {
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } itemType)
+                continue;
+
+            var id = GetInt(itemType, "baseTypeID")
+                     ?? (int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var keyId) ? keyId : -1);
+            if (id >= 0 && (GetString(itemType, "displayName") ?? GetString(itemType, "BaseTypeName") ?? rowName) is { } name)
+                result.TryAdd(id, name);
+        }
+
+        return result;
+    }
+
+    // ===== Timelines and blessings =====
+
+    /// <summary>Blessing lists of a timeline difficulty, in the order the game lists them.</summary>
+    private static readonly string[] BlessingListFields = ["firstSlotBlessings", "otherSlotBlessings", "anySlotBlessings"];
+
+    /// <summary>
+    /// Timelines that grant blessings, ordered by id. A timeline element looks like <c>{"timelineID":1,"displayName":"Fall of the
+    /// Outcasts","difficulties":[{"level":62,"firstSlotBlessings":[],"otherSlotBlessings":[0,2,4],"anySlotBlessings":[111]},
+    /// {"level":100,...}]}</c>; the numbers are <c>subTypeID</c>s of the blessing item type, and every difficulty after the
+    /// first is an empowered one (its blessings are the "Grand" ones). Empty for a database made before the table existed.
+    /// </summary>
+    private static List<Timeline> ReadTimelines(SqliteConnection connection, IReadOnlyList<ItemBase> bases)
+    {
+        var blessings = new Dictionary<int, ItemBase>();
+        foreach (var blessing in bases.Where(b => b.BaseTypeId == Timeline.BlessingBaseTypeId))
+            blessings.TryAdd(blessing.SubTypeId, blessing);
+
+        var result = new List<Timeline>();
+        foreach (var (key, rowName, json) in ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM Timelines"))
+        {
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } timeline)
+                continue;
+
+            var id = GetInt(timeline, "timelineID")
+                     ?? (int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var keyId) ? keyId : -1);
+            if (id <= 0 || Timeline.ContainerIdOf(id) > byte.MaxValue)
+                continue;
+
+            var level = 0;
+            var options = new List<TimelineBlessing>();
+            var seen = new HashSet<int>();
+            if (Find(timeline, "difficulties") is { ValueKind: JsonValueKind.Array } difficulties)
+            {
+                var index = 0;
+                foreach (var difficulty in difficulties.EnumerateArray())
+                {
+                    var isGrand = index++ > 0;
+                    if (difficulty.ValueKind != JsonValueKind.Object)
+                        continue;
+
+                    if (!isGrand)
+                        level = GetInt(difficulty, "level") ?? 0;
+
+                    foreach (var field in BlessingListFields)
+                    {
+                        if (Find(difficulty, field) is not { ValueKind: JsonValueKind.Array } list)
+                            continue;
+
+                        foreach (var entry in list.EnumerateArray())
+                        {
+                            if (entry.ValueKind == JsonValueKind.Number && entry.TryGetInt32(out var subTypeId)
+                                && seen.Add(subTypeId) && blessings.TryGetValue(subTypeId, out var blessing))
+                                options.Add(new TimelineBlessing(blessing, isGrand));
+                        }
+                    }
+                }
+            }
+
+            // Placeholder timelines of the data (id 99) grant nothing and have no blessing slot.
+            if (options.Count == 0)
+                continue;
+
+            var name = GetString(timeline, "displayName") ?? rowName ?? $"Timeline {id}";
+            result.Add(new Timeline(id, name, level, options.OrderBy(o => o.IsGrand).ToList()));
+        }
+
+        return result.OrderBy(t => t.TimelineId).ToList();
     }
 
     // ===== Crafting materials =====
@@ -619,6 +719,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             if (name is null)
                 continue;
 
+            // Most corrupted idol affixes carry a display name left over from other affixes ("Added Throwing Damage and
+            // reduced Melee Damage" on Chill Immunity); the game builds their name itself, so show the internal one
+            // without its "Idol" prefix ("Chill Immunity").
+            if (rollsOn == RollsOnIdols && special == (int)AffixCategory.Corrupted
+                && GetBool(affix, "useGeneratedNameForDisplayName") == true
+                && GetString(affix, "affixName") is { } internalName)
+                name = WithoutIdolPrefix(internalName);
+
             var canRollOn = new HashSet<int>();
             if (Find(affix, "canRollOn") is { ValueKind: JsonValueKind.Array } types)
             {
@@ -635,6 +743,10 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             var groupName = GetInt(affix, "displayCategory") is { } category && AffixCategoryNames.TryGetValue(category, out var categoryName)
                 ? categoryName
                 : ((AffixCategory)special).ToString();
+
+            // Idol altars roll their corrupted affixes beside the others: tell them apart in the affix picker.
+            if (canRollOn.Contains(EquipmentSlotExtensions.IdolAltarBaseTypeId) && (AffixCategory)special == AffixCategory.Corrupted)
+                groupName = $"{groupName} (Corrupted)";
 
             var tiers = ParseAffixTiers(affix, name, names);
             if (tiers.Count == 0)
@@ -666,6 +778,16 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    /// <summary>"Idol Chill Immunity" → "Chill Immunity".</summary>
+    private static string WithoutIdolPrefix(string name)
+    {
+        const string prefix = "Idol ";
+        var trimmed = name.Trim();
+        return trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && trimmed.Length > prefix.Length
+            ? trimmed[prefix.Length..]
+            : trimmed;
     }
 
     private static List<AffixTier> ParseAffixTiers(JsonElement affix, string affixName, ImplicitNames names)
@@ -763,7 +885,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         [12] = "Health Recovery", [13] = "Ward", [14] = "Stun", [15] = "Critical Strike Avoidance", [16] = "Damage Dealt to Mana",
         [17] = "Leech", [18] = "Movement", [19] = "Cooldown", [20] = "Reflect", [21] = "Mana", [22] = "Minion", [23] = "Ailments",
         [24] = "Acolyte", [25] = "Mage", [26] = "Primalist", [27] = "Sentinel", [28] = "Rogue", [35] = "Bow",
-        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [42] = "Corrupted", [44] = "Variant"
+        [36] = "Experimental", [37] = "Personal", [38] = "Parry", [39] = "Set", [40] = "Weaver", [41] = "Enchantment", [42] = "Corrupted", [43] = "Idol Altars",
+        [44] = "Variant"
     };
 
     // ===== Modifiers (implicits and unique mods) =====
@@ -814,20 +937,45 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         // Increased / more are always percentages; added values only for properties shown that way (resistances, ...).
         var isPercent = type != ImplicitModifierType.Added || (info?.AddedAsPercentage ?? false);
 
+        var isTenth = info?.AddedAsTenth == true && type == ImplicitModifierType.Added;
         return new ItemImplicit(
             name,
             type,
             Math.Min(first, second),
             Math.Max(first, second),
             isPercent,
-            PercentScale: info?.AddedAsTenth == true && type == ImplicitModifierType.Added ? 10 : 100,
+            PercentScale: isTenth ? 10 : 100,
             ShowPlus: !(info?.DontDisplayPlus ?? false),
-            NameIncludesModifier: info?.NameIncludesModifier ?? false);
+            NameIncludesModifier: info?.NameIncludesModifier ?? false,
+            PercentDecimals: type == ImplicitModifierType.Added && info?.AddedAsPercentage == true
+                ? PercentDecimalsOf(info.RoundingForAdded, isTenth)
+                : null);
     }
+
+    /// <summary><c>roundingForAdded</c> values whose step is a fraction of a percentage when shown as one.</summary>
+    private const int RoundingHundredth = 0, RoundingThousandth = 3;
+
+    /// <summary>
+    /// Decimals the game shows for an added percentage: a step of a hundredth is a whole percent, a thousandth one
+    /// decimal; "tenth of value" properties show one decimal more. <c>null</c> for other roundings (left as they were).
+    /// </summary>
+    private static int? PercentDecimalsOf(int? roundingForAdded, bool isTenth) => roundingForAdded switch
+    {
+        RoundingHundredth => isTenth ? 1 : 0,
+        RoundingThousandth => isTenth ? 2 : 1,
+        _ => null
+    };
 
     // ===== Implicit names =====
 
-    private sealed record PropertyInfo(string Name, bool AddedAsPercentage, bool AddedAsTenth, bool DontDisplayPlus, bool NameIncludesModifier);
+    /// <param name="RoundingForAdded">The property's <c>roundingForAdded</c> (0 hundredth, 1 integer, 2 tenth, 3 thousandth).</param>
+    private sealed record PropertyInfo(
+        string Name,
+        bool AddedAsPercentage,
+        bool AddedAsTenth,
+        bool DontDisplayPlus,
+        bool NameIncludesModifier,
+        int? RoundingForAdded = null);
 
     /// <summary>Builds implicit names like the game: "Minion Spell Fire Damage", "Bleed Chance", "Damage over Time".</summary>
     /// <param name="abilityProperties">
@@ -841,7 +989,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         Dictionary<int, string> ailments,
         Dictionary<int, IReadOnlyList<PropertyInfo>> abilityProperties,
         IReadOnlyList<PropertyInfo> idolAltarProperties,
-        IReadOnlyList<PropertyInfo> playerProperties)
+        IReadOnlyList<PropertyInfo> playerProperties,
+        IReadOnlyDictionary<int, string> itemTypeNames)
     {
         /// <summary>Tag bits (the game's <c>AT</c> flags) in the order their words go before the property name.</summary>
         private static readonly (long Bit, string Word)[] PrefixTags =
@@ -852,6 +1001,16 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         ];
 
         private const long DamageOverTimeTag = 4096;
+
+        /// <summary>
+        /// Tag bits that make a modifier conditional; their words follow the property name, e.g. Patience of Herkir
+        /// (Armor, 262144) reads "+(400–650) Armor While Channelling" in the game, Defiance of Yulia (Cold, Spell,
+        /// 262144) "Cold Spell Damage While Channelling".
+        /// </summary>
+        private static readonly (long Bit, string Words)[] ConditionTags =
+        [
+            (262144, "While Channelling"), (524288, "While Transformed")
+        ];
 
         /// <summary>
         /// A property of one specific skill: <c>tags</c> holds the skill's <c>abilityID</c> and <c>specialTag</c> the
@@ -868,6 +1027,22 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         /// Bow Hit" of Reign of Winter).
         /// </summary>
         private const int PlayerProperty = 98;
+
+        /// <summary>
+        /// "Increased Drop Rate" (blessings): <c>specialTag</c> picks what drops more and <c>tags</c> which one of it —
+        /// 0 an item type (<c>baseTypeID</c>, e.g. 29 Grand Idol), 1 a crafting material (1 Rune, 2 Glyph), 2 the shards
+        /// of an item type (20 Amulet Shard), 3 uniques (0) or gold (1), 4 a shard group (Prefix, Suffix, Class Specific,
+        /// Ailment, Skill). The tags are not damage types here.
+        /// </summary>
+        private const int DropRateProperty = 104;
+
+        private static readonly Dictionary<long, string> DropRateMaterials = new() { [1] = "Rune", [2] = "Glyph" };
+        private static readonly Dictionary<long, string> DropRateSpecials = new() { [0] = "Unique", [1] = "Gold" };
+
+        private static readonly Dictionary<long, string> DropRateShardGroups = new()
+        {
+            [0] = "Prefix Shard", [1] = "Suffix Shard", [2] = "Class Specific Shard", [4] = "Ailment Shard", [5] = "Skill Shard"
+        };
 
         public PropertyInfo? GetProperty(int property) => properties.GetValueOrDefault(property);
 
@@ -899,6 +1074,9 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         {
             var name = info?.Name is { Length: > 0 } n ? n : $"Property {property}";
 
+            if (property == DropRateProperty)
+                return DropRateName(name, specialTag, tags);
+
             // "Ailment Chance" with special tag 2 → "Bleed Chance"; other properties get the ailment as a prefix.
             if (specialTag != 0 && ailments.TryGetValue(specialTag, out var ailment))
             {
@@ -914,7 +1092,36 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             if ((tags & DamageOverTimeTag) != 0)
                 name += " over Time";
 
+            foreach (var (bit, condition) in ConditionTags)
+            {
+                if ((tags & bit) != 0)
+                    name += $" {condition}";
+            }
+
             return name;
+        }
+
+        /// <summary>"Increased Drop Rate" with what drops more put in, e.g. "Increased Grand Idol Drop Rate".</summary>
+        private string DropRateName(string name, int specialTag, long tags)
+        {
+            string? ItemType() => tags is >= 0 and <= int.MaxValue && itemTypeNames.TryGetValue((int)tags, out var type) ? type : null;
+
+            var target = specialTag switch
+            {
+                0 => ItemType(),
+                1 => DropRateMaterials.GetValueOrDefault(tags),
+                2 => ItemType() is { } type ? $"{type} Shard" : "Shard",
+                3 => DropRateSpecials.GetValueOrDefault(tags),
+                4 => DropRateShardGroups.GetValueOrDefault(tags, "Shard"),
+                _ => null
+            };
+            if (target is null)
+                return name;
+
+            const string dropRate = "Drop Rate";
+            return name.Contains(dropRate, StringComparison.OrdinalIgnoreCase)
+                ? name.Replace(dropRate, $"{target} {dropRate}", StringComparison.OrdinalIgnoreCase)
+                : $"{name} ({target})";
         }
     }
 
@@ -998,7 +1205,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         GetBool(property, "displayAddedAsPercentage") ?? false,
         GetBool(property, "displayAddedAsTenthOfValue") ?? false,
         GetBool(property, "dontDisplayPlus") ?? false,
-        GetBool(property, "nameIncludesModifier") ?? false);
+        GetBool(property, "nameIncludesModifier") ?? false,
+        GetInt(property, "roundingForAdded"));
 
     /// <summary>
     /// <c>idolAltarProperties</c> / <c>playerProperties</c>: lists of properties (no ids) that affixes refer to by index

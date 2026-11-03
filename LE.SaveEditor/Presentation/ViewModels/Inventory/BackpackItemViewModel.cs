@@ -112,8 +112,9 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
         ? new string(m.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w[0]).Take(3).ToArray())
         : string.Empty;
 
-    /// <summary>Name for messages: the equipment or material name, else "this idol" / "this item".</summary>
-    public string DisplayName => Equipment?.Item?.Base.Name ?? Material?.FullName ?? (IsIdol ? "this idol" : "this item");
+    /// <summary>Name for messages: the equipment or material name, else "this idol" / "this idol altar" / "this item".</summary>
+    public string DisplayName => Equipment?.Item?.Base.Name ?? Material?.FullName
+                                 ?? (IsIdol ? "this idol" : IsIdolAltar ? "this idol altar" : "this item");
 
     /// <summary>Crafting material shown when the save was read; a different <see cref="Material"/> is written back.</summary>
     private CraftingMaterial? _loadedMaterial;
@@ -165,14 +166,23 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     /// <exception cref="ArgumentException">The item cannot be stored.</exception>
     internal SavedItem ToNewSavedItem()
     {
+        // The bytes the item was made with (built in the editor, or moved here from another grid) are the hint, so an
+        // item moved between grids keeps its format, instance id and rolls.
         var data = Equipment?.Item is { } current
-            ? ItemDataWriter.Write(SavedItemConverter.ToItemData(current, null))
+            ? ItemDataWriter.Write(SavedItemConverter.ToItemData(current, ItemDataReader.Read(Source.Data)))
             : Material is { } material
-                ? CraftingMaterialData.Write(material)
+                ? CraftingMaterialData.Write(material, Source.Data)
                 : Source.Data;
 
         return Source with { X = Column, Y = BackpackViewModel.SavedYFromRow(Row, Footprint, _gridRows), Data = data };
     }
+
+    /// <summary>
+    /// The bytes of the item as it is now (edited equipment or material re-encoded, anything else as read), for moving
+    /// it to another grid.
+    /// </summary>
+    /// <exception cref="ArgumentException">An edited item cannot be stored.</exception>
+    internal IReadOnlyList<byte> CurrentData() => IsNew ? ToNewSavedItem().Data : ToSavedItem()?.Data ?? Source.Data;
 
     /// <summary>Left column of the item (0-based).</summary>
     [ObservableProperty]
@@ -197,13 +207,19 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isDragging;
 
+    /// <summary>The idol covers a refracted slot of the idol altar (its tile shows the refracted frame).</summary>
+    [ObservableProperty]
+    private bool _isInRefractedSlot;
+
     public bool IsIdol => EquipmentSlot.Idol.AcceptsBaseType(BaseTypeId);
+
+    public bool IsIdolAltar => EquipmentSlot.IdolAltar.AcceptsBaseType(BaseTypeId);
 
     /// <summary>Kind of crafting material stored in the item, also when <c>base.db</c> does not know the material.</summary>
     private CraftingMaterialKind? StoredMaterialKind => CraftingMaterialKindExtensions.FromBaseTypeId(BaseTypeId);
 
     /// <summary>Short text on a placeholder tile.</summary>
-    public string PlaceholderLabel => IsIdol ? "Idol" : StoredMaterialKind switch
+    public string PlaceholderLabel => IsIdol ? "Idol" : IsIdolAltar ? "Altar" : StoredMaterialKind switch
     {
         CraftingMaterialKind.AffixShard => "Shard",
         { } kind => kind.DisplayName,

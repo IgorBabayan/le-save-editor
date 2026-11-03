@@ -10,18 +10,26 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// Shape of a grid container: the backpack (<see cref="Backpack"/>) or the idol grid (<see cref="Idols"/>).
+/// Shape of a grid container: the backpack (<see cref="Backpack"/>) or the idol grid (<see cref="ForIdols"/>).
 /// </summary>
 /// <param name="ContainerId"><c>containerID</c> of the items in <c>savedItems</c>.</param>
 /// <param name="Columns">Width in cells.</param>
 /// <param name="Rows">Height in cells.</param>
 /// <param name="Name">Name used in messages ("backpack", "idol grid").</param>
 /// <param name="BlockedCells">Cells that can never hold an item (column, row counted from the top).</param>
+/// <param name="LockedCells">
+/// Cells the game keeps locked until the character unlocks them (idol slots opened by quests); like blocked cells they
+/// take no item, but they are drawn as locked slots rather than as gaps.
+/// </param>
 /// <param name="OnlySlot">The only item kind the grid takes (<see cref="EquipmentSlot.Idol"/>), or <c>null</c> for any item.</param>
 /// <param name="RelocateOnLoad">
 /// Items of the save whose stored cell has no room go to the first free spot (backpack); otherwise they are left out
 /// and stay in the save untouched (idol grid, whose cells the game may lock).
 /// </param>
+/// <param name="RefractedCells">
+/// Refracted idol slots of an idol altar: usable cells that modify the effects of the idols in them.
+/// </param>
+/// <param name="AltarSubTypeId">The <c>subTypeID</c> of the idol altar that shapes the grid; <c>null</c> without one.</param>
 public sealed record ItemGridLayout(
     int ContainerId,
     int Columns,
@@ -29,7 +37,10 @@ public sealed record ItemGridLayout(
     string Name,
     IReadOnlySet<(int Column, int Row)> BlockedCells,
     EquipmentSlot? OnlySlot,
-    bool RelocateOnLoad)
+    bool RelocateOnLoad,
+    IReadOnlySet<(int Column, int Row)>? LockedCells = null,
+    IReadOnlySet<(int Column, int Row)>? RefractedCells = null,
+    int? AltarSubTypeId = null)
 {
     /// <summary>Container of idols in <c>savedItems</c>.</summary>
     public const int IdolContainerId = 29;
@@ -42,16 +53,48 @@ public sealed record ItemGridLayout(
         SavedItem.BackpackContainerId, BackpackViewModel.Columns, BackpackViewModel.Rows, "backpack",
         new HashSet<(int, int)>(), null, RelocateOnLoad: true);
 
+    /// <summary>Total number of idol slots once all are unlocked.</summary>
+    public static int IdolSlotCount => IdolSlotUnlocks.AllSlots.Count;
+
     /// <summary>
-    /// The idol grid: 5 × 5 cells without the four corners, as in the game; only idols. Idols stored over a corner are
-    /// left as they are.
+    /// The idol grid as in the game; only idols. Without an altar it has 5 × 5 cells without the four corners and the
+    /// centre (20 idol slots), and the slots the character has not unlocked yet (see <see cref="IdolSlotUnlocks"/>) are
+    /// locked. An equipped idol altar replaces that shape with its own (<see cref="IdolAltarLayouts"/>): every slot of
+    /// it is open and some are refracted. Idols stored over a blocked or locked cell are left as they are.
     /// </summary>
-    public static ItemGridLayout Idols { get; } = new(
-        IdolContainerId, IdolGridSize, IdolGridSize, "idol grid",
-        new HashSet<(int, int)> { (0, 0), (IdolGridSize - 1, 0), (0, IdolGridSize - 1), (IdolGridSize - 1, IdolGridSize - 1) },
-        EquipmentSlot.Idol, RelocateOnLoad: false);
+    /// <param name="unlocks">Idol unlocks the character has earned (<see cref="IdolSlotUnlocks.CountUnlocks"/>).</param>
+    /// <param name="altarSubTypeId">The <c>subTypeID</c> of the equipped idol altar; <c>null</c> without one.</param>
+    public static ItemGridLayout ForIdols(int unlocks, int? altarSubTypeId = null)
+    {
+        var shape = altarSubTypeId is { } altar ? IdolAltarLayouts.ForAltar(altar) : IdolAltarLayouts.Standard;
+        return new ItemGridLayout(
+            IdolContainerId, IdolGridSize, IdolGridSize, "idol grid",
+            shape.Blocked,
+            EquipmentSlot.Idol, RelocateOnLoad: false,
+            LockedCells: altarSubTypeId is null ? IdolSlotUnlocks.LockedSlots(unlocks) : null,
+            RefractedCells: shape.Refracted,
+            AltarSubTypeId: altarSubTypeId);
+    }
+
+    /// <summary>Cells the game keeps locked (see <see cref="LockedCells"/>); empty when none.</summary>
+    public IReadOnlySet<(int Column, int Row)> Locked => LockedCells ?? EmptyCells;
+
+    /// <summary>Refracted cells of an idol altar (see <see cref="RefractedCells"/>); empty when none.</summary>
+    public IReadOnlySet<(int Column, int Row)> Refracted => RefractedCells ?? EmptyCells;
+
+    /// <summary>Cells that can hold an item now: neither blocked nor locked.</summary>
+    public int UsableCellCount => Columns * Rows - BlockedCells.Count - Locked.Count;
+
+    private static readonly IReadOnlySet<(int Column, int Row)> EmptyCells = new HashSet<(int, int)>();
 
     public bool IsBlocked(int column, int row) => BlockedCells.Contains((column, row));
+
+    public bool IsLocked(int column, int row) => Locked.Contains((column, row));
+
+    public bool IsRefracted(int column, int row) => Refracted.Contains((column, row));
+
+    /// <summary>Whether the cell can ever hold an item now: neither blocked nor locked.</summary>
+    public bool IsUsable(int column, int row) => !IsBlocked(column, row) && !IsLocked(column, row);
 
     /// <summary>Whether an item of type <paramref name="baseTypeId"/> may be kept in this grid.</summary>
     public bool Accepts(int baseTypeId) => OnlySlot is not { } slot || slot.AcceptsBaseType(baseTypeId);
@@ -60,7 +103,7 @@ public sealed record ItemGridLayout(
 /// <summary>
 /// A grid container of the character: the backpack (a <see cref="Columns"/> × <see cref="Rows"/> grid holding the items of
 /// container <see cref="SavedItem.BackpackContainerId"/>: equipment, idols and crafting materials such as runes, glyphs
-/// and affix shards) or, with <see cref="ItemGridLayout.Idols"/>, the idol grid.
+/// and affix shards) or, with <see cref="ItemGridLayout.ForIdols"/>, the idol grid.
 /// Items cover several cells (<see cref="ItemFootprint"/>), never overlap and never cover a blocked cell.
 /// </summary>
 public sealed partial class BackpackViewModel : ViewModelBase
@@ -77,6 +120,12 @@ public sealed partial class BackpackViewModel : ViewModelBase
 
     /// <summary>Items placed when the save was read, including the ones removed since (for <see cref="GetUpdates"/>).</summary>
     private readonly List<BackpackItemViewModel> _loadedItems = [];
+
+    /// <summary>
+    /// Items read from the save that a new grid shape left without room (<see cref="ChangeLayout"/>) and that could not
+    /// go anywhere else: no longer shown, and left in the save as they were.
+    /// </summary>
+    private readonly HashSet<BackpackItemViewModel> _keptInSave = [];
 
     /// <summary>An item was moved, changed or removed.</summary>
     public event EventHandler? Changed;
@@ -103,10 +152,20 @@ public sealed partial class BackpackViewModel : ViewModelBase
         Cells = CreateCells(layout);
         Items.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Summary));
         Load(savedItems, iconProvider, itemBaseCatalog);
+        UpdateRefractedItems();
     }
 
-    /// <summary>Shape of the grid.</summary>
-    public ItemGridLayout Layout { get; }
+    /// <summary>Shape of the grid; changed with <see cref="ChangeLayout"/> (the idol grid follows the idol altar).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FreeCells))]
+    [NotifyPropertyChangedFor(nameof(Summary))]
+    [NotifyPropertyChangedFor(nameof(HasRefractedCells))]
+    private ItemGridLayout _layout = ItemGridLayout.Backpack;
+
+    /// <summary>The grid has refracted cells (an idol altar with refracted slots shapes it).</summary>
+    public bool HasRefractedCells => Layout.Refracted.Count > 0;
+
+    partial void OnLayoutChanged(ItemGridLayout value) => Cells = CreateCells(value);
 
     /// <summary>Width of the grid in cells.</summary>
     public int ColumnCount => Layout.Columns;
@@ -114,8 +173,9 @@ public sealed partial class BackpackViewModel : ViewModelBase
     /// <summary>Height of the grid in cells.</summary>
     public int RowCount => Layout.Rows;
 
-    /// <summary>Background cells, row by row.</summary>
-    public IReadOnlyList<BackpackCellViewModel> Cells { get; }
+    /// <summary>Background cells, row by row; rebuilt when the shape of the grid changes.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<BackpackCellViewModel> _cells = [];
 
     /// <summary>Items in the grid, each placed at its own cells.</summary>
     public ObservableCollection<BackpackItemViewModel> Items { get; } = [];
@@ -123,8 +183,8 @@ public sealed partial class BackpackViewModel : ViewModelBase
     /// <summary>Items in the save that had no room in the grid (overlapping or outside of it) and are not shown.</summary>
     public int SkippedCount { get; private set; }
 
-    /// <summary>Number of cells no item covers (blocked cells do not count).</summary>
-    public int FreeCells => ColumnCount * RowCount - Layout.BlockedCells.Count - Items.Sum(i => i.Width * i.Height);
+    /// <summary>Number of cells no item covers (blocked and locked cells do not count).</summary>
+    public int FreeCells => Layout.UsableCellCount - Items.Sum(i => i.Width * i.Height);
 
     /// <summary>Line under the grid, e.g. "5 items · 87 free cells".</summary>
     public string Summary
@@ -196,6 +256,10 @@ public sealed partial class BackpackViewModel : ViewModelBase
     {
         foreach (var item in _loadedItems)
         {
+            // Left out by a new grid shape with nowhere else to go: it stays in the save as it was.
+            if (_keptInSave.Contains(item))
+                continue;
+
             if (!Items.Contains(item))
                 yield return SavedItemUpdate.Remove(item.Source);
             else if (item.ToSavedItem() is { } replacement)
@@ -208,11 +272,11 @@ public sealed partial class BackpackViewModel : ViewModelBase
 
     /// <summary>
     /// Whether no item covers the cell in <paramref name="column"/>, <paramref name="row"/> and it is inside the grid
-    /// and not blocked.
+    /// and neither blocked nor locked.
     /// </summary>
     public bool IsCellFree(int column, int row) =>
         column >= 0 && column < ColumnCount && row >= 0 && row < RowCount
-        && !Layout.IsBlocked(column, row)
+        && Layout.IsUsable(column, row)
         && !Items.Any(i => i.Covers(column, row));
 
     /// <summary>Whether at least one item type of <paramref name="slot"/> still fits somewhere in the grid.</summary>
@@ -262,6 +326,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
             ItemDataWriter.Write(SavedItemConverter.ToItemData(built, null)));
 
         Add(new BackpackItemViewModel(source, baseTypeId, place.Column, place.Row, equipment, isNew: true, gridRows: RowCount));
+        UpdateRefractedItems();
         Changed?.Invoke(this, EventArgs.Empty);
 
         if (moved)
@@ -283,6 +348,115 @@ public sealed partial class BackpackViewModel : ViewModelBase
         item.Material = material;
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
+    }
+
+    /// <summary>
+    /// Gives the grid another shape (the idol grid when the idol altar changes). Items that still fit where they are stay
+    /// there; the others go to the first free spot of the new shape. Items that fit nowhere are taken out of the grid and
+    /// returned: the caller can put them elsewhere (<see cref="AddFromGrid"/>), or keep them in the save with
+    /// <see cref="KeepInSave"/>.
+    /// </summary>
+    /// <returns>The items that have no room in the new shape, in grid order.</returns>
+    public IReadOnlyList<BackpackItemViewModel> ChangeLayout(ItemGridLayout layout)
+    {
+        if (layout.Columns != Layout.Columns || layout.Rows != Layout.Rows)
+            throw new ArgumentException("The new layout must keep the size of the grid.", nameof(layout));
+
+        Layout = layout;
+
+        // Items over a cell the new shape blocks or locks (or over each other after that) lose their place first, so the
+        // ones that stay keep their cells; then the others look for a spot, top rows first.
+        var misplaced = Items
+            .Where(item => !CanPlace(item.Footprint, item.Column, item.Row, item))
+            .OrderBy(item => item.Row)
+            .ThenBy(item => item.Column)
+            .ToList();
+        foreach (var item in misplaced)
+            Items.Remove(item);
+
+        var displaced = new List<BackpackItemViewModel>();
+        foreach (var item in misplaced)
+        {
+            if (FindFreeSpot(item.Footprint, ignore: null) is { } spot)
+            {
+                item.Column = spot.Column;
+                item.Row = spot.Row;
+                Items.Add(item);
+            }
+            else
+            {
+                displaced.Add(item);
+            }
+        }
+
+        UpdateRefractedItems();
+        OnPropertyChanged(nameof(Summary));
+        OnPropertyChanged(nameof(FreeCells));
+        if (misplaced.Count > 0)
+            Changed?.Invoke(this, EventArgs.Empty);
+        return displaced;
+    }
+
+    /// <summary>
+    /// Keeps <paramref name="item"/>, taken out of the grid by <see cref="ChangeLayout"/>, in the save as it was read
+    /// (not shown, never written). An item made in the editor is not in the save, so it is lost.
+    /// </summary>
+    /// <returns><c>true</c> when the item stays in the save; <c>false</c> for a new item.</returns>
+    public bool KeepInSave(BackpackItemViewModel item)
+    {
+        Items.Remove(item);
+        if (item.IsNew || !_loadedItems.Contains(item))
+            return false;
+
+        _keptInSave.Add(item);
+        SkippedCount++;
+        OnPropertyChanged(nameof(Summary));
+        return true;
+    }
+
+    /// <summary>
+    /// Puts an item that leaves another grid (an idol the idol grid has no room for) into the first free spot of this
+    /// one, with its current bytes; it is added to this grid's container on the next save. Nothing changes when the item
+    /// does not belong in this grid or there is no room for it.
+    /// </summary>
+    /// <returns><c>true</c> if the item was added.</returns>
+    public bool AddFromGrid(BackpackItemViewModel item)
+    {
+        if (!Layout.Accepts(item.BaseTypeId) || FindFreeSpot(item.Footprint, ignore: null) is not { } spot)
+            return false;
+
+        var source = item.Source with
+        {
+            ContainerId = Layout.ContainerId,
+            X = spot.Column,
+            Y = SavedYFromRow(spot.Row, item.Footprint, RowCount),
+            Data = item.CurrentData(),
+            Index = -1
+        };
+
+        EquipmentSlotViewModel? equipment = null;
+        if (item.Equipment?.Item is { } built)
+            equipment = new EquipmentSlotViewModel(item.Equipment.Slot, _iconProvider) { Item = built, IsInGrid = true };
+
+        Add(new BackpackItemViewModel(source, item.BaseTypeId, spot.Column, spot.Row, equipment, isNew: true, gridRows: RowCount,
+            material: item.Material, iconProvider: _iconProvider));
+        UpdateRefractedItems();
+        Changed?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    /// <summary>Marks the items that cover a refracted cell (their tile shows the refracted frame).</summary>
+    private void UpdateRefractedItems()
+    {
+        foreach (var item in Items)
+        {
+            var refracted = false;
+            for (var r = item.Row; r < item.Row + item.Height && !refracted; r++)
+            for (var c = item.Column; c < item.Column + item.Width && !refracted; c++)
+                refracted = Layout.IsRefracted(c, r);
+
+            item.IsInRefractedSlot = refracted;
+        }
     }
 
     /// <summary>
@@ -393,6 +567,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
     {
         item.Footprint = footprint;
         item.AcceptedItem = built;
+        UpdateRefractedItems();
         OnPropertyChanged(nameof(Summary));
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -426,6 +601,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
 
         item.Column = column;
         item.Row = row;
+        UpdateRefractedItems();
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
     }
@@ -442,7 +618,7 @@ public sealed partial class BackpackViewModel : ViewModelBase
         for (var r = row; r < row + footprint.Height; r++)
         for (var c = column; c < column + footprint.Width; c++)
         {
-            if (Layout.IsBlocked(c, r) || Items.Any(other => !ReferenceEquals(other, ignore) && other.Covers(c, r)))
+            if (!Layout.IsUsable(c, r) || Items.Any(other => !ReferenceEquals(other, ignore) && other.Covers(c, r)))
                 return false;
         }
 
@@ -467,11 +643,15 @@ public sealed partial class BackpackViewModel : ViewModelBase
         var cells = new List<BackpackCellViewModel>(layout.Columns * layout.Rows);
         for (var row = 0; row < layout.Rows; row++)
         for (var column = 0; column < layout.Columns; column++)
-            cells.Add(new BackpackCellViewModel(column, row, layout.IsBlocked(column, row)));
+            cells.Add(new BackpackCellViewModel(column, row, layout.IsBlocked(column, row), layout.IsLocked(column, row),
+                layout.IsRefracted(column, row)));
 
         return cells;
     }
 }
 
-/// <summary>One background cell of a grid; <see cref="IsBlocked"/> cells can never hold an item.</summary>
-public sealed record BackpackCellViewModel(int Column, int Row, bool IsBlocked = false);
+/// <summary>
+/// One background cell of a grid; <see cref="IsBlocked"/> cells can never hold an item and <see cref="IsLocked"/> cells
+/// not until the game unlocks them. <see cref="IsRefracted"/> cells are refracted idol slots of an idol altar.
+/// </summary>
+public sealed record BackpackCellViewModel(int Column, int Row, bool IsBlocked = false, bool IsLocked = false, bool IsRefracted = false);

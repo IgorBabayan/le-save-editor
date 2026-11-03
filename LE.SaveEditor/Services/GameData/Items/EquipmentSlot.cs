@@ -1,8 +1,9 @@
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// A slot of the equipment grid in the "Inventory" tab, or <see cref="Idol"/>: the item kind of the idol grid
-/// (it is not an equipment container, so it has no <c>containerID</c> of its own).
+/// A slot of the equipment grid in the "Inventory" tab, <see cref="Idol"/>: the item kind of the idol grid (it is not an
+/// equipment container, so it has no <c>containerID</c> of its own), or <see cref="IdolAltar"/>: the altar slot of the
+/// idol inventory, whose altar sets the shape of the idol grid.
 /// </summary>
 public enum EquipmentSlot
 {
@@ -17,11 +18,18 @@ public enum EquipmentSlot
     Gloves,
     Boots,
     Relic,
-    Idol
+    Idol,
+    IdolAltar
 }
 
 public static class EquipmentSlotExtensions
 {
+    /// <summary><c>baseTypeID</c> of idol altars.</summary>
+    public const int IdolAltarBaseTypeId = 41;
+
+    /// <summary><c>containerID</c> of the altar slot of the idol inventory in <c>savedItems</c>.</summary>
+    public const int IdolAltarContainerId = 123;
+
     /// <summary>
     /// <c>baseTypeID</c>s of the game's item types that fit each slot
     /// (the same ids are the second byte of an item in a save: helmet = 0, body armour = 1, wand = 10, catalyst = 19, ...).
@@ -42,7 +50,8 @@ public static class EquipmentSlotExtensions
         [EquipmentSlot.RightRing] = [21],
         [EquipmentSlot.Relic] = [22],
         // small, minor, humble, stout, grand, large, ornate, huge, adorned
-        [EquipmentSlot.Idol] = [25, 26, 27, 28, 29, 30, 31, 32, 33]
+        [EquipmentSlot.Idol] = [25, 26, 27, 28, 29, 30, 31, 32, 33],
+        [EquipmentSlot.IdolAltar] = [IdolAltarBaseTypeId]
     };
 
     /// <summary>
@@ -61,7 +70,8 @@ public static class EquipmentSlotExtensions
         [EquipmentSlot.LeftRing] = ["ring"],
         [EquipmentSlot.RightRing] = ["ring"],
         [EquipmentSlot.Relic] = ["relic"],
-        [EquipmentSlot.Idol] = ["idol"]
+        [EquipmentSlot.Idol] = ["idol"],
+        [EquipmentSlot.IdolAltar] = ["altar"]
     };
 
     /// <summary><c>containerID</c> of each equipment slot in <c>savedItems</c> of a character save.</summary>
@@ -77,7 +87,8 @@ public static class EquipmentSlotExtensions
         [9] = EquipmentSlot.LeftRing,
         [10] = EquipmentSlot.RightRing,
         [11] = EquipmentSlot.Amulet,
-        [12] = EquipmentSlot.Relic
+        [12] = EquipmentSlot.Relic,
+        [IdolAltarContainerId] = EquipmentSlot.IdolAltar
     };
 
     /// <summary>The equipment slot a saved item with <paramref name="containerId"/> is in; <c>null</c> for any other container.</summary>
@@ -111,6 +122,7 @@ public static class EquipmentSlotExtensions
             EquipmentSlot.BodyArmour => "Body armour",
             EquipmentSlot.OffHand => "Off-hand",
             EquipmentSlot.LeftRing or EquipmentSlot.RightRing => "Ring",
+            EquipmentSlot.IdolAltar => "Idol altar",
             _ => slot.ToString()
         };
 
@@ -121,6 +133,12 @@ public static class EquipmentSlotExtensions
 
         /// <summary>The slot is the idol grid's item kind rather than an equipment slot.</summary>
         public bool IsIdol => slot == EquipmentSlot.Idol;
+
+        /// <summary>The slot holds an idol altar (it changes the idol grid and takes altar affixes).</summary>
+        public bool IsIdolAltar => slot == EquipmentSlot.IdolAltar;
+
+        /// <summary>Items of the slot can be set items (idols and idol altars cannot).</summary>
+        public bool HasSetItems => slot is not (EquipmentSlot.Idol or EquipmentSlot.IdolAltar);
 
         /// <summary>
         /// Slots whose items a search in the item builder also lists for an item kept in a grid (backpack): a weapon
@@ -134,7 +152,9 @@ public static class EquipmentSlotExtensions
 
         /// <summary>Fallback for item types without an id: matches the normalized type name.</summary>
         public bool AcceptsTypeName(string normalizedTypeName) =>
-            TypeNameWords[slot].Any(word => slot is EquipmentSlot.LeftRing or EquipmentSlot.RightRing
+            // "Idol Altar" holds the word "idol", but altars are not idols.
+            !(slot == EquipmentSlot.Idol && normalizedTypeName.Contains("altar", StringComparison.Ordinal))
+            && TypeNameWords[slot].Any(word => slot is EquipmentSlot.LeftRing or EquipmentSlot.RightRing
                 ? normalizedTypeName == word
                 : normalizedTypeName.Contains(word, StringComparison.Ordinal));
     }

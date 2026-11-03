@@ -45,14 +45,28 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   primordial Horn, Fang, Feather and Petal; Temporal Keystones and Timeglass Fragments). Type an amount into a slot
   (0 removes the resource); empty slots are dimmed. Resources the game's tab does not show (lizard tails, tokens, ...)
   are listed under "Other resources" while the stash holds some, and "Edit all…" edits every resource, or adds any
-  resource of the game database, in the material storage dialog. Resources are stored in the stash's `keysList` like
-  runes (`[2, 104, subTypeID]` with a quantity) and written with the other stash changes when the character is saved.
+  resource of the game database, in the material storage dialog. Resources are stored in the stash's `keysList` as
+  the game stores them: an item in format 6 (`[6, id, id, id, id, 104, subTypeID]`) in container 100 at position
+  x 0, y = subTypeID, with a quantity. They are written with the other stash changes when the character is saved;
+  resource entries in another shape (written by older editor versions) are dropped by the game, so the editor
+  rewrites them into this shape when it saves the stash.
 - Runes and glyphs lying in the backpack: click one, or right-click it and choose "Edit…", to turn it into another
   material of the same kind; "Remove" deletes it on the next save. They take one cell and can be dragged like other
   items. Their names, descriptions and icons come from the game database; materials it does not know are shown as
   "Rune" or "Glyph" placeholders and stay in the save untouched. A rune or glyph item is stored as
   `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). Resources (keys, charms, ... — `baseTypeID` 104) lying in
   the backpack are shown and changed the same way.
+- Blessings: the "Blessings" section (after "Woven echoes") lists every Monolith timeline echo with the blessing the
+  character holds for it. Select an echo to see the blessings its timeline grants — normal ones, then the Grand ones of
+  the empowered timeline — with their stat ranges; pick one to put it in the slot at its best roll and adjust the roll
+  with the slider, or "Remove" it. A blessing is a plain item of type 34 (`[2, 34, subTypeID, 0, 0, roll, roll, roll,
+  0, 0, 0]`) in `savedItems` container 32 + timelineID (33 = Fall of the Outcasts … 42 = Spirits of Fire). The
+  timelines and their blessings come from the `Timelines` table of the game database; a database made before it shows
+  a hint to update it, and the blessings in the save stay untouched. Blessings of another timeline, or unknown to the
+  database, stay in their slot until another one is picked.
+  The game shows a blessing as "Undiscovered" unless the character's stash lists it in `unlockedBlessings`
+  (blessing subTypeIDs): saving the character adds every blessing it holds that the stash does not list yet, and the
+  section warns about such blessings until then.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
 - The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption
@@ -67,7 +81,28 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   written for that type), so tiers and ranges in the builder and tooltip match the game.
 - Rarity counts only prefixes and suffixes: a sealed affix and the corruption do not make an item rare. The tooltip
   shows the sealed affix under "Sealed prefix" or "Sealed suffix".
-- Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique.
+- Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique. Idol bases and unique idols
+  also take a corruption (a corrupted unique idol becomes a legendary, like any corrupted unique): the corrupted idol affixes of that idol type are offered first, then its normal idol affixes; it is
+  stored like an equipment corruption (corrupted item flag, corruption marked in the affix count) and does not change
+  the rarity. Most corrupted idol affixes have a wrong display name in the game data (e.g. "Added Throwing Damage and
+  reduced Melee Damage" for Chill Immunity), so they are named after their internal name ("Chill Immunity"). Weaver idols (Minor, Small, Humble, Stout) and Heretical idols (Grand, Large, Ornate, Huge, Adorned) are
+  offered in the builder although the game data marks them as not dropping. Weaver idols also roll the Weaver affixes
+  (e.g. "Vitality and Added Health Regen", "Physical Resistance and Minion Physical Resistance"), listed first in
+  their prefix and suffix pickers. Heretical idols (Grand, Large, Ornate, Huge and Adorned) take one enchantment
+  from the idol enchantments besides their prefix and suffix; it is shown in blue like in the game, does not change
+  the rarity and is stored among the affixes (the game tells it apart by the affix). Unique idols take no enchantment.
+- Added percentages are shown with the decimals the game uses for the property (its `roundingForAdded`), so e.g.
+  1.79% All Resistances on a Humble idol reads "+2%" as in the game.
+- Idol altars: the "Idol altar" slot left of the idol grid holds the character's altar (container 123). Click it to
+  build or change the altar in the item inspector, right-click it to edit or remove it. The idol grid takes the shape
+  of the altar at once: its blocked cells, and its refracted slots highlighted (idols over a refracted slot get a
+  refracted frame); with an altar every slot of its shape is open, without one the grid is the standard 5 × 5 without
+  corners and centre with the quest locks. Idols that no longer fit move to a free slot, then to the backpack; an
+  idol that fits nowhere is left in the save where it was. Altar layouts are the ones maxroll's planner uses (the game
+  data has none). An altar is always corrupted (it is saved with the corrupted item flag): it takes two prefixes and two
+  suffixes from the altar affixes and a corruption (the corrupted altar affixes are offered first, then the normal
+  altar affixes, e.g. Increased Effect of Suffixes for Idols in Refracted Slots); altars are 2 × 2 and can also be
+  built in the backpack.
 - Opening the item list in the inspector puts the cursor into its search box. In the backpack, a weapon search also
   finds off-hands (shields, quivers, catalysts).
 
@@ -95,7 +130,7 @@ Console tool that builds the editor's game data from maxroll's planner data
 `%APPDATA%\LE.SaveEditor` (next to `settings.json`):
 
 - `base.db` — SQLite (EF Core) with the tables `Classes`, `Affixes`, `ItemTypes`,
-  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `PlayerProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
+  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `PlayerProperties`, `Timelines`, `Icons`. Every row keeps its element as JSON (`Json`)
   plus `Key`, `Name` and a SHA-256 `Hash`; `__DataMigrations` records every build/update.
   `Icons` has one row per image (`Group` + `Name`, `Path` = `uniques/spirit_xylem`).
 - `Icons/<group>/<name>.png` — from `https://assets-ng.maxroll.gg/last-epoch/webp/<group>/<name>.webp`,

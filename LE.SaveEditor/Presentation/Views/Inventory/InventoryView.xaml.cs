@@ -18,8 +18,8 @@ namespace LE.SaveEditor.Presentation.Views.Inventory;
 /// there. Releasing over a taken spot, pressing Escape or losing the mouse leaves the item where it was. A click
 /// without moving still opens the item inspector. Right-clicking an empty backpack cell offers the item types to build
 /// there and opens the item inspector for a new item of the chosen type next to that cell; right-clicking an empty
-/// idol cell opens it for a new idol right away. Right-clicking an equipped item, a backpack item (also a rune or glyph)
-/// or an idol offers to edit or remove it.
+/// idol cell opens it for a new idol right away. Right-clicking an equipped item, the idol altar, a backpack item (also a
+/// rune or glyph) or an idol offers to edit or remove it.
 /// </summary>
 public partial class InventoryView : UserControl
 {
@@ -30,15 +30,15 @@ public partial class InventoryView : UserControl
     private const double DropFillOpacity = 0.2;
 
     /// <summary>
-    /// Item types offered for a new backpack item, in menu order and grouped (armour, weapons, jewellery, idols);
-    /// a separator goes between groups. Rings are built as left rings.
+    /// Item types offered for a new backpack item, in menu order and grouped (armour, weapons, jewellery, idols and idol
+    /// altars); a separator goes between groups. Rings are built as left rings.
     /// </summary>
     private static readonly EquipmentSlot[][] NewItemSlotGroups =
     [
         [EquipmentSlot.Helmet, EquipmentSlot.BodyArmour, EquipmentSlot.Gloves, EquipmentSlot.Belt, EquipmentSlot.Boots],
         [EquipmentSlot.Weapon, EquipmentSlot.OffHand],
         [EquipmentSlot.Amulet, EquipmentSlot.LeftRing, EquipmentSlot.Relic],
-        [EquipmentSlot.Idol]
+        [EquipmentSlot.Idol, EquipmentSlot.IdolAltar]
     ];
 
     /// <summary>Material icon of each item type in the menus (names of <see cref="MaterialIconKind"/>).</summary>
@@ -55,6 +55,7 @@ public partial class InventoryView : UserControl
         EquipmentSlot.LeftRing or EquipmentSlot.RightRing => "Ring",
         EquipmentSlot.Relic => "TreasureChest",
         EquipmentSlot.Idol => "DiamondStone",
+        EquipmentSlot.IdolAltar => "Pillar",
         _ => "HelpCircleOutline"
     };
 
@@ -196,7 +197,7 @@ public partial class InventoryView : UserControl
         e.Handled = true;
     }
 
-    /// <summary>A right-click on an equipment slot that holds an item offers to edit or remove it.</summary>
+    /// <summary>A right-click on an equipment slot (or the idol altar slot) that holds an item offers to edit or remove it.</summary>
     private void EquipmentGrid_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
         for (var node = e.OriginalSource as DependencyObject; node is not null && !ReferenceEquals(node, sender);

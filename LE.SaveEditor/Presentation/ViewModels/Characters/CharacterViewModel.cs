@@ -1,7 +1,7 @@
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
-using LE.SaveEditor.Presentation.ViewModels.Blessings;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
+using LE.SaveEditor.Presentation.ViewModels.Waypoints;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Saves.Models;
@@ -10,7 +10,7 @@ namespace LE.SaveEditor.Presentation.ViewModels.Characters;
 
 /// <summary>
 /// Details of the character selected in the character list, split into the
-/// "Blessings" and "Inventory" tabs of the main window.
+/// "Inventory" (blessings included) and "Waypoints" tabs of the main window.
 /// </summary>
 public sealed partial class CharacterViewModel : ViewModelBase
 {
@@ -24,9 +24,10 @@ public sealed partial class CharacterViewModel : ViewModelBase
     {
         Character = character;
         Stash = stash;
-        Blessings = new BlessingsViewModel(character);
         Inventory = new InventoryViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService, stash);
         Inventory.Changed += (_, _) => RefreshHasUnsavedChanges();
+        Waypoints = new WaypointsViewModel(character);
+        Waypoints.Changed += (_, _) => RefreshHasUnsavedChanges();
         if (stash is not null)
         {
             stash.Changed += (_, _) => RefreshHasUnsavedChanges();
@@ -39,11 +40,11 @@ public sealed partial class CharacterViewModel : ViewModelBase
 
     public CharacterSave Character { get; }
 
-    /// <summary>"Blessings" tab.</summary>
-    public BlessingsViewModel Blessings { get; }
-
     /// <summary>"Inventory" tab.</summary>
     public InventoryViewModel Inventory { get; }
+
+    /// <summary>"Waypoints" tab.</summary>
+    public WaypointsViewModel Waypoints { get; }
 
     /// <summary>Something was changed that is not written to the save file or the character's stash file yet.</summary>
     [ObservableProperty]
@@ -54,6 +55,15 @@ public sealed partial class CharacterViewModel : ViewModelBase
     public IReadOnlyList<SavedItemUpdate> GetUpdates() => Inventory.GetUpdates();
 
     /// <summary>
+    /// Blessings the character holds that its stash has not discovered: written into the stash's <c>unlockedBlessings</c>
+    /// on save, so the game does not show them as "Undiscovered".
+    /// </summary>
+    public IReadOnlyList<int> GetBlessingsToDiscover() => Inventory.Blessings.GetUndiscoveredBlessingIds();
+
+    /// <summary>The waypoints to write into <c>unlockedWaypointScenes</c>; <c>null</c> when they did not change.</summary>
+    public IReadOnlyList<string>? GetWaypointScenes() => Waypoints.GetChangedScenes();
+
+    /// <summary>
     /// An item applied again without changes, or moved back to its cell, leaves nothing to save,
     /// so the flag follows the actual difference to the file rather than "something was touched".
     /// </summary>
@@ -61,7 +71,8 @@ public sealed partial class CharacterViewModel : ViewModelBase
     {
         try
         {
-            HasUnsavedChanges = GetUpdates().Count > 0 || Stash?.HasChanges == true;
+            HasUnsavedChanges = GetUpdates().Count > 0 || Waypoints.HasChanges || Stash?.HasChanges == true
+                                || GetBlessingsToDiscover().Count > 0;
         }
         catch (ArgumentException)
         {

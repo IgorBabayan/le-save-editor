@@ -98,7 +98,7 @@ public partial class MainViewModel(
     public CharacterSave? SelectedCharacter =>
         SelectedCharacterTabIndex == HardcoreTabIndex ? SelectedHardcoreCharacter : SelectedSoftcoreCharacter;
 
-    /// <summary>Details (Blessings / Inventory tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
+    /// <summary>Details (Inventory / Waypoints tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private CharacterViewModel? _characterDetails;
@@ -275,22 +275,27 @@ public partial class MainViewModel(
         try
         {
             var updates = details.GetUpdates();
-            var stash = details.Stash is { HasChanges: true } changedStash ? changedStash : null;
-            if (updates.Count == 0 && stash is null)
+            var waypoints = details.GetWaypointScenes();
+            // Blessings held but not discovered in the stash are written into it too (else the game shows "Undiscovered").
+            var discoveredBlessings = details.GetBlessingsToDiscover();
+            var stash = details.Stash is { } changedStash && (changedStash.HasChanges || discoveredBlessings.Count > 0)
+                ? changedStash
+                : null;
+            if (updates.Count == 0 && waypoints is null && stash is null)
                 return;
 
             var backups = new List<string>();
-            if (updates.Count > 0)
+            if (updates.Count > 0 || waypoints is not null)
             {
-                var result = await characterSaveWriter.SaveAsync(character, updates);
+                var result = await characterSaveWriter.SaveAsync(character, updates, waypoints);
                 backups.Add(Path.GetFileName(result.BackupPath));
                 ReplaceCharacter(character, result.Character);
             }
 
-            // The material storage lives in the stash file, which the characters of the stash share.
+            // The gold, favor, ancient bones, faction ranks and the material storage live in the stash file, which the characters of the stash share.
             if (stash is not null)
             {
-                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts);
+                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts, stash.Currencies, discoveredBlessings, stash.FactionRanks);
                 backups.Add(Path.GetFileName(stashResult.BackupPath));
                 _stashes = _stashes.Select(s => string.Equals(s.FilePath, stashResult.Stash.FilePath, StringComparison.OrdinalIgnoreCase) ? stashResult.Stash : s).ToList();
                 stash.MarkSaved(stashResult.Stash);

@@ -48,7 +48,8 @@ public readonly record struct ItemFootprint(int Width, int Height)
         [30] = new(1, 3), // large idol
         [31] = new(4, 1), // ornate idol
         [32] = new(1, 4), // huge idol
-        [33] = new(2, 2)  // adorned idol
+        [33] = new(2, 2), // adorned idol
+        [41] = new(2, 2)  // idol altar
     };
 
     /// <summary>Size of an item of type <paramref name="baseTypeId"/>; <see cref="Single"/> for unlisted types.</summary>

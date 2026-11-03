@@ -65,6 +65,7 @@ public static class SavedItemConverter
     {
         _ when stored.IsCorrupted => AffixSlotKind.Corrupted,
         { OnlyOnUniques.Count: > 0 } => AffixSlotKind.Unique,
+        { Category: AffixCategory.IdolEnchantment } => AffixSlotKind.Enchant,
         { Category: AffixCategory.Corrupted } => AffixSlotKind.Corrupted,
         { Type: AffixType.Prefix } => stored.IsSealed ? AffixSlotKind.SealedPrefix : AffixSlotKind.Prefix,
         _ => stored.IsSealed ? AffixSlotKind.SealedSuffix : AffixSlotKind.Suffix
@@ -148,6 +149,7 @@ public static class SavedItemConverter
 
         // The unique's own affixes before the others (the game shows them on top); the writer puts the sealed affix and
         // the corruption where the game expects them (first on a plain base, the corruption last on a legendary).
+        var isAltar = item.Slot.IsIdolAltar || itemBase.BaseTypeId == EquipmentSlotExtensions.IdolAltarBaseTypeId;
         IReadOnlyList<ItemAffixData> affixes = item.Rarity is ItemRarity.Unique or ItemRarity.Set
             ? []
             : item.Affixes
@@ -177,7 +179,7 @@ public static class SavedItemConverter
             affixes,
             formatVersion,
             original?.InstanceId,
-            FlagsOf(item, original, sameKind, hasCorruption),
+            isAltar ? AltarFlagsOf(original, sameBase) : FlagsOf(item, original, sameKind, hasCorruption),
             TailOf(item, original, sameKind, sameBase, formatVersion));
     }
 
@@ -198,6 +200,13 @@ public static class SavedItemConverter
             flags &= ~ItemDataReader.CorruptedItemFlag;
         return flags;
     }
+
+    /// <summary>
+    /// An idol altar keeps the other flags the game stored for it and is always corrupted, with or without a corruption
+    /// affix.
+    /// </summary>
+    private static int AltarFlagsOf(ItemData? original, bool sameBase) =>
+        (sameBase ? original!.Flags : 0) | ItemDataReader.CorruptedItemFlag;
 
     /// <summary>
     /// Uniques and set items end with their legendary potential (kept for the same unique). Items with affixes keep how

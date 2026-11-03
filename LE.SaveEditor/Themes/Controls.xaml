@@ -629,7 +629,7 @@
 
     <!-- ===== Tabs ===== -->
 
-    <!-- Tab strip with an accent underline under the selected tab (character view: Blessings / Inventory). -->
+    <!-- Tab strip with an accent underline under the selected tab (character view: Inventory / Waypoints). -->
     <Style x:Key="UnderlineTabControlStyle" TargetType="TabControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -782,6 +782,8 @@
     <SolidColorBrush x:Key="ItemTooltipTypeBrush" Color="#B9AD8A" />
     <SolidColorBrush x:Key="ItemTooltipStatBrush" Color="#E9E4DA" />
     <SolidColorBrush x:Key="ItemTooltipExaltedBrush" Color="#C08CF5" />
+    <!-- Enchantments of Heretical idols, in the game's blue. -->
+    <SolidColorBrush x:Key="ItemTooltipEnchantBrush" Color="#5CC8D8" />
     <SolidColorBrush x:Key="ItemTooltipInfoBrush" Color="#93A9EC" />
     <SolidColorBrush x:Key="ItemTooltipUniqueEffectBrush" Color="#F0A35E" />
     <FontFamily x:Key="ItemTooltipTitleFont">Georgia, Times New Roman</FontFamily>
@@ -817,6 +819,9 @@
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding IsExalted}" Value="True">
                 <Setter TargetName="Lines" Property="TextElement.Foreground" Value="{StaticResource ItemTooltipExaltedBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsEnchant}" Value="True">
+                <Setter TargetName="Lines" Property="TextElement.Foreground" Value="{StaticResource ItemTooltipEnchantBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding HasTier}" Value="False">
                 <Setter TargetName="Tier" Property="Visibility" Value="Collapsed" />

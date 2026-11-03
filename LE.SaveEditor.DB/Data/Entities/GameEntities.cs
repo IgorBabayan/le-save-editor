@@ -79,6 +79,15 @@ public sealed class PlayerProperty : GameEntity
 {
 }
 
+/// <summary>
+/// <c>timelines</c>: the Monolith timelines (<c>timelineID</c>, <c>displayName</c>) and per difficulty the blessings
+/// (<c>subTypeID</c> of item type 34) the timeline grants (<c>firstSlotBlessings</c>, <c>otherSlotBlessings</c>,
+/// <c>anySlotBlessings</c>). A character keeps the blessing of a timeline in <c>savedItems</c> container 32 + timelineID.
+/// </summary>
+public sealed class Timeline : GameEntity
+{
+}
+
 /// <summary><c>stats</c></summary>
 public sealed class Stat : GameEntity
 {
