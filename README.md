@@ -73,7 +73,8 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
 - Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique. Idol bases and unique idols
   also take a corruption (a corrupted unique idol becomes a legendary, like any corrupted unique): the corrupted idol affixes of that idol type are offered first, then its normal idol affixes; it is
   stored like an equipment corruption (corrupted item flag, corruption marked in the affix count) and does not change
-  the rarity. Weaver idols (Minor, Small, Humble, Stout) and Heretical idols (Grand, Large, Ornate, Huge, Adorned) are
+  the rarity. Most corrupted idol affixes have a wrong display name in the game data (e.g. "Added Throwing Damage and
+  reduced Melee Damage" for Chill Immunity), so they are named after their internal name ("Chill Immunity"). Weaver idols (Minor, Small, Humble, Stout) and Heretical idols (Grand, Large, Ornate, Huge, Adorned) are
   offered in the builder although the game data marks them as not dropping.
 - Idol altars: the "Idol altar" slot left of the idol grid holds the character's altar (container 123). Click it to
   build or change the altar in the item inspector, right-click it to edit or remove it. The idol grid takes the shape

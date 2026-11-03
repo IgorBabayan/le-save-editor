@@ -619,6 +619,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             if (name is null)
                 continue;
 
+            // Most corrupted idol affixes carry a display name left over from other affixes ("Added Throwing Damage and
+            // reduced Melee Damage" on Chill Immunity); the game builds their name itself, so show the internal one
+            // without its "Idol" prefix ("Chill Immunity").
+            if (rollsOn == RollsOnIdols && special == (int)AffixCategory.Corrupted
+                && GetBool(affix, "useGeneratedNameForDisplayName") == true
+                && GetString(affix, "affixName") is { } internalName)
+                name = WithoutIdolPrefix(internalName);
+
             var canRollOn = new HashSet<int>();
             if (Find(affix, "canRollOn") is { ValueKind: JsonValueKind.Array } types)
             {
@@ -670,6 +678,16 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    /// <summary>"Idol Chill Immunity" → "Chill Immunity".</summary>
+    private static string WithoutIdolPrefix(string name)
+    {
+        const string prefix = "Idol ";
+        var trimmed = name.Trim();
+        return trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && trimmed.Length > prefix.Length
+            ? trimmed[prefix.Length..]
+            : trimmed;
     }
 
     private static List<AffixTier> ParseAffixTiers(JsonElement affix, string affixName, ImplicitNames names)
