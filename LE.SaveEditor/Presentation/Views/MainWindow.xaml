@@ -532,7 +532,7 @@
                               ResizeBehavior="PreviousAndNext"
                               Background="Transparent" />
 
-                <!-- ===== Details of the selected character: Blessings / Inventory tabs ===== -->
+                <!-- ===== Details of the selected character: Inventory / Waypoints tabs ===== -->
                 <Grid Grid.Column="2">
                     <TextBlock HorizontalAlignment="Center"
                                VerticalAlignment="Center"

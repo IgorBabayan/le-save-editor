@@ -4,12 +4,271 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:blessingsVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Blessings"
+             xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
+             xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=blessingsVm:BlessingsViewModel, IsDesignTimeCreatable=False}"
-             d:DesignHeight="600" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="900">
 
-    <!-- Blessings are not parsed yet. -->
+    <UserControl.Resources>
+        <!-- Placeholder shown in an icon box while the blessing has no icon (or the slot is empty). -->
+        <Style x:Key="BlessingPlaceholderIconStyle" TargetType="wpf:MaterialIcon">
+            <Setter Property="Kind" Value="StarOutline" />
+            <Setter Property="Opacity" Value="0.5" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Square icon box: the blessing icon, or the placeholder without one. -->
+        <Style x:Key="BlessingIconBoxStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- One rolled stat of the selected blessing: its tooltip line and a slider over the 0…255 roll. -->
+        <DataTemplate x:Key="BlessingStatTemplate" DataType="{x:Type inventoryVm:ItemStatViewModel}">
+            <StackPanel Margin="0,6,0,0">
+                <TextBlock TextWrapping="Wrap" Text="{Binding DisplayText}" />
+                <Grid Margin="0,2,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MaxWidth="320" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Fixed 0…255 range (the roll the game stores): no binding order can clamp the value. -->
+                    <Slider Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Minimum="0"
+                            Maximum="{x:Static inventoryVm:ItemStatViewModel.MaxRoll}"
+                            TickFrequency="1"
+                            SmallChange="1"
+                            LargeChange="16"
+                            IsSnapToTickEnabled="True"
+                            IsEnabled="{Binding IsEditable, Mode=OneTime}"
+                            Value="{Binding Roll}" />
+                    <TextBlock Grid.Column="1"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Style="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding RangeText}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
     <Grid>
-        <TextBlock Text="Blessings will appear here." Style="{StaticResource EmptyPageTextStyle}" />
+        <!-- ===== No timelines in the game database ===== -->
+        <Border Style="{StaticResource InventorySectionBorderStyle}"
+                Visibility="{Binding IsDatabaseMissing, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock MaxWidth="520"
+                       TextWrapping="Wrap"
+                       Text="The game database holds no timelines yet, so blessings cannot be listed. Generate or update it with the database button in the title bar. The blessings in the save stay as they are."
+                       Style="{StaticResource EmptyPageTextStyle}" />
+        </Border>
+
+        <Grid Visibility="{Binding HasEchoes, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" MinWidth="360" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- ===== Echoes (timelines) with the blessing each holds ===== -->
+            <Border Grid.Row="0" Grid.Column="0"
+                    Padding="0,4"
+                    VerticalAlignment="Top"
+                    Style="{StaticResource InventorySectionBorderStyle}">
+                <!-- One-way selection: the view model is changed from code-behind on a user pick only (see the code-behind). -->
+                <ListBox ItemsSource="{Binding Echoes}"
+                         SelectedItem="{Binding SelectedEcho, Mode=OneWay}"
+                         SelectionChanged="EchoList_OnSelectionChanged"
+                         Style="{StaticResource PlainListBoxStyle}"
+                         ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                         PreviewMouseWheel="List_OnPreviewMouseWheel">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type blessingsVm:BlessingEchoViewModel}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="36" Height="36" Style="{StaticResource BlessingIconBoxStyle}">
+                                    <Grid>
+                                        <Image Margin="3"
+                                               Stretch="Uniform"
+                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                               Source="{Binding Icon}" />
+                                        <wpf:MaterialIcon Width="18" Height="18" Style="{StaticResource BlessingPlaceholderIconStyle}" />
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                                    <TextBlock TextTrimming="CharacterEllipsis"
+                                               Text="{Binding SelectedName}"
+                                               Style="{StaticResource SecondaryTextStyle}" />
+                                </StackPanel>
+                                <!-- Not saved yet. -->
+                                <Ellipse Grid.Column="2"
+                                         Width="7"
+                                         Height="7"
+                                         Margin="6,0,0,0"
+                                         VerticalAlignment="Center"
+                                         Fill="{DynamicResource AccentBrush}"
+                                         ToolTip="Changed, not saved yet"
+                                         Visibility="{Binding HasChanges, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- ===== Blessing of the selected echo and the blessings its timeline grants ===== -->
+            <Border Grid.Row="0" Grid.Column="2"
+                    Padding="16,12"
+                    VerticalAlignment="Top"
+                    Style="{StaticResource InventorySectionBorderStyle}">
+                <StackPanel DataContext="{Binding SelectedEcho}">
+                    <!-- Header: timeline name and level, revert / remove actions. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource SectionHeaderTextStyle}" />
+                            <TextBlock Margin="0,2,0,0" Text="{Binding LevelText}" Style="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource TextLinkButtonStyle}"
+                                    ToolTip="Back to the blessing in the save file"
+                                    Command="{Binding RevertCommand}"
+                                    Visibility="{Binding HasChanges, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <wpf:MaterialIcon Width="14" Height="14" Margin="0,0,4,0" VerticalAlignment="Center" Kind="Undo" />
+                                    <TextBlock VerticalAlignment="Center" Text="Revert" />
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="4,0,0,0"
+                                    Style="{StaticResource TextLinkButtonStyle}"
+                                    ToolTip="Empty the blessing slot of this echo"
+                                    Command="{Binding RemoveCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <wpf:MaterialIcon Width="14" Height="14" Margin="0,0,4,0" VerticalAlignment="Center" Kind="TrashCanOutline" />
+                                    <TextBlock VerticalAlignment="Center" Text="Remove" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- The blessing in the slot with its roll sliders. -->
+                    <Border Margin="0,12,0,0"
+                            Padding="12,10"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Width="56"
+                                    Height="56"
+                                    VerticalAlignment="Top"
+                                    Style="{StaticResource BlessingIconBoxStyle}"
+                                    Background="{DynamicResource ControlBackgroundBrush}">
+                                <Grid>
+                                    <Image Margin="4"
+                                           Stretch="Uniform"
+                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                           Source="{Binding Icon}" />
+                                    <wpf:MaterialIcon Width="26" Height="26" Style="{StaticResource BlessingPlaceholderIconStyle}" />
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="{Binding SelectedName}" />
+                                <TextBlock Margin="0,2,0,0"
+                                           Text="Pick one of the blessings below."
+                                           Style="{StaticResource SecondaryTextStyle}"
+                                           Visibility="{Binding HasBlessing, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                                <ItemsControl Focusable="False"
+                                              ItemsSource="{Binding Stats}"
+                                              ItemTemplate="{StaticResource BlessingStatTemplate}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Blessings the timeline grants, normal ones first, then the Grand ones. -->
+                    <TextBlock Margin="2,16,0,4" Text="Choose a blessing" Style="{StaticResource SecondaryTextStyle}" />
+                    <ListBox ItemsSource="{Binding OptionsView}"
+                             SelectedItem="{Binding Selected, Mode=OneWay}"
+                             SelectionChanged="OptionList_OnSelectionChanged"
+                             Style="{StaticResource PlainListBoxStyle}"
+                             ItemContainerStyle="{StaticResource ListRowItemStyle}"
+                             PreviewMouseWheel="List_OnPreviewMouseWheel">
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Margin="6,10,0,4"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding Name}"
+                                                   Style="{StaticResource SecondaryTextStyle}" />
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type blessingsVm:BlessingOptionViewModel}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0"
+                                            Width="32"
+                                            Height="32"
+                                            VerticalAlignment="Top"
+                                            Style="{StaticResource BlessingIconBoxStyle}">
+                                        <Grid>
+                                            <Image Margin="2"
+                                                   Stretch="Uniform"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                                   Source="{Binding Icon}" />
+                                            <wpf:MaterialIcon Width="16" Height="16" Style="{StaticResource BlessingPlaceholderIconStyle}" />
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                        <TextBlock TextWrapping="Wrap"
+                                                   Text="{Binding StatsText}"
+                                                   Style="{StaticResource SecondaryTextStyle}" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                       Margin="2,8,0,0"
+                       Text="{Binding Summary}"
+                       Style="{StaticResource SecondaryTextStyle}" />
+        </Grid>
     </Grid>
 </UserControl>

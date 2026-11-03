@@ -56,6 +56,14 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   "Rune" or "Glyph" placeholders and stay in the save untouched. A rune or glyph item is stored as
   `[2, baseTypeID, subTypeID]` (rune = 102, glyph = 103). Resources (keys, charms, ... — `baseTypeID` 104) lying in
   the backpack are shown and changed the same way.
+- Blessings: the "Blessings" section (after "Woven echoes") lists every Monolith timeline echo with the blessing the
+  character holds for it. Select an echo to see the blessings its timeline grants — normal ones, then the Grand ones of
+  the empowered timeline — with their stat ranges; pick one to put it in the slot at its best roll and adjust the roll
+  with the slider, or "Remove" it. A blessing is a plain item of type 34 (`[2, 34, subTypeID, 0, 0, roll, roll, roll,
+  0, 0, 0]`) in `savedItems` container 32 + timelineID (33 = Fall of the Outcasts … 42 = Spirits of Fire). The
+  timelines and their blessings come from the `Timelines` table of the game database; a database made before it shows
+  a hint to update it, and the blessings in the save stay untouched. Blessings of another timeline, or unknown to the
+  database, stay in their slot until another one is picked.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
 - The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption
@@ -119,7 +127,7 @@ Console tool that builds the editor's game data from maxroll's planner data
 `%APPDATA%\LE.SaveEditor` (next to `settings.json`):
 
 - `base.db` — SQLite (EF Core) with the tables `Classes`, `Affixes`, `ItemTypes`,
-  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `PlayerProperties`, `Icons`. Every row keeps its element as JSON (`Json`)
+  `ItemCategories`, `Uniques`, `Stats`, `Properties`, `Ailments`, `AbilityProperties`, `IdolAltarProperties`, `PlayerProperties`, `Timelines`, `Icons`. Every row keeps its element as JSON (`Json`)
   plus `Key`, `Name` and a SHA-256 `Hash`; `__DataMigrations` records every build/update.
   `Icons` has one row per image (`Group` + `Name`, `Path` = `uniques/spirit_xylem`).
 - `Icons/<group>/<name>.png` — from `https://assets-ng.maxroll.gg/last-epoch/webp/<group>/<name>.webp`,

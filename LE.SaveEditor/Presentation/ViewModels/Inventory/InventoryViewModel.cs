@@ -1,5 +1,6 @@
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
+using LE.SaveEditor.Presentation.ViewModels.Blessings;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Notifications;
@@ -10,10 +11,11 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
-/// followed by the "Items", "Resources" and "Woven echoes" sections.
+/// followed by the "Items", "Resources", "Woven echoes" and "Blessings" sections.
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
 /// (all read from <c>savedItems</c>), the "Resources" section the keys and consumables of the character's stash
-/// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty. Clicking an equipment slot, an idol or a backpack
+/// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty; "Blessings" holds the blessing picked for each
+/// timeline echo (<see cref="BlessingsViewModel"/>). Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
 /// builds a new item there. The idol altar slot sits by the idol grid: the altar in it gives the grid its shape and
 /// refracted slots (<see cref="IdolAltarLayouts"/>), and changing or removing it reshapes the grid at once.
@@ -39,7 +41,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// <summary>The <c>savedItems</c> entry each equipment slot was read from, and the item it showed then.</summary>
     private readonly Dictionary<EquipmentSlot, (SavedItem Source, BuiltItem? Loaded)> _equipped = [];
 
-    /// <summary>An equipped item, an idol or an item in the backpack was changed, moved or removed.</summary>
+    /// <summary>An equipped item, an idol, an item in the backpack or a blessing was changed, moved or removed.</summary>
     public event EventHandler? Changed;
 
     public InventoryViewModel(
@@ -101,6 +103,8 @@ public sealed partial class InventoryViewModel : ViewModelBase
         UpdateGold();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
+        Blessings = new BlessingsViewModel(character, itemBaseCatalog, iconProvider);
+        Blessings.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>All equipment slots, the idol altar slot included.</summary>
@@ -124,6 +128,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     /// <summary>The altar slot of the idol inventory; its altar shapes the idol grid.</summary>
     public EquipmentSlotViewModel IdolAltar { get; }
+
+    /// <summary>The "Blessings" section: the blessing of every timeline echo.</summary>
+    public BlessingsViewModel Blessings { get; }
 
     /// <summary>The "Items" section: the backpack grid with the items the character carries.</summary>
     public BackpackViewModel Backpack { get; }
@@ -378,7 +385,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     /// <summary>
     /// Changes to write into <c>savedItems</c>: equipped items that were replaced or built in an empty slot, followed
-    /// by the changes of the idol grid and the backpack. An item that could not be shown (base not in <c>base.db</c>) stays in the save
+    /// by the changes of the idol grid, the backpack and the blessings. An item that could not be shown (base not in <c>base.db</c>) stays in the save
     /// unless another item was built in its slot.
     /// </summary>
     /// <exception cref="ArgumentException">An edited item cannot be stored.</exception>
@@ -414,6 +421,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
         updates.AddRange(Idols.GetUpdates());
         updates.AddRange(Backpack.GetUpdates());
+        updates.AddRange(Blessings.GetUpdates());
         return updates;
     }
 

@@ -4,7 +4,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:charactersVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Characters"
-             xmlns:blessingsViews="clr-namespace:LE.SaveEditor.Presentation.Views.Blessings"
              xmlns:inventoryViews="clr-namespace:LE.SaveEditor.Presentation.Views.Inventory"
              xmlns:waypointsViews="clr-namespace:LE.SaveEditor.Presentation.Views.Waypoints"
              mc:Ignorable="d"
@@ -22,10 +21,6 @@
 
         <TabItem x:Name="WaypointsTab" Header="Waypoints">
             <waypointsViews:WaypointsView DataContext="{Binding Waypoints}" />
-        </TabItem>
-
-        <TabItem x:Name="BlessingsTab" Header="Blessings">
-            <blessingsViews:BlessingsView DataContext="{Binding Blessings}" />
         </TabItem>
     </TabControl>
 </UserControl>

@@ -98,7 +98,7 @@ public partial class MainViewModel(
     public CharacterSave? SelectedCharacter =>
         SelectedCharacterTabIndex == HardcoreTabIndex ? SelectedHardcoreCharacter : SelectedSoftcoreCharacter;
 
-    /// <summary>Details (Blessings / Inventory tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
+    /// <summary>Details (Inventory / Waypoints tabs) of <see cref="SelectedCharacter"/>; <c>null</c> when nothing is selected.</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private CharacterViewModel? _characterDetails;

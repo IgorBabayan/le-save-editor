@@ -1,6 +1,5 @@
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
-using LE.SaveEditor.Presentation.ViewModels.Blessings;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Presentation.ViewModels.Waypoints;
 using LE.SaveEditor.Services.GameData;
@@ -11,7 +10,7 @@ namespace LE.SaveEditor.Presentation.ViewModels.Characters;
 
 /// <summary>
 /// Details of the character selected in the character list, split into the
-/// "Inventory", "Waypoints" and "Blessings" tabs of the main window.
+/// "Inventory" (blessings included) and "Waypoints" tabs of the main window.
 /// </summary>
 public sealed partial class CharacterViewModel : ViewModelBase
 {
@@ -25,7 +24,6 @@ public sealed partial class CharacterViewModel : ViewModelBase
     {
         Character = character;
         Stash = stash;
-        Blessings = new BlessingsViewModel(character);
         Inventory = new InventoryViewModel(character, dialogService, iconProvider, itemBaseCatalog, toastService, stash);
         Inventory.Changed += (_, _) => RefreshHasUnsavedChanges();
         Waypoints = new WaypointsViewModel(character);
@@ -41,9 +39,6 @@ public sealed partial class CharacterViewModel : ViewModelBase
     public StashMaterialsViewModel? Stash { get; }
 
     public CharacterSave Character { get; }
-
-    /// <summary>"Blessings" tab.</summary>
-    public BlessingsViewModel Blessings { get; }
 
     /// <summary>"Inventory" tab.</summary>
     public InventoryViewModel Inventory { get; }

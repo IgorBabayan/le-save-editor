@@ -2,12 +2,13 @@ using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using LE.SaveEditor.Services.GameData.Blessings;
 using Microsoft.Data.Sqlite;
 
 namespace LE.SaveEditor.Services.GameData.Items;
 
 /// <summary>
-/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c> and <c>Icons</c> tables of <c>base.db</c>
+/// Reads the <c>ItemTypes</c>, <c>Uniques</c>, <c>Affixes</c>, <c>Properties</c>, <c>Ailments</c>, <c>Timelines</c> and <c>Icons</c> tables of <c>base.db</c>
 /// (plus the indexed property lists).
 /// </summary>
 /// <remarks>
@@ -35,14 +36,18 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <param name="Affixes">Equipment and idol affixes as the data gives them (not scaled to an item type).</param>
     /// <param name="AffixEffectModifiers">Per item type (<c>baseTypeID</c>) its <c>affixEffectModifier</c>.</param>
     /// <param name="Materials">Runes, glyphs, affix shards and resources (key items).</param>
+    /// <param name="Timelines">Monolith timelines with the blessings they grant.</param>
     private sealed record Catalog(
         IReadOnlyList<ItemBase> Bases,
         IReadOnlyList<ItemBase> Uniques,
         IReadOnlyList<AffixDefinition> Affixes,
         bool HasStatNames,
         IReadOnlyDictionary<int, double> AffixEffectModifiers,
-        IReadOnlyList<CraftingMaterial> Materials)
+        IReadOnlyList<CraftingMaterial> Materials,
+        IReadOnlyList<Timeline> Timelines)
     {
+        public static Catalog Empty { get; } = new([], [], [], false, new Dictionary<int, double>(), [], []);
+
         /// <summary>Affixes scaled to an item type, by affix id and item type, so each is built once.</summary>
         public Dictionary<(int AffixId, int BaseTypeId), AffixDefinition> Scaled { get; } = [];
     }
@@ -125,6 +130,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
     public CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId) =>
         GetCatalog().Materials.FirstOrDefault(m => m.Kind == kind && m.SubTypeId == subTypeId);
+
+    public IReadOnlyList<Timeline> GetTimelines() => GetCatalog().Timelines;
 
     /// <summary>
     /// <paramref name="affix"/> with the values it has on item type <paramref name="baseTypeId"/>. The game scales every
@@ -209,7 +216,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     private static Catalog Load()
     {
         if (!File.Exists(GameDataPaths.DatabaseFile))
-            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
+            return Catalog.Empty;
 
         try
         {
@@ -264,12 +271,13 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 affixes,
                 properties.Count > 0 && abilityProperties.Count > 0 && playerProperties.Count > 0,
                 affixEffectModifiers,
-                NameShards(materials, allAffixes, icons));
+                NameShards(materials, allAffixes, icons),
+                ReadTimelines(connection, result));
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             // A missing or broken database means an empty builder, never a crash.
-            return new Catalog([], [], [], false, new Dictionary<int, double>(), []);
+            return Catalog.Empty;
         }
     }
 
@@ -312,6 +320,76 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         }
 
         return result;
+    }
+
+    // ===== Timelines and blessings =====
+
+    /// <summary>Blessing lists of a timeline difficulty, in the order the game lists them.</summary>
+    private static readonly string[] BlessingListFields = ["firstSlotBlessings", "otherSlotBlessings", "anySlotBlessings"];
+
+    /// <summary>
+    /// Timelines that grant blessings, ordered by id. A timeline element looks like <c>{"timelineID":1,"displayName":"Fall of the
+    /// Outcasts","difficulties":[{"level":62,"firstSlotBlessings":[],"otherSlotBlessings":[0,2,4],"anySlotBlessings":[111]},
+    /// {"level":100,...}]}</c>; the numbers are <c>subTypeID</c>s of the blessing item type, and every difficulty after the
+    /// first is an empowered one (its blessings are the "Grand" ones). Empty for a database made before the table existed.
+    /// </summary>
+    private static List<Timeline> ReadTimelines(SqliteConnection connection, IReadOnlyList<ItemBase> bases)
+    {
+        var blessings = new Dictionary<int, ItemBase>();
+        foreach (var blessing in bases.Where(b => b.BaseTypeId == Timeline.BlessingBaseTypeId))
+            blessings.TryAdd(blessing.SubTypeId, blessing);
+
+        var result = new List<Timeline>();
+        foreach (var (key, rowName, json) in ReadRowsOrEmpty(connection, "SELECT Key, Name, Json FROM Timelines"))
+        {
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } timeline)
+                continue;
+
+            var id = GetInt(timeline, "timelineID")
+                     ?? (int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var keyId) ? keyId : -1);
+            if (id <= 0 || Timeline.ContainerIdOf(id) > byte.MaxValue)
+                continue;
+
+            var level = 0;
+            var options = new List<TimelineBlessing>();
+            var seen = new HashSet<int>();
+            if (Find(timeline, "difficulties") is { ValueKind: JsonValueKind.Array } difficulties)
+            {
+                var index = 0;
+                foreach (var difficulty in difficulties.EnumerateArray())
+                {
+                    var isGrand = index++ > 0;
+                    if (difficulty.ValueKind != JsonValueKind.Object)
+                        continue;
+
+                    if (!isGrand)
+                        level = GetInt(difficulty, "level") ?? 0;
+
+                    foreach (var field in BlessingListFields)
+                    {
+                        if (Find(difficulty, field) is not { ValueKind: JsonValueKind.Array } list)
+                            continue;
+
+                        foreach (var entry in list.EnumerateArray())
+                        {
+                            if (entry.ValueKind == JsonValueKind.Number && entry.TryGetInt32(out var subTypeId)
+                                && seen.Add(subTypeId) && blessings.TryGetValue(subTypeId, out var blessing))
+                                options.Add(new TimelineBlessing(blessing, isGrand));
+                        }
+                    }
+                }
+            }
+
+            // Placeholder timelines of the data (id 99) grant nothing and have no blessing slot.
+            if (options.Count == 0)
+                continue;
+
+            var name = GetString(timeline, "displayName") ?? rowName ?? $"Timeline {id}";
+            result.Add(new Timeline(id, name, level, options.OrderBy(o => o.IsGrand).ToList()));
+        }
+
+        return result.OrderBy(t => t.TimelineId).ToList();
     }
 
     // ===== Crafting materials =====

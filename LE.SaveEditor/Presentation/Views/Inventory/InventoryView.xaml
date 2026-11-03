@@ -6,6 +6,7 @@
              xmlns:inventoryVm="clr-namespace:LE.SaveEditor.Presentation.ViewModels.Inventory"
              xmlns:wpf="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
              xmlns:behaviors="clr-namespace:LE.SaveEditor.Presentation.Behaviors"
+             xmlns:blessingsViews="clr-namespace:LE.SaveEditor.Presentation.Views.Blessings"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=inventoryVm:InventoryViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="800" d:DesignWidth="900">
@@ -599,7 +600,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ===== Sections: backpack ("Items"), resources (keys and consumables of the stash); woven echoes are not parsed yet ===== -->
+            <!-- ===== Sections: backpack ("Items"), resources (keys and consumables of the stash), woven echoes (not parsed yet), blessings ===== -->
             <TabControl Grid.Row="1"
                         Margin="0,24,0,0"
                         Padding="0,12,0,0"
@@ -827,6 +828,11 @@
                     <Border Style="{StaticResource InventorySectionBorderStyle}">
                         <TextBlock Text="Woven echoes will appear here." Style="{StaticResource EmptyPageTextStyle}" />
                     </Border>
+                </TabItem>
+
+                <!-- ===== Blessings: one per timeline echo, picked from the blessings the timeline grants ===== -->
+                <TabItem Header="Blessings">
+                    <blessingsViews:BlessingsView DataContext="{Binding Blessings}" />
                 </TabItem>
             </TabControl>
         </Grid>
