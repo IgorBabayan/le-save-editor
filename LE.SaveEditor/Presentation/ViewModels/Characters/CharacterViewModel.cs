@@ -54,6 +54,12 @@ public sealed partial class CharacterViewModel : ViewModelBase
     /// <exception cref="ArgumentException">An edited item cannot be stored.</exception>
     public IReadOnlyList<SavedItemUpdate> GetUpdates() => Inventory.GetUpdates();
 
+    /// <summary>
+    /// Blessings the character holds that its stash has not discovered: written into the stash's <c>unlockedBlessings</c>
+    /// on save, so the game does not show them as "Undiscovered".
+    /// </summary>
+    public IReadOnlyList<int> GetBlessingsToDiscover() => Inventory.Blessings.GetUndiscoveredBlessingIds();
+
     /// <summary>The waypoints to write into <c>unlockedWaypointScenes</c>; <c>null</c> when they did not change.</summary>
     public IReadOnlyList<string>? GetWaypointScenes() => Waypoints.GetChangedScenes();
 
@@ -65,7 +71,8 @@ public sealed partial class CharacterViewModel : ViewModelBase
     {
         try
         {
-            HasUnsavedChanges = GetUpdates().Count > 0 || Waypoints.HasChanges || Stash?.HasChanges == true;
+            HasUnsavedChanges = GetUpdates().Count > 0 || Waypoints.HasChanges || Stash?.HasChanges == true
+                                || GetBlessingsToDiscover().Count > 0;
         }
         catch (ArgumentException)
         {

@@ -105,6 +105,10 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(RemoveCommand))]
     private BlessingOptionViewModel? _selected;
 
+    /// <summary>The blessing in the slot is not in the stash's <c>unlockedBlessings</c> (saving adds it).</summary>
+    [ObservableProperty]
+    private bool _isUndiscovered;
+
     /// <summary>The echo is the one whose blessings are shown (highlighted in the echo list).</summary>
     [ObservableProperty]
     private bool _isSelected;

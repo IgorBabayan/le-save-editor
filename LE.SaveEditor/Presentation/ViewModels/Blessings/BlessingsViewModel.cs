@@ -1,3 +1,4 @@
+using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Blessings;
 using LE.SaveEditor.Services.GameData.Items;
@@ -13,12 +14,21 @@ namespace LE.SaveEditor.Presentation.ViewModels.Blessings;
 /// The timelines and their blessings come from the <c>Timelines</c> table of <c>base.db</c>; a blessing is stored in
 /// <c>savedItems</c> like a plain item of type <see cref="Timeline.BlessingBaseTypeId"/> in the timeline's container
 /// (<see cref="Timeline.ContainerId"/>). <see cref="GetUpdates"/> collects what changed for saving.
+/// The game shows a blessing as "Undiscovered" unless the character's stash lists it in <c>unlockedBlessings</c>;
+/// <see cref="GetUndiscoveredBlessingIds"/> gives the blessings held that the stash does not list, which saving adds.
 /// </summary>
 public sealed partial class BlessingsViewModel : ViewModelBase
 {
-    public BlessingsViewModel(CharacterSave character, IItemBaseCatalog catalog, IIconProvider iconProvider)
+    private readonly StashMaterialsViewModel? _stash;
+
+    public BlessingsViewModel(
+        CharacterSave character,
+        IItemBaseCatalog catalog,
+        IIconProvider iconProvider,
+        StashMaterialsViewModel? stash = null)
     {
         Character = character;
+        _stash = stash;
 
         var timelines = catalog.GetTimelines();
         IsDatabaseMissing = timelines.Count == 0;
@@ -30,10 +40,16 @@ public sealed partial class BlessingsViewModel : ViewModelBase
             echo.Changed += (_, _) =>
             {
                 OnPropertyChanged(nameof(Summary));
+                RefreshDiscovery();
                 Changed?.Invoke(this, EventArgs.Empty);
             };
 
+        // Saving the stash (by this or another character of it) changes what it has discovered.
+        if (stash is not null)
+            stash.Changed += (_, _) => RefreshDiscovery();
+
         SelectedEcho = Echoes.FirstOrDefault();
+        RefreshDiscovery();
     }
 
     public CharacterSave Character { get; }
@@ -75,6 +91,55 @@ public sealed partial class BlessingsViewModel : ViewModelBase
 
     /// <summary>A blessing was picked, removed or its roll changed.</summary>
     public event EventHandler? Changed;
+
+    /// <summary>
+    /// Blessings the character holds (with the changes made here) that its stash has not discovered; saving adds them to
+    /// the stash's <c>unlockedBlessings</c>. Empty without a stash file.
+    /// </summary>
+    public IReadOnlyList<int> GetUndiscoveredBlessingIds()
+    {
+        if (_stash is null)
+            return [];
+
+        var unlocked = _stash.Stash.UnlockedBlessings.ToHashSet();
+        return HeldBlessingIds().Where(id => !unlocked.Contains(id)).Distinct().ToList();
+    }
+
+    /// <summary>Why held blessings may show as "Undiscovered" in the game, and what saving does about it; <c>null</c> when all are discovered.</summary>
+    public string? DiscoveryHint
+    {
+        get
+        {
+            if (!HeldBlessingIds().Any())
+                return null;
+
+            if (_stash is null)
+                return "No stash file was found for this character, so the game shows these blessings as Undiscovered.";
+
+            var count = GetUndiscoveredBlessingIds().Count;
+            return count == 0
+                ? null
+                : $"{count} {(count == 1 ? "blessing is" : "blessings are")} not discovered in {_stash.Stash.FileName} yet; " +
+                  "saving marks them as discovered, otherwise the game shows them as Undiscovered.";
+        }
+    }
+
+    public bool HasDiscoveryHint => DiscoveryHint is not null;
+
+    /// <summary>Blessing ids in the slots (blessings the editor cannot read have none).</summary>
+    private IEnumerable<int> HeldBlessingIds() =>
+        Echoes.Select(e => e.Selected?.Base.SubTypeId ?? -1).Where(id => id >= 0);
+
+    private void RefreshDiscovery()
+    {
+        var unlocked = _stash?.Stash.UnlockedBlessings.ToHashSet();
+        foreach (var echo in Echoes)
+            echo.IsUndiscovered = unlocked is not null && echo.Selected is { Base.SubTypeId: >= 0 } held
+                                  && !unlocked.Contains(held.Base.SubTypeId);
+
+        OnPropertyChanged(nameof(DiscoveryHint));
+        OnPropertyChanged(nameof(HasDiscoveryHint));
+    }
 
     /// <summary>Changes to write into <c>savedItems</c>: added, replaced and removed blessings.</summary>
     /// <exception cref="ArgumentException">A blessing cannot be stored.</exception>

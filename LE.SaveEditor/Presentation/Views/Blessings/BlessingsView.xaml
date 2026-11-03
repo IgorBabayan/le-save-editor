@@ -324,6 +324,11 @@
                             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock FontSize="14" FontWeight="SemiBold" Text="{Binding SelectedName}" />
                                 <TextBlock Margin="0,2,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningForegroundBrush}"
+                                           Text="Not discovered in the stash yet: saving marks it as discovered."
+                                           Visibility="{Binding IsUndiscovered, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <TextBlock Margin="0,2,0,0"
                                            Text="Pick one of the blessings below."
                                            Style="{StaticResource SecondaryTextStyle}"
                                            Visibility="{Binding HasBlessing, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
@@ -385,10 +390,15 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
-                       Margin="2,8,0,0"
-                       Text="{Binding Summary}"
-                       Style="{StaticResource SecondaryTextStyle}" />
+            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="2,8,0,0">
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource SecondaryTextStyle}" />
+                <!-- Held blessings the stash has not discovered (the game shows them as "Undiscovered"). -->
+                <TextBlock Margin="0,2,0,0"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource WarningForegroundBrush}"
+                           Text="{Binding DiscoveryHint}"
+                           Visibility="{Binding HasDiscoveryHint, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>

@@ -6,12 +6,13 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.Saves;
 
-/// <summary>Writes changes of the gold and the material storage back into a stash file.</summary>
+/// <summary>Writes changes of the gold, the material storage and the discovered blessings back into a stash file.</summary>
 public interface IStashSaveWriter
 {
     /// <summary>
     /// Writes <paramref name="amounts"/> (every material the storage should hold) and <paramref name="gold"/> into
-    /// <paramref name="stash"/>'s file, keeping everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
+    /// <paramref name="stash"/>'s file, and adds <paramref name="discoveredBlessings"/> to its <c>unlockedBlessings</c>, keeping
+    /// everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
     /// </summary>
     /// <returns>The stash as read back from the written file, and the path of the backup.</returns>
     /// <exception cref="SaveFileChangedException">The file changed after it was read (e.g. the game saved it).</exception>
@@ -22,6 +23,7 @@ public interface IStashSaveWriter
         StashSave stash,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
         int gold,
+        IReadOnlyCollection<int>? discoveredBlessings = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -35,7 +37,8 @@ public sealed record StashSaveResult(StashSave Stash, string BackupPath);
 /// <c>[2, baseTypeID, subTypeID]</c> at position −4, −4, as the game stores them) or <c>keysList</c> (a resource item as
 /// the game stores it there: <c>[6, id, id, id, id, 104, subTypeID]</c> in container 100 at position 0, subTypeID; the
 /// game drops resource entries in any other shape when it loads the stash, so such entries are rewritten). A changed
-/// gold amount is written into <c>gold</c>. Every other field and entry stays as
+/// gold amount is written into <c>gold</c>; blessings the stash has not discovered yet are added at the end of
+/// <c>unlockedBlessings</c> (otherwise the game shows them as "Undiscovered"). Every other field and entry stays as
 /// the game wrote it; the file is written compact, through a temporary file, keeping the old one as a backup.
 /// </summary>
 public sealed class StashSaveWriter : IStashSaveWriter
@@ -50,6 +53,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         StashSave stash,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
         int gold,
+        IReadOnlyCollection<int>? discoveredBlessings = null,
         CancellationToken cancellationToken = default)
     {
         var path = stash.FilePath;
@@ -57,7 +61,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         if (!string.Equals(CharacterSaveParser.ComputeContentHash(content), stash.ContentHash, StringComparison.Ordinal))
             throw new SaveFileChangedException(path);
 
-        var newContent = Apply(content, stash.Amounts, amounts, stash.Gold, gold);
+        var newContent = Apply(content, stash.Amounts, amounts, stash.Gold, gold, discoveredBlessings);
 
         // Never write something the editor itself cannot read back.
         var saved = StashSaveParser.Parse(path, newContent);
@@ -83,15 +87,16 @@ public sealed class StashSaveWriter : IStashSaveWriter
 
     /// <summary>
     /// The file content with the materials whose amount differs between <paramref name="original"/> and
-    /// <paramref name="amounts"/>, and the gold when <paramref name="gold"/> differs from <paramref name="originalGold"/>,
-    /// written into it.
+    /// <paramref name="amounts"/>, the gold when <paramref name="gold"/> differs from <paramref name="originalGold"/>, and the
+    /// <paramref name="discoveredBlessings"/> missing from <c>unlockedBlessings</c>, written into it.
     /// </summary>
     public static string Apply(
         string content,
         IReadOnlyDictionary<CraftingMaterialKey, int> original,
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
         int originalGold,
-        int gold)
+        int gold,
+        IReadOnlyCollection<int>? discoveredBlessings = null)
     {
         var start = content.IndexOf('{');
         var end = content.LastIndexOf('}');
@@ -109,7 +114,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
             .ToDictionary(c => c.Key, c => c.Quantity);
         gold = Math.Max(0, gold);
         var goldChanged = gold != Math.Max(0, originalGold);
-        if (changes.Count == 0 && !goldChanged)
+        var blessingsAdded = AddBlessings(root, discoveredBlessings);
+        if (changes.Count == 0 && !goldChanged && !blessingsAdded)
             return content;
 
         if (goldChanged)
@@ -251,6 +257,35 @@ public sealed class StashSaveWriter : IStashSaveWriter
             ["containerID"] = KeyContainerId,
             ["formatVersion"] = 2
         };
+    }
+
+    /// <summary>
+    /// Appends the blessings of <paramref name="blessings"/> that <c>unlockedBlessings</c> does not list yet (creating the
+    /// list when the file has none); <c>true</c> when something was added.
+    /// </summary>
+    private static bool AddBlessings(JsonObject root, IReadOnlyCollection<int>? blessings)
+    {
+        if (blessings is null || blessings.Count == 0)
+            return false;
+
+        var list = root[StashSaveParser.UnlockedBlessingsField] as JsonArray;
+        var known = list?
+            .Select(n => n is JsonValue value && value.TryGetValue<int>(out var id) ? id : (int?)null)
+            .OfType<int>()
+            .ToHashSet() ?? new HashSet<int>();
+        var missing = blessings.Where(id => id >= 0 && known.Add(id)).ToList();
+        if (missing.Count == 0)
+            return false;
+
+        if (list is null)
+        {
+            list = [];
+            root[StashSaveParser.UnlockedBlessingsField] = list;
+        }
+
+        foreach (var id in missing)
+            list.Add(id);
+        return true;
     }
 
     /// <summary>

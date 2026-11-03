@@ -5,7 +5,10 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.Saves;
 
-/// <summary>Reads the gold and the material storage of a stash file (<see cref="StashSave"/>); everything else in it is ignored.</summary>
+/// <summary>
+/// Reads the gold, the material storage and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
+/// else in it is ignored.
+/// </summary>
 public static class StashSaveParser
 {
     /// <summary>List of affix shards.</summary>
@@ -19,6 +22,9 @@ public static class StashSaveParser
 
     /// <summary>Gold of the stash.</summary>
     internal const string GoldField = "gold";
+
+    /// <summary>Blessings (<c>subTypeID</c>s) the characters of the stash have discovered.</summary>
+    internal const string UnlockedBlessingsField = "unlockedBlessings";
 
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
@@ -53,6 +59,7 @@ public static class StashSaveParser
             StashType = GetInt(root, "stashType"),
             SoloCharacterId = root.TryGetProperty("soloChallengeCharacterId", out var solo) ? AsText(solo) : null,
             Gold = ReadGold(root),
+            UnlockedBlessings = ReadUnlockedBlessings(root),
             Amounts = amounts,
             ContentHash = CharacterSaveParser.ComputeContentHash(content)
         };
@@ -120,6 +127,18 @@ public static class StashSaveParser
         return CraftingMaterialData.Read(bytes) is { Kind: not CraftingMaterialKind.AffixShard } material
             ? new CraftingMaterialKey(material.Kind, material.SubTypeId)
             : null;
+    }
+
+    /// <summary><c>unlockedBlessings</c>, in file order; empty when the file has none.</summary>
+    internal static IReadOnlyList<int> ReadUnlockedBlessings(JsonElement root)
+    {
+        if (!root.TryGetProperty(UnlockedBlessingsField, out var list) || list.ValueKind != JsonValueKind.Array)
+            return [];
+
+        return list.EnumerateArray()
+            .Where(e => e.ValueKind == JsonValueKind.Number && e.TryGetInt32(out _))
+            .Select(e => e.GetInt32())
+            .ToList();
     }
 
     /// <summary><c>gold</c>, limited to 0 … <see cref="int.MaxValue"/>; 0 when the file has none.</summary>

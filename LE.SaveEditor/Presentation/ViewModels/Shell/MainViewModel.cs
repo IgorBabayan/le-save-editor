@@ -276,7 +276,11 @@ public partial class MainViewModel(
         {
             var updates = details.GetUpdates();
             var waypoints = details.GetWaypointScenes();
-            var stash = details.Stash is { HasChanges: true } changedStash ? changedStash : null;
+            // Blessings held but not discovered in the stash are written into it too (else the game shows "Undiscovered").
+            var discoveredBlessings = details.GetBlessingsToDiscover();
+            var stash = details.Stash is { } changedStash && (changedStash.HasChanges || discoveredBlessings.Count > 0)
+                ? changedStash
+                : null;
             if (updates.Count == 0 && waypoints is null && stash is null)
                 return;
 
@@ -291,7 +295,7 @@ public partial class MainViewModel(
             // The gold and the material storage live in the stash file, which the characters of the stash share.
             if (stash is not null)
             {
-                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts, stash.Gold);
+                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts, stash.Gold, discoveredBlessings);
                 backups.Add(Path.GetFileName(stashResult.BackupPath));
                 _stashes = _stashes.Select(s => string.Equals(s.FilePath, stashResult.Stash.FilePath, StringComparison.OrdinalIgnoreCase) ? stashResult.Stash : s).ToList();
                 stash.MarkSaved(stashResult.Stash);

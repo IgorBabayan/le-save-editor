@@ -64,6 +64,9 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   timelines and their blessings come from the `Timelines` table of the game database; a database made before it shows
   a hint to update it, and the blessings in the save stay untouched. Blessings of another timeline, or unknown to the
   database, stay in their slot until another one is picked.
+  The game shows a blessing as "Undiscovered" unless the character's stash lists it in `unlockedBlessings`
+  (blessing subTypeIDs): saving the character adds every blessing it holds that the stash does not list yet, and the
+  section warns about such blessings until then.
 - Remove an item with the trash button in the inspector ("Remove item" in the full builder), or right-click an
   equipped item, a backpack item or an idol and choose "Remove". It is deleted from the save on the next save.
 - The corruption slot offers the corruption-only affixes first, then normal affixes of the item type. The corruption

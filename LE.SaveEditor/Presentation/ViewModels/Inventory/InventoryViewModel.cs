@@ -103,7 +103,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         UpdateGold();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
-        Blessings = new BlessingsViewModel(character, itemBaseCatalog, iconProvider);
+        Blessings = new BlessingsViewModel(character, itemBaseCatalog, iconProvider, stash);
         Blessings.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
 
