@@ -4,26 +4,34 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// The material storage of one stash file with the changes made in the editor. Every character that uses the stash
+/// The gold and the material storage of one stash file with the changes made in the editor. Every character that uses the stash
 /// shares this instance (softcore characters of a cycle share their stash), so a change shows for all of them and is
 /// written once.
 /// </summary>
 public sealed class StashMaterialsViewModel(StashSave stash)
 {
+    /// <summary>Most gold the editor writes (the game keeps it in a 32-bit number).</summary>
+    public const int MaxGold = int.MaxValue;
+
     private Dictionary<CraftingMaterialKey, int> _amounts = new(stash.Amounts);
+    private int _gold = stash.Gold;
 
     /// <summary>The stash as read from (or last written to) its file.</summary>
     public StashSave Stash { get; private set; } = stash;
 
-    /// <summary>The amounts changed, or the stash was saved.</summary>
+    /// <summary>The amounts or the gold changed, or the stash was saved.</summary>
     public event EventHandler? Changed;
 
     /// <summary>Every material of the storage with its current amount (with entries the game keeps at 0).</summary>
     public IReadOnlyDictionary<CraftingMaterialKey, int> Amounts => _amounts;
 
-    /// <summary>Some amount differs from the file.</summary>
+    /// <summary>Gold of the stash with the change made in the editor.</summary>
+    public int Gold => _gold;
+
+    /// <summary>The gold or some amount differs from the file.</summary>
     public bool HasChanges =>
-        _amounts.Keys.Concat(Stash.Amounts.Keys).Distinct()
+        _gold != Stash.Gold
+        || _amounts.Keys.Concat(Stash.Amounts.Keys).Distinct()
             .Any(key => _amounts.GetValueOrDefault(key) != Stash.Amounts.GetValueOrDefault(key));
 
     /// <summary>How many materials of <paramref name="kind"/> the storage holds now.</summary>
@@ -74,11 +82,23 @@ public sealed class StashMaterialsViewModel(StashSave stash)
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>Sets the gold of the stash (limited to 0 … <see cref="MaxGold"/>); nothing happens when it is the current one.</summary>
+    public void SetGold(int gold)
+    {
+        gold = Math.Clamp(gold, 0, MaxGold);
+        if (gold == _gold)
+            return;
+
+        _gold = gold;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>The stash was written: <paramref name="saved"/> (read back from the file) is the new state.</summary>
     public void MarkSaved(StashSave saved)
     {
         Stash = saved;
         _amounts = new Dictionary<CraftingMaterialKey, int>(saved.Amounts);
+        _gold = saved.Gold;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

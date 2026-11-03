@@ -5,7 +5,7 @@ using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.Saves;
 
-/// <summary>Reads the material storage of a stash file (<see cref="StashSave"/>); everything else in it is ignored.</summary>
+/// <summary>Reads the gold and the material storage of a stash file (<see cref="StashSave"/>); everything else in it is ignored.</summary>
 public static class StashSaveParser
 {
     /// <summary>List of affix shards.</summary>
@@ -16,6 +16,9 @@ public static class StashSaveParser
 
     /// <summary>List of resources (key items).</summary>
     internal const string KeyList = "keysList";
+
+    /// <summary>Gold of the stash.</summary>
+    internal const string GoldField = "gold";
 
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
@@ -49,6 +52,7 @@ public static class StashSaveParser
             FilePath = filePath,
             StashType = GetInt(root, "stashType"),
             SoloCharacterId = root.TryGetProperty("soloChallengeCharacterId", out var solo) ? AsText(solo) : null,
+            Gold = ReadGold(root),
             Amounts = amounts,
             ContentHash = CharacterSaveParser.ComputeContentHash(content)
         };
@@ -116,6 +120,18 @@ public static class StashSaveParser
         return CraftingMaterialData.Read(bytes) is { Kind: not CraftingMaterialKind.AffixShard } material
             ? new CraftingMaterialKey(material.Kind, material.SubTypeId)
             : null;
+    }
+
+    /// <summary><c>gold</c>, limited to 0 … <see cref="int.MaxValue"/>; 0 when the file has none.</summary>
+    internal static int ReadGold(JsonElement root)
+    {
+        if (!root.TryGetProperty(GoldField, out var gold) || gold.ValueKind != JsonValueKind.Number)
+            return 0;
+
+        if (gold.TryGetInt64(out var whole))
+            return (int)Math.Clamp(whole, 0, int.MaxValue);
+
+        return gold.TryGetDouble(out var real) ? (int)Math.Clamp(real, 0, int.MaxValue) : 0;
     }
 
     private static string? AsText(JsonElement value) => value.ValueKind switch

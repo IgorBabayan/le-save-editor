@@ -69,8 +69,13 @@ public sealed partial class InventoryViewModel : ViewModelBase
             };
         Backpack.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         if (stash is not null)
-            stash.Changed += (_, _) => UpdateCraftingMaterials();
+            stash.Changed += (_, _) =>
+            {
+                UpdateCraftingMaterials();
+                UpdateGold();
+            };
         UpdateCraftingMaterials();
+        UpdateGold();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
     }
@@ -108,6 +113,51 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// the save folder has no stash file for it.
     /// </summary>
     public StashMaterialsViewModel? Stash { get; }
+
+    /// <summary>The character has a stash file, so its gold can be changed.</summary>
+    public bool HasStash => Stash is not null;
+
+    /// <summary>
+    /// Gold of the character's stash (shared by every character using it); written to the stash file when the character
+    /// is saved.
+    /// </summary>
+    [ObservableProperty]
+    private int _gold;
+
+    /// <summary>Set while <see cref="Gold"/> is filled from the stash, so it is not written back.</summary>
+    private bool _updatingGold;
+
+    /// <summary>Tooltip of the gold box: where the gold is kept.</summary>
+    public string GoldToolTip => Stash is { } stash
+        ? $"Gold kept in {stash.Stash.FileName}, shared by every character using that stash. Written when the character is saved."
+        : "No stash file was found for this character in the save folder, so its gold cannot be edited.";
+
+    partial void OnGoldChanged(int value)
+    {
+        var clamped = Math.Clamp(value, 0, StashMaterialsViewModel.MaxGold);
+        if (clamped != value)
+        {
+            Gold = clamped;
+            return;
+        }
+
+        if (!_updatingGold)
+            Stash?.SetGold(value);
+    }
+
+    /// <summary>Shows the gold of the stash (0 without one).</summary>
+    private void UpdateGold()
+    {
+        _updatingGold = true;
+        try
+        {
+            Gold = Stash?.Gold ?? 0;
+        }
+        finally
+        {
+            _updatingGold = false;
+        }
+    }
 
     /// <summary>
     /// The "Crafting materials" box, in the game's order: per kind (shards, runes, glyphs) how many the material storage

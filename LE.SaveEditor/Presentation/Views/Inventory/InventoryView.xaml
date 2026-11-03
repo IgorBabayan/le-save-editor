@@ -495,6 +495,46 @@
                             </ItemsControl>
                         </StackPanel>
                     </Border>
+
+                    <!-- Gold of the stash: typed in, written to the stash file when the character is saved. -->
+                    <Border Margin="0,12,0,0"
+                            Padding="12,8"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}"
+                            ToolTip="{Binding GoldToolTip}"
+                            ToolTipService.ShowOnDisabled="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <wpf:MaterialIcon Grid.Column="0"
+                                              Width="18"
+                                              Height="18"
+                                              VerticalAlignment="Center"
+                                              Foreground="#FFD4A72C"
+                                              Kind="CircleMultiple" />
+                            <TextBlock Grid.Column="1"
+                                       Margin="8,0,12,0"
+                                       VerticalAlignment="Center"
+                                       Text="Gold"
+                                       Style="{StaticResource SectionHeaderTextStyle}" />
+                            <TextBox Grid.Column="2"
+                                     MinWidth="120"
+                                     HorizontalAlignment="Stretch"
+                                     TextAlignment="Right"
+                                     FontSize="14"
+                                     FontWeight="SemiBold"
+                                     IsReadOnly="{Binding HasStash, Converter={StaticResource InverseBooleanConverter}}"
+                                     behaviors:NumericInput.IsEnabled="True"
+                                     behaviors:NumericInput.Maximum="{x:Static inventoryVm:StashMaterialsViewModel.MaxGold}"
+                                     behaviors:SelectOnClick.IsEnabled="True"
+                                     Text="{Binding Gold, UpdateSourceTrigger=PropertyChanged, TargetNullValue=0}" />
+                        </Grid>
+                    </Border>
                 </StackPanel>
             </Grid>
 
