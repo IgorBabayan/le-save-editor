@@ -25,6 +25,7 @@ public static class WaypointCatalog
     private const string Chapter7 = "Chapter 7";
     private const string Chapter8 = "Chapter 8";
     private const string Chapter9 = "Chapter 9";
+    private const string Chapter10 = "Chapter 10";
 
     public static IReadOnlyList<Waypoint> All { get; } =
     [
@@ -121,6 +122,17 @@ public static class WaypointCatalog
         new("H100", "The Aerie", Chapter9),
         new("H110", "The Temple Rooftops", Chapter9),
         new("H120", "The Upper Temple", Chapter9),
+
+        new("I10", "The Ancient Oasis", Chapter10),
+        new("I20", "The Crystal Cave", Chapter10),
+        new("I40", "The Mountain Ascent", Chapter10),
+        new("I50", "The Draal Hive", Chapter10),
+        new("I70", "The Silent Coast", Chapter10),
+        new("I80", "The Garden", Chapter10),
+        new("I100", "The Dragon Grotto", Chapter10),
+        new("I120", "The Temple in the Sky", Chapter10),
+        new("I130", "Eterra's Arboretum", Chapter10),
+        new("I140", "The Halls of Preservation", Chapter10),
 
         new("EoT", "The End of Time", OtherGroup),
         new("MonolithHub", "Monolith of Fate", OtherGroup),
