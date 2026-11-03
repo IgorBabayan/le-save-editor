@@ -6,7 +6,7 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Reads the gold, the ancient bones, the Circle of Fortune favor, the material storage and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
+/// Reads the gold, the ancient bones, the Circle of Fortune favor, the faction ranks, the material storage and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
 /// else in it is ignored.
 /// </summary>
 public static class StashSaveParser
@@ -34,6 +34,12 @@ public static class StashSaveParser
 
     /// <summary>Favor of a faction entry.</summary>
     internal const string FavorField = "favor";
+
+    /// <summary>Rank of a faction entry.</summary>
+    internal const string RankField = "rank";
+
+    /// <summary>Reputation of a faction entry (progress towards the next rank).</summary>
+    internal const string ReputationField = "reputation";
 
     /// <summary>Blessings (<c>subTypeID</c>s) the characters of the stash have discovered.</summary>
     internal const string UnlockedBlessingsField = "unlockedBlessings";
@@ -73,6 +79,7 @@ public static class StashSaveParser
             Gold = ReadGold(root),
             AncientBones = ReadAmount(root, AncientBonesField),
             Favor = ReadFavor(root),
+            FactionRanks = ReadFactionRanks(root),
             UnlockedBlessings = ReadUnlockedBlessings(root),
             Amounts = amounts,
             ContentHash = CharacterSaveParser.ComputeContentHash(content)
@@ -171,6 +178,22 @@ public static class StashSaveParser
             return null;
 
         return ReadAmount(circle, FavorField);
+    }
+
+    /// <summary><c>factions[id].rank</c> of every faction entry, by key; empty when the stash has no factions.</summary>
+    internal static IReadOnlyDictionary<string, int> ReadFactionRanks(JsonElement root)
+    {
+        var ranks = new Dictionary<string, int>(StringComparer.Ordinal);
+        if (!root.TryGetProperty(FactionsField, out var factions) || factions.ValueKind != JsonValueKind.Object)
+            return ranks;
+
+        foreach (var faction in factions.EnumerateObject())
+        {
+            if (faction.Value.ValueKind == JsonValueKind.Object)
+                ranks[faction.Name] = ReadAmount(faction.Value, RankField);
+        }
+
+        return ranks;
     }
 
     /// <summary>A whole amount <paramref name="name"/> of <paramref name="element"/>, limited to 0 … <see cref="int.MaxValue"/>; 0 when missing.</summary>

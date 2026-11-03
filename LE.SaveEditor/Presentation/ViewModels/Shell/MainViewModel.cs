@@ -292,10 +292,10 @@ public partial class MainViewModel(
                 ReplaceCharacter(character, result.Character);
             }
 
-            // The gold, favor, ancient bones and the material storage live in the stash file, which the characters of the stash share.
+            // The gold, favor, ancient bones, faction ranks and the material storage live in the stash file, which the characters of the stash share.
             if (stash is not null)
             {
-                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts, stash.Currencies, discoveredBlessings);
+                var stashResult = await stashSaveWriter.SaveAsync(stash.Stash, stash.Amounts, stash.Currencies, discoveredBlessings, stash.FactionRanks);
                 backups.Add(Path.GetFileName(stashResult.BackupPath));
                 _stashes = _stashes.Select(s => string.Equals(s.FilePath, stashResult.Stash.FilePath, StringComparison.OrdinalIgnoreCase) ? stashResult.Stash : s).ToList();
                 stash.MarkSaved(stashResult.Stash);

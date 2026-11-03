@@ -16,7 +16,7 @@ public readonly record struct CraftingMaterialKey(CraftingMaterialKind Kind, int
 /// (keys, charms, primordial materials, ...) are the <c>keysList</c> entries: an item in format 6 in container 100 at the
 /// resource's slot (<c>"data": [6, id, id, id, id, 104, 4], "inventoryPosition": {"x": 0, "y": 4}, "containerID": 100</c>
 /// = Temporal Sanctum Key). The stash also keeps the gold of its characters (<c>"gold": 2191</c>), their ancient bones
-/// (<c>"ancientBones": 0</c>), their Circle of Fortune favor (<c>"factions": {"0": {"favor": 104, ...}}</c>) and the
+/// (<c>"ancientBones": 0</c>), their factions with the Circle of Fortune favor (<c>"factions": {"0": {"rank": 1, "favor": 104, ...}}</c>) and the
 /// blessings they have discovered (<c>"unlockedBlessings": [111, 8, ...]</c>, blessing <c>subTypeID</c>s).
 /// </summary>
 public sealed record StashSave
@@ -44,6 +44,12 @@ public sealed record StashSave
     /// Fortune entry (none of its characters has met the guild yet), so there is no favor to edit.
     /// </summary>
     public int? Favor { get; init; }
+
+    /// <summary>
+    /// <c>factions[id].rank</c> of every faction entry the stash has, by faction key (<c>"0"</c> = Circle of Fortune). A
+    /// faction without an entry has not been unlocked in game by any character of the stash.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> FactionRanks { get; init; } = new Dictionary<string, int>();
 
     /// <summary>Gold, ancient bones and favor of the stash.</summary>
     public StashCurrencies Currencies => new(Gold, Favor ?? 0, AncientBones);

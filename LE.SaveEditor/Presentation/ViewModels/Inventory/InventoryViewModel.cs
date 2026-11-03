@@ -1,6 +1,7 @@
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Presentation.ViewModels.Blessings;
+using LE.SaveEditor.Presentation.ViewModels.Factions;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Notifications;
@@ -11,11 +12,12 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
 /// "Inventory" tab of one character: equipped items, the idol grid and crafting materials on top,
-/// followed by the "Items", "Resources", "Woven echoes" and "Blessings" sections.
+/// followed by the "Items", "Resources", "Woven echoes", "Blessings" and "Factions" sections.
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
 /// (all read from <c>savedItems</c>), the "Resources" section the keys and consumables of the character's stash
 /// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty; "Blessings" holds the blessing picked for each
-/// timeline echo (<see cref="BlessingsViewModel"/>). Clicking an equipment slot, an idol or a backpack
+/// timeline echo (<see cref="BlessingsViewModel"/>); "Factions" the rank of every faction unlocked in the stash
+/// (<see cref="FactionsViewModel"/>). Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
 /// builds a new item there. The idol altar slot sits by the idol grid: the altar in it gives the grid its shape and
 /// refracted slots (<see cref="IdolAltarLayouts"/>), and changing or removing it reshapes the grid at once.
@@ -105,6 +107,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
         Blessings = new BlessingsViewModel(character, itemBaseCatalog, iconProvider, stash);
         Blessings.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        Factions = new FactionsViewModel(stash);
     }
 
     /// <summary>All equipment slots, the idol altar slot included.</summary>
@@ -131,6 +134,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     /// <summary>The "Blessings" section: the blessing of every timeline echo.</summary>
     public BlessingsViewModel Blessings { get; }
+
+    /// <summary>The "Factions" section: the rank of every faction the stash has unlocked.</summary>
+    public FactionsViewModel Factions { get; }
 
     /// <summary>The "Items" section: the backpack grid with the items the character carries.</summary>
     public BackpackViewModel Backpack { get; }

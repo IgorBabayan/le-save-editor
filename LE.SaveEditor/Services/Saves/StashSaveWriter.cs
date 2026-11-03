@@ -7,16 +7,16 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Writes changes of the gold, the Circle of Fortune favor, the ancient bones, the material storage and the discovered
-/// blessings back into a stash file.
+/// Writes changes of the gold, the Circle of Fortune favor, the ancient bones, the faction ranks, the material storage and
+/// the discovered blessings back into a stash file.
 /// </summary>
 public interface IStashSaveWriter
 {
     /// <summary>
     /// Writes <paramref name="amounts"/> (every material the storage should hold) and <paramref name="currencies"/> (gold,
     /// favor, ancient bones) into
-    /// <paramref name="stash"/>'s file, and adds <paramref name="discoveredBlessings"/> to its <c>unlockedBlessings</c>, keeping
-    /// everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
+    /// <paramref name="stash"/>'s file, adds <paramref name="discoveredBlessings"/> to its <c>unlockedBlessings</c> and writes
+    /// <paramref name="factionRanks"/> into the faction entries it already has, keeping everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
     /// </summary>
     /// <returns>The stash as read back from the written file, and the path of the backup.</returns>
     /// <exception cref="SaveFileChangedException">The file changed after it was read (e.g. the game saved it).</exception>
@@ -28,6 +28,7 @@ public interface IStashSaveWriter
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
         StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
+        IReadOnlyDictionary<string, int>? factionRanks = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -59,6 +60,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
         StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
+        IReadOnlyDictionary<string, int>? factionRanks = null,
         CancellationToken cancellationToken = default)
     {
         var path = stash.FilePath;
@@ -66,7 +68,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         if (!string.Equals(CharacterSaveParser.ComputeContentHash(content), stash.ContentHash, StringComparison.Ordinal))
             throw new SaveFileChangedException(path);
 
-        var newContent = Apply(content, stash.Amounts, amounts, stash.Currencies, currencies, discoveredBlessings);
+        var newContent = Apply(content, stash.Amounts, amounts, stash.Currencies, currencies, discoveredBlessings, factionRanks);
 
         // Never write something the editor itself cannot read back.
         var saved = StashSaveParser.Parse(path, newContent);
@@ -94,7 +96,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
     /// The file content with the materials whose amount differs between <paramref name="original"/> and
     /// <paramref name="amounts"/>, the gold, favor and ancient bones of <paramref name="currencies"/> that differ from
     /// <paramref name="originalCurrencies"/>, and the <paramref name="discoveredBlessings"/> missing from
-    /// <c>unlockedBlessings</c>, written into it.
+    /// <c>unlockedBlessings</c> and the <paramref name="factionRanks"/> that differ from the file, written into it.
     /// </summary>
     public static string Apply(
         string content,
@@ -102,7 +104,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
         IReadOnlyDictionary<CraftingMaterialKey, int> amounts,
         StashCurrencies originalCurrencies,
         StashCurrencies currencies,
-        IReadOnlyCollection<int>? discoveredBlessings = null)
+        IReadOnlyCollection<int>? discoveredBlessings = null,
+        IReadOnlyDictionary<string, int>? factionRanks = null)
     {
         var start = content.IndexOf('{');
         var end = content.LastIndexOf('}');
@@ -120,7 +123,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
             .ToDictionary(c => c.Key, c => c.Quantity);
         var currenciesChanged = ApplyCurrencies(root, originalCurrencies, currencies);
         var blessingsAdded = AddBlessings(root, discoveredBlessings);
-        if (changes.Count == 0 && !currenciesChanged && !blessingsAdded)
+        var ranksChanged = ApplyFactionRanks(root, factionRanks);
+        if (changes.Count == 0 && !currenciesChanged && !blessingsAdded && !ranksChanged)
             return content;
 
         if (changes.Count == 0)
@@ -290,6 +294,35 @@ public sealed class StashSaveWriter : IStashSaveWriter
             && factions[StashSaveParser.CircleOfFortuneFactionId] is JsonObject circle)
         {
             circle[StashSaveParser.FavorField] = favor;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Writes the ranks of <paramref name="ranks"/> (by faction key) that differ from the file into the faction entries the
+    /// stash already has; the reputation of a changed faction starts over at 0 (the start of its new rank). A faction
+    /// without an entry is skipped: the editor never unlocks a faction. <c>true</c> when something was written.
+    /// </summary>
+    private static bool ApplyFactionRanks(JsonObject root, IReadOnlyDictionary<string, int>? ranks)
+    {
+        if (ranks is null || ranks.Count == 0 || root[StashSaveParser.FactionsField] is not JsonObject factions)
+            return false;
+
+        var changed = false;
+        foreach (var (id, rank) in ranks)
+        {
+            if (factions[id] is not JsonObject faction)
+                continue;
+
+            var value = Math.Max(0, rank);
+            if (faction[StashSaveParser.RankField] is JsonValue current && current.TryGetValue<int>(out var saved) && saved == value)
+                continue;
+
+            faction[StashSaveParser.RankField] = value;
+            if (faction.ContainsKey(StashSaveParser.ReputationField))
+                faction[StashSaveParser.ReputationField] = 0;
             changed = true;
         }
 
