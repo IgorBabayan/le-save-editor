@@ -30,8 +30,9 @@ public enum ItemListKind
 /// Affix slots follow the rarity: bases take 2 prefixes, 2 suffixes, a sealed prefix, a sealed suffix and a
 /// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
 /// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
-/// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic or Unique: an idol base takes one prefix and one suffix
-/// (idol affixes), a unique idol none. Idol altars (<see cref="EquipmentSlot.IdolAltar"/>) are plain bases, always
+/// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic or Unique: an idol base takes one prefix, one suffix
+/// (idol affixes) and a corruption, a unique idol none. Weaver and Heretical idols are offered although the game marks
+/// them as not dropping. Idol altars (<see cref="EquipmentSlot.IdolAltar"/>) are plain bases, always
 /// corrupted, with two prefixes and two suffixes of the altar affixes and a corruption (a corrupted altar affix or any
 /// other altar affix); they have no sealed affix, unique or set version.
 /// For an item kept in a grid (backpack) a search can also list the items of extra slots (a weapon search finds
@@ -275,8 +276,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         : IsSearching ? Slot.IsIdol ? "No idols or unique idols match the search."
             : Slot.IsIdolAltar ? "No idol altars match the search."
             : "No bases, unique or set items match the search."
-        : !CurrentListOptions.Any(o => !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
-        : ShowOnlyUsable && !CurrentListOptions.Any(o => o.IsUsable && !o.Base.CannotDrop) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
+        : !CurrentListOptions.Any(IsListed) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} were found in the game database."
+        : ShowOnlyUsable && !CurrentListOptions.Any(o => o.IsUsable && IsListed(o)) ? $"No {Slot.DisplayName.ToLowerInvariant()} {ListNoun} for this class."
         : $"No {ListNoun} match the search.";
 
     /// <summary>
@@ -367,7 +368,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             // The current choice always stays listed (the ListBox would clear it otherwise), in its own group;
             // legacy bases (no longer dropped) are hidden otherwise.
             var matches = option == selected
-                          || (!option.Base.CannotDrop
+                          || (IsListed(option)
                               && (!ShowOnlyUsable || option.IsUsable)
                               && words.All(w => option.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
                                                 || option.Base.TypeName.Contains(w, StringComparison.CurrentCultureIgnoreCase)
@@ -380,6 +381,21 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasBases));
         OnPropertyChanged(nameof(EmptyBasesText));
     }
+
+    /// <summary>
+    /// Words of idol bases the game marks as not dropping but that players get another way: Weaver idols (the Weaver
+    /// tree) and Heretical idols (heretical crafting). They are offered like other bases.
+    /// </summary>
+    private static readonly string[] ObtainableIdolWords = ["Weaver", "Heretical"];
+
+    /// <summary>
+    /// Whether <paramref name="option"/> is offered: bases that still drop, plus Weaver and Heretical idols; other legacy
+    /// bases stay hidden.
+    /// </summary>
+    private static bool IsListed(BaseOptionViewModel option) =>
+        !option.Base.CannotDrop
+        || (EquipmentSlot.Idol.AcceptsBaseType(option.Base.BaseTypeId)
+            && ObtainableIdolWords.Any(w => option.Base.Name.Contains(w, StringComparison.OrdinalIgnoreCase)));
 
     // ===== Selection and stats =====
 
@@ -591,7 +607,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>
     /// Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets
-    /// corruption; idols 1P / 1S, unique idols none; idol altars 2P / 2S / corruption.
+    /// corruption; idols 1P / 1S / corruption, unique idols none; idol altars 2P / 2S / corruption.
     /// </summary>
     private void BuildAffixSlots()
     {
@@ -600,7 +616,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             _ when Slot.IsIdolAltar && ListKind == ItemListKind.Bases =>
                 [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             _ when Slot.IsIdolAltar => [],
-            (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix],
+            (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             (true, _) => [],
             (_, ItemListKind.Sets) => [AffixSlotKind.Corrupted],
             (_, ItemListKind.Uniques) => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
