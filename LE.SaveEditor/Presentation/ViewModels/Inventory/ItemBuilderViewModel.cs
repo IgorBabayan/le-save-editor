@@ -30,8 +30,8 @@ public enum ItemListKind
 /// Affix slots follow the rarity: bases take 2 prefixes, 2 suffixes, a sealed prefix, a sealed suffix and a
 /// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
 /// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
-/// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic or Unique: an idol base takes one prefix, one suffix
-/// (idol affixes) and a corruption, a unique idol none. Weaver and Heretical idols are offered although the game marks
+/// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic, Unique or Legendary: an idol base takes one prefix, one
+/// suffix (idol affixes) and a corruption, a unique idol only a corruption (which makes it legendary). Weaver and Heretical idols are offered although the game marks
 /// them as not dropping. Idol altars (<see cref="EquipmentSlot.IdolAltar"/>) are plain bases, always
 /// corrupted, with two prefixes and two suffixes of the altar affixes and a corruption (a corrupted altar affix or any
 /// other altar affix); they have no sealed affix, unique or set version.
@@ -53,8 +53,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary>Slots whose items a search lists besides the slot's own.</summary>
     private readonly IReadOnlyList<EquipmentSlot> _extraSearchSlots;
 
-    /// <summary>Rarities an idol can have.</summary>
-    private static readonly ItemRarity[] IdolRarities = [ItemRarity.Normal, ItemRarity.Magic, ItemRarity.Unique];
+    /// <summary>Rarities an idol can have (a corrupted unique idol is a legendary, like any corrupted unique).</summary>
+    private static readonly ItemRarity[] IdolRarities = [ItemRarity.Normal, ItemRarity.Magic, ItemRarity.Unique, ItemRarity.Legendary];
 
     /// <summary>Rarities an idol altar can have (it follows its affixes, like a plain base).</summary>
     private static readonly ItemRarity[] IdolAltarRarities = [ItemRarity.Normal, ItemRarity.Magic, ItemRarity.Rare, ItemRarity.Exalted];
@@ -607,7 +607,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>
     /// Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets
-    /// corruption; idols 1P / 1S / corruption, unique idols none; idol altars 2P / 2S / corruption.
+    /// corruption; idols 1P / 1S / corruption, unique idols a corruption; idol altars 2P / 2S / corruption.
     /// </summary>
     private void BuildAffixSlots()
     {
@@ -617,6 +617,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
                 [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             _ when Slot.IsIdolAltar => [],
             (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
+            // Unique idols take only a corruption (it makes them legendary); idols have no set items.
+            (true, ItemListKind.Uniques) => [AffixSlotKind.Corrupted],
             (true, _) => [],
             (_, ItemListKind.Sets) => [AffixSlotKind.Corrupted],
             (_, ItemListKind.Uniques) => [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],

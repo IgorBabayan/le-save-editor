@@ -70,8 +70,8 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   written for that type), so tiers and ranges in the builder and tooltip match the game.
 - Rarity counts only prefixes and suffixes: a sealed affix and the corruption do not make an item rare. The tooltip
   shows the sealed affix under "Sealed prefix" or "Sealed suffix".
-- Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique. Idol bases also take a
-  corruption: the corrupted idol affixes of that idol type are offered first, then its normal idol affixes; it is
+- Idols are Normal, Magic (one prefix and one suffix from the idol affixes) or Unique. Idol bases and unique idols
+  also take a corruption (a corrupted unique idol becomes a legendary, like any corrupted unique): the corrupted idol affixes of that idol type are offered first, then its normal idol affixes; it is
   stored like an equipment corruption (corrupted item flag, corruption marked in the affix count) and does not change
   the rarity. Weaver idols (Minor, Small, Humble, Stout) and Heretical idols (Grand, Large, Ornate, Huge, Adorned) are
   offered in the builder although the game data marks them as not dropping.
