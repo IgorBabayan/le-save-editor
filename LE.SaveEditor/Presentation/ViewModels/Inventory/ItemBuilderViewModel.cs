@@ -31,9 +31,9 @@ public enum ItemListKind
 /// corruption; uniques / legendaries 2 prefixes, 2 suffixes and a corruption (a unique becomes legendary as soon as
 /// it gets an affix); set items only a corruption. Only affixes that can roll on the item's type are offered.
 /// Idols (<see cref="EquipmentSlot.Idol"/>) are Normal, Magic or Unique: an idol base takes one prefix and one suffix
-/// (idol affixes), a unique idol none. Idol altars (<see cref="EquipmentSlot.IdolAltar"/>) are plain bases with two
-/// prefixes and two suffixes of the altar affixes (the corrupted ones included, as altars are always corrupted); they
-/// have no sealed affix, corruption, unique or set version.
+/// (idol affixes), a unique idol none. Idol altars (<see cref="EquipmentSlot.IdolAltar"/>) are plain bases, always
+/// corrupted, with two prefixes and two suffixes of the altar affixes and a corruption from the corrupted altar
+/// affixes; they have no sealed affix, unique or set version.
 /// For an item kept in a grid (backpack) a search can also list the items of extra slots (a weapon search finds
 /// off-hands too); without a search only the slot's own items are listed.
 /// </summary>
@@ -591,14 +591,14 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     /// <summary>
     /// Slots for the current list: bases 2P / 2S / sealed P / sealed S / corruption, uniques 2P / 2S / corruption, sets
-    /// corruption; idols 1P / 1S, unique idols none; idol altars 2P / 2S (corrupted altar affixes included).
+    /// corruption; idols 1P / 1S, unique idols none; idol altars 2P / 2S / corruption (corrupted altar affixes only).
     /// </summary>
     private void BuildAffixSlots()
     {
         AffixSlotKind[] listKinds = (Slot.IsIdol, ListKind) switch
         {
             _ when Slot.IsIdolAltar && ListKind == ItemListKind.Bases =>
-                [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix],
+                [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             _ when Slot.IsIdolAltar => [],
             (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix],
             (true, _) => [],
@@ -618,7 +618,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
         AffixSlots.Clear();
         foreach (var kind in kinds)
         {
-            var slot = new AffixSlotViewModel(kind, s => AffixPickerSlot = s, RemoveAffix, takesCorruptedAffixes: Slot.IsIdolAltar);
+            var slot = new AffixSlotViewModel(kind, s => AffixPickerSlot = s, RemoveAffix, onlyCorruptedAffixes: Slot.IsIdolAltar);
             // A tier change can make the item exalted (or not).
             slot.PropertyChanged += (_, e) =>
             {

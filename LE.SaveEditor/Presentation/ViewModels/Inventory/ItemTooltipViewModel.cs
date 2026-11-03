@@ -108,7 +108,7 @@ public sealed class ItemTooltipViewModel
     /// <summary>What an idol altar does, as the game's tooltip says, and the idol grid it gives.</summary>
     private static IReadOnlyList<string> AltarEffects(BuiltItem item)
     {
-        var lines = new List<string> { "Changes the idol inventory layout and adds refracted slots." };
+        var lines = new List<string> { "Corrupted", "Changes the idol inventory layout and adds refracted slots." };
         if (IdolAltarLayouts.IsKnown(item.Base.SubTypeId))
         {
             var shape = IdolAltarLayouts.ForAltar(item.Base.SubTypeId);
