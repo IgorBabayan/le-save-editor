@@ -77,7 +77,9 @@ Copies that were not installed with the installer (e.g. debug builds) are never 
   reduced Melee Damage" for Chill Immunity), so they are named after their internal name ("Chill Immunity"). Weaver idols (Minor, Small, Humble, Stout) and Heretical idols (Grand, Large, Ornate, Huge, Adorned) are
   offered in the builder although the game data marks them as not dropping. Weaver idols also roll the Weaver affixes
   (e.g. "Vitality and Added Health Regen", "Physical Resistance and Minion Physical Resistance"), listed first in
-  their prefix and suffix pickers.
+  their prefix and suffix pickers. Heretical idols (Grand, Large, Ornate, Huge and Adorned) take one enchantment
+  from the idol enchantments besides their prefix and suffix; it is shown in blue like in the game, does not change
+  the rarity and is stored among the affixes (the game tells it apart by the affix). Unique idols take no enchantment.
 - Added percentages are shown with the decimals the game uses for the property (its `roundingForAdded`), so e.g.
   1.79% All Resistances on a Humble idol reads "+2%" as in the game.
 - Idol altars: the "Idol altar" slot left of the idol grid holds the character's altar (container 123). Click it to

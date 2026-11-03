@@ -12,11 +12,13 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <param name="TierText">"Tier: 7 (drop only)", or <c>null</c> for implicits and unique modifiers.</param>
 /// <param name="Ranges">"Range: 21% to 26%", one per line.</param>
 /// <param name="IsExalted">Tier 6 or higher: the lines are shown in the exalted color.</param>
+/// <param name="IsEnchant">An idol enchantment: the lines are shown in the enchantment color.</param>
 public sealed record ItemTooltipEntry(
     IReadOnlyList<string> Lines,
     string? TierText,
     IReadOnlyList<string> Ranges,
-    bool IsExalted)
+    bool IsExalted,
+    bool IsEnchant = false)
 {
     public bool HasTier => TierText is not null;
 }
@@ -57,6 +59,7 @@ public sealed class ItemTooltipViewModel
         AddAffixSection(sections, "UNIQUE AFFIX", item, AffixSlotKind.Unique);
         AddAffixSection(sections, "PREFIXES", item, AffixSlotKind.Prefix);
         AddAffixSection(sections, "SUFFIXES", item, AffixSlotKind.Suffix);
+        AddAffixSection(sections, "ENCHANTMENT", item, AffixSlotKind.Enchant);
         AddAffixSection(sections, "SEALED PREFIX", item, AffixSlotKind.SealedPrefix);
         AddAffixSection(sections, "SEALED SUFFIX", item, AffixSlotKind.SealedSuffix);
         AddAffixSection(sections, "CORRUPTED", item, AffixSlotKind.Corrupted);
@@ -132,7 +135,8 @@ public sealed class ItemTooltipViewModel
                 a.Lines.ToList(),
                 a.Tier >= ExaltedTier ? $"Tier: {a.Tier} (drop only)" : $"Tier: {a.Tier}",
                 a.TierData.Stats.Select(Range).ToList(),
-                a.Tier >= ExaltedTier))
+                a.Tier >= ExaltedTier,
+                a.Slot == AffixSlotKind.Enchant))
             .ToList();
 
         if (entries.Count > 0)

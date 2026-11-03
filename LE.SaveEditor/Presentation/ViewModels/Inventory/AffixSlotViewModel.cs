@@ -13,7 +13,10 @@ public enum AffixSlotKind
     Corrupted,
 
     /// <summary>One of the affixes only a specific unique has as a legendary (e.g. the Blood Rage affixes of Unsated Rage).</summary>
-    Unique
+    Unique,
+
+    /// <summary>The enchantment of a Heretical idol (an idol enchantment affix).</summary>
+    Enchant
 }
 
 /// <summary>
@@ -41,6 +44,7 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
         AffixSlotKind.SealedPrefix => "Sealed prefix",
         AffixSlotKind.SealedSuffix => "Sealed suffix",
         AffixSlotKind.Unique => "Unique affix",
+        AffixSlotKind.Enchant => "Enchantment",
         _ => "Corruption"
     };
 
@@ -59,6 +63,9 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
     /// <summary>The slot takes the unique's own legendary affixes.</summary>
     public bool IsUniqueAffix => Kind == AffixSlotKind.Unique;
 
+    /// <summary>The slot takes a Heretical idol's enchantment.</summary>
+    public bool IsEnchant => Kind == AffixSlotKind.Enchant;
+
     /// <summary>
     /// <c>true</c> when <paramref name="affix"/> may go into this slot: prefixes / suffixes take affixes of their type
     /// that are not corruption-only; the corruption slot takes corruption-only affixes and normal prefixes / suffixes
@@ -70,6 +77,9 @@ public sealed partial class AffixSlotViewModel : ViewModelBase
     {
         AffixSlotKind.Unique => affix.OnlyOnUniques.Count > 0,
         _ when affix.OnlyOnUniques.Count > 0 => false,
+        // Idol enchantments go only into the enchantment slot of a Heretical idol, and it takes nothing else.
+        AffixSlotKind.Enchant => affix.Category == AffixCategory.IdolEnchantment,
+        _ when affix.Category == AffixCategory.IdolEnchantment => false,
         AffixSlotKind.Corrupted => affix.Category is AffixCategory.Corrupted or AffixCategory.Normal,
         _ => affix.Category != AffixCategory.Corrupted && affix.Type == AcceptedType
     };

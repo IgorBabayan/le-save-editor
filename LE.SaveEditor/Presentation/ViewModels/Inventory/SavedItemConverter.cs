@@ -65,6 +65,7 @@ public static class SavedItemConverter
     {
         _ when stored.IsCorrupted => AffixSlotKind.Corrupted,
         { OnlyOnUniques.Count: > 0 } => AffixSlotKind.Unique,
+        { Category: AffixCategory.IdolEnchantment } => AffixSlotKind.Enchant,
         { Category: AffixCategory.Corrupted } => AffixSlotKind.Corrupted,
         { Type: AffixType.Prefix } => stored.IsSealed ? AffixSlotKind.SealedPrefix : AffixSlotKind.Prefix,
         _ => stored.IsSealed ? AffixSlotKind.SealedSuffix : AffixSlotKind.Suffix

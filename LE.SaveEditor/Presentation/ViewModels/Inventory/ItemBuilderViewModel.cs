@@ -391,6 +391,18 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary>Weaver idols as the game data marks them: (<c>baseTypeID</c>, <c>subTypeID</c>).</summary>
     private static readonly HashSet<(int BaseTypeId, int SubTypeId)> WeaverIdols = [(25, 2), (26, 1), (27, 1), (28, 1)];
 
+    /// <summary>
+    /// Heretical idols as the game data marks them: Grand, Large, Ornate and Huge idols of sub types 5–9, Adorned idols
+    /// of sub types 7–11. They take one idol enchantment.
+    /// </summary>
+    private static bool IsHereticalIdol(ItemBase item) =>
+        !item.IsUnique && item.BaseTypeId switch
+        {
+            >= 29 and <= 32 => item.SubTypeId is >= 5 and <= 9,
+            33 => item.SubTypeId is >= 7 and <= 11,
+            _ => false
+        };
+
     /// <summary>Whether <paramref name="item"/> is a Weaver idol (it rolls the Weaver affixes).</summary>
     private static bool IsWeaverIdol(ItemBase item) =>
         !item.IsUnique && WeaverIdols.Contains((item.BaseTypeId, item.SubTypeId));
@@ -623,6 +635,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             _ when Slot.IsIdolAltar && ListKind == ItemListKind.Bases =>
                 [AffixSlotKind.Prefix, AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             _ when Slot.IsIdolAltar => [],
+            // A Heretical idol takes one enchantment besides its prefix and suffix.
+            (true, ItemListKind.Bases) when SelectedBase is { } idol && IsHereticalIdol(idol) =>
+                [AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Enchant, AffixSlotKind.Corrupted],
             (true, ItemListKind.Bases) => [AffixSlotKind.Prefix, AffixSlotKind.Suffix, AffixSlotKind.Corrupted],
             // Unique idols take only a corruption (it makes them legendary); idols have no set items.
             (true, ItemListKind.Uniques) => [AffixSlotKind.Corrupted],
@@ -735,7 +750,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// </summary>
     private ItemRarity RarityFromAffixes()
     {
-        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted && !s.IsSealed).ToList();
+        var affixes = AffixSlots.Where(s => s.HasAffix && !s.IsCorrupted && !s.IsSealed && !s.IsEnchant).ToList();
 
         // Idols are never rare or exalted: any affix makes them magic.
         if (Slot.IsIdol)

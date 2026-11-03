@@ -15,6 +15,9 @@ public enum AffixCategory
     Personal = 2,
     Set = 3,
 
+    /// <summary>Enchantments only Heretical idols take (one per idol).</summary>
+    IdolEnchantment = 4,
+
     /// <summary>Affixes only Weaver idols roll (Minor, Small, Humble and Stout Weaver idols).</summary>
     IdolWeaver = 5,
 
