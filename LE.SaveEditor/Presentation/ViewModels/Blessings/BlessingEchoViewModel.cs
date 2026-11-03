@@ -105,6 +105,10 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(RemoveCommand))]
     private BlessingOptionViewModel? _selected;
 
+    /// <summary>The echo is the one whose blessings are shown (highlighted in the echo list).</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
     /// <summary>Rolled stats of <see cref="Selected"/>, each with its slider.</summary>
     public ObservableCollection<ItemStatViewModel> Stats { get; } = [];
 

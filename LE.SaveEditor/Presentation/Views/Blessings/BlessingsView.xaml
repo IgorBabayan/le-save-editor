@@ -74,8 +74,11 @@
             </Setter>
         </Style>
 
-        <!-- A blessing row: hover highlight, and the accent bar and selection background while it is the echo's blessing. -->
-        <Style x:Key="BlessingOptionButtonStyle" TargetType="Button">
+        <!--
+            A row of the echo list or the blessing list: hover highlight, and the accent bar and selection background while
+            its item is selected (IsSelected of the echo / blessing).
+        -->
+        <Style x:Key="BlessingRowButtonStyle" TargetType="Button">
             <Setter Property="Margin" Value="4,1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
@@ -204,16 +207,19 @@
                     Padding="0,4"
                     VerticalAlignment="Top"
                     Style="{StaticResource InventorySectionBorderStyle}">
-                <!-- One-way selection: the view model is changed from code-behind on a user pick only (see the code-behind). -->
-                <ListBox ItemsSource="{Binding Echoes}"
-                         SelectedItem="{Binding SelectedEcho, Mode=OneWay}"
-                         SelectionChanged="EchoList_OnSelectionChanged"
-                         IsSynchronizedWithCurrentItem="False"
-                         Style="{StaticResource PlainListBoxStyle}"
-                         ItemContainerStyle="{StaticResource ListRowItemStyle}"
-                         PreviewMouseWheel="List_OnPreviewMouseWheel">
-                    <ListBox.ItemTemplate>
+                <!--
+                    Plain rows that select the echo with a command, not a ListBox: a ListBox also selects the rows the mouse
+                    passes over while the button is down, and the page shifts under the mouse when the echo's panel changes
+                    height, so a click selected another echo.
+                -->
+                <ItemsControl x:Name="EchoList"
+                              Focusable="False"
+                              ItemsSource="{Binding Echoes}">
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type blessingsVm:BlessingEchoViewModel}">
+                            <Button Style="{StaticResource BlessingRowButtonStyle}"
+                                    Command="{Binding DataContext.SelectEchoCommand, ElementName=EchoList}"
+                                    CommandParameter="{Binding}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -245,9 +251,10 @@
                                          ToolTip="Changed, not saved yet"
                                          Visibility="{Binding HasChanges, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
+                            </Button>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </Border>
 
             <!-- ===== Blessing of the selected echo and the blessings its timeline grants ===== -->
@@ -343,7 +350,7 @@
                         </ItemsControl.GroupStyle>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type blessingsVm:BlessingOptionViewModel}">
-                                <Button Style="{StaticResource BlessingOptionButtonStyle}"
+                                <Button Style="{StaticResource BlessingRowButtonStyle}"
                                         Command="{Binding DataContext.PickCommand, ElementName=OptionList}"
                                         CommandParameter="{Binding}">
                                 <Grid>

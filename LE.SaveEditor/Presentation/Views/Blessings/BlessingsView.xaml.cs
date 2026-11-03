@@ -1,9 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Input;
-using System.Windows.Media;
-using LE.SaveEditor.Presentation.ViewModels.Blessings;
 
 namespace LE.SaveEditor.Presentation.Views.Blessings;
 
@@ -13,19 +10,6 @@ public partial class BlessingsView : UserControl
     public BlessingsView()
     {
         InitializeComponent();
-    }
-
-    /// <summary>
-    /// An echo picked in the list. The lists bind their selection one way: when the inventory switches to another
-    /// character the list gets new items, and a two-way binding could write that reset (no selection) into the new view model.
-    /// </summary>
-    private void EchoList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ListBox { DataContext: BlessingsViewModel blessings }
-            && e.AddedItems.Count > 0
-            && e.AddedItems[0] is BlessingEchoViewModel echo
-            && blessings.Echoes.Contains(echo))
-            blessings.SelectedEcho = echo;
     }
 
     /// <summary>Blessing groups the user collapsed; kept while switching echoes, so a collapsed group stays collapsed.</summary>
@@ -48,23 +32,5 @@ public partial class BlessingsView : UserControl
             _collapsedGroups.Remove(group);
         else
             _collapsedGroups.Add(group);
-    }
-
-    /// <summary>
-    /// The lists show all their rows inside the inventory's scroll viewer; their own scroll viewers would swallow the
-    /// mouse wheel, so it is passed on to the page.
-    /// </summary>
-    private void List_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
-    {
-        if (e.Handled || sender is not UIElement list)
-            return;
-
-        e.Handled = true;
-        var forwarded = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
-        {
-            RoutedEvent = MouseWheelEvent,
-            Source = list
-        };
-        (VisualTreeHelper.GetParent(list) as UIElement)?.RaiseEvent(forwarded);
     }
 }

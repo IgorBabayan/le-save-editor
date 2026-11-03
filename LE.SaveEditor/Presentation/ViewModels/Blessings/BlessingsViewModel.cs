@@ -56,6 +56,23 @@ public sealed partial class BlessingsViewModel : ViewModelBase
     /// <summary>"7 of 10 echoes have a blessing".</summary>
     public string Summary => $"{Echoes.Count(e => e.Selected is not null)} of {Echoes.Count} echoes have a blessing";
 
+    /// <summary>Shows the blessings of <paramref name="echo"/> (one of <see cref="Echoes"/>).</summary>
+    [RelayCommand]
+    private void SelectEcho(BlessingEchoViewModel? echo)
+    {
+        if (echo is not null && Echoes.Contains(echo))
+            SelectedEcho = echo;
+    }
+
+    partial void OnSelectedEchoChanged(BlessingEchoViewModel? oldValue, BlessingEchoViewModel? newValue)
+    {
+        // The highlighted row of the echo list.
+        if (oldValue is not null)
+            oldValue.IsSelected = false;
+        if (newValue is not null)
+            newValue.IsSelected = true;
+    }
+
     /// <summary>A blessing was picked, removed or its roll changed.</summary>
     public event EventHandler? Changed;
 
