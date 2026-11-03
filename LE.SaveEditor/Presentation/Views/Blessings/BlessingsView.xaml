@@ -33,6 +33,76 @@
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
 
+        <!-- Header of a blessing group: chevron, group name and how many blessings it holds; click to collapse. -->
+        <Style x:Key="BlessingGroupToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd"
+                                Margin="4,8,4,2"
+                                Padding="6,4"
+                                CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                SnapsToDevicePixels="True">
+                            <StackPanel Orientation="Horizontal">
+                                <wpf:MaterialIcon x:Name="Chevron"
+                                                  Width="16"
+                                                  Height="16"
+                                                  Margin="0,0,6,0"
+                                                  VerticalAlignment="Center"
+                                                  Kind="ChevronDown"
+                                                  Foreground="{TemplateBinding Foreground}" />
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="Chevron" Property="Kind" Value="ChevronRight" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A group of the blessing list; its rows hide while the header is collapsed (see the code-behind). -->
+        <Style x:Key="BlessingGroupItemStyle" TargetType="GroupItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupItem">
+                        <StackPanel>
+                            <ToggleButton x:Name="Toggle"
+                                          IsChecked="True"
+                                          Style="{StaticResource BlessingGroupToggleStyle}"
+                                          Tag="{Binding Name}"
+                                          Loaded="GroupToggle_OnLoaded"
+                                          Click="GroupToggle_OnClick">
+                                <TextBlock FontWeight="SemiBold">
+                                    <Run Text="{Binding Name, Mode=OneWay}" />
+                                    <Run Text="{Binding ItemCount, Mode=OneWay, StringFormat='({0})'}" FontWeight="Normal" />
+                                </TextBlock>
+                            </ToggleButton>
+                            <ItemsPresenter x:Name="Rows" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger SourceName="Toggle" Property="IsChecked" Value="False">
+                                <Setter TargetName="Rows" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- One rolled stat of the selected blessing: its tooltip line and a slider over the 0…255 roll. -->
         <DataTemplate x:Key="BlessingStatTemplate" DataType="{x:Type inventoryVm:ItemStatViewModel}">
             <StackPanel Margin="0,6,0,0">
@@ -220,17 +290,9 @@
                              Style="{StaticResource PlainListBoxStyle}"
                              ItemContainerStyle="{StaticResource ListRowItemStyle}"
                              PreviewMouseWheel="List_OnPreviewMouseWheel">
+                        <!-- Collapsible groups: Blessings, Grand blessings, Other. -->
                         <ListBox.GroupStyle>
-                            <GroupStyle>
-                                <GroupStyle.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Margin="6,10,0,4"
-                                                   FontWeight="SemiBold"
-                                                   Text="{Binding Name}"
-                                                   Style="{StaticResource SecondaryTextStyle}" />
-                                    </DataTemplate>
-                                </GroupStyle.HeaderTemplate>
-                            </GroupStyle>
+                            <GroupStyle ContainerStyle="{StaticResource BlessingGroupItemStyle}" />
                         </ListBox.GroupStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type blessingsVm:BlessingOptionViewModel}">

@@ -234,18 +234,21 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             var properties = ReadProperties(connection);
             var abilityProperties = ReadAbilityProperties(connection);
             var playerProperties = ReadIndexedProperties(connection, "PlayerProperties", "Player property");
+            // Read up front: drop rate modifiers name the item type they apply to ("Increased Grand Idol Drop Rate").
+            var itemTypeRows = ReadRows(connection, "SELECT Key, Name, Json FROM ItemTypes").ToList();
             var names = new ImplicitNames(
                 properties,
                 ReadAilments(connection),
                 abilityProperties,
                 ReadIndexedProperties(connection, "IdolAltarProperties", "Idol altar property"),
-                playerProperties);
+                playerProperties,
+                ReadItemTypeNames(itemTypeRows));
             var icons = ReadIcons(connection);
 
             var result = new List<ItemBase>();
             var affixEffectModifiers = new Dictionary<int, double>();
             var materials = new List<CraftingMaterial>();
-            foreach (var (key, name, json) in ReadRows(connection, "SELECT Key, Name, Json FROM ItemTypes"))
+            foreach (var (key, name, json) in itemTypeRows)
             {
                 using var document = TryParse(json);
                 if (document?.RootElement is not { ValueKind: JsonValueKind.Object } itemType)
@@ -317,6 +320,25 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 GetBool(subItem, "cannotDrop") ?? false,
                 icons.Find(typeName, internalName, name),
                 ParseImplicits(subItem, names)));
+        }
+
+        return result;
+    }
+
+    /// <summary>Display name of every item type by its <c>baseTypeID</c>, e.g. 29 → "Grand Idol".</summary>
+    private static Dictionary<int, string> ReadItemTypeNames(IEnumerable<(string Key, string? Name, string Json)> rows)
+    {
+        var result = new Dictionary<int, string>();
+        foreach (var (key, rowName, json) in rows)
+        {
+            using var document = TryParse(json);
+            if (document?.RootElement is not { ValueKind: JsonValueKind.Object } itemType)
+                continue;
+
+            var id = GetInt(itemType, "baseTypeID")
+                     ?? (int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var keyId) ? keyId : -1);
+            if (id >= 0 && (GetString(itemType, "displayName") ?? GetString(itemType, "BaseTypeName") ?? rowName) is { } name)
+                result.TryAdd(id, name);
         }
 
         return result;
@@ -967,7 +989,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         Dictionary<int, string> ailments,
         Dictionary<int, IReadOnlyList<PropertyInfo>> abilityProperties,
         IReadOnlyList<PropertyInfo> idolAltarProperties,
-        IReadOnlyList<PropertyInfo> playerProperties)
+        IReadOnlyList<PropertyInfo> playerProperties,
+        IReadOnlyDictionary<int, string> itemTypeNames)
     {
         /// <summary>Tag bits (the game's <c>AT</c> flags) in the order their words go before the property name.</summary>
         private static readonly (long Bit, string Word)[] PrefixTags =
@@ -994,6 +1017,22 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         /// Bow Hit" of Reign of Winter).
         /// </summary>
         private const int PlayerProperty = 98;
+
+        /// <summary>
+        /// "Increased Drop Rate" (blessings): <c>specialTag</c> picks what drops more and <c>tags</c> which one of it —
+        /// 0 an item type (<c>baseTypeID</c>, e.g. 29 Grand Idol), 1 a crafting material (1 Rune, 2 Glyph), 2 the shards
+        /// of an item type (20 Amulet Shard), 3 uniques (0) or gold (1), 4 a shard group (Prefix, Suffix, Class Specific,
+        /// Ailment, Skill). The tags are not damage types here.
+        /// </summary>
+        private const int DropRateProperty = 104;
+
+        private static readonly Dictionary<long, string> DropRateMaterials = new() { [1] = "Rune", [2] = "Glyph" };
+        private static readonly Dictionary<long, string> DropRateSpecials = new() { [0] = "Unique", [1] = "Gold" };
+
+        private static readonly Dictionary<long, string> DropRateShardGroups = new()
+        {
+            [0] = "Prefix Shard", [1] = "Suffix Shard", [2] = "Class Specific Shard", [4] = "Ailment Shard", [5] = "Skill Shard"
+        };
 
         public PropertyInfo? GetProperty(int property) => properties.GetValueOrDefault(property);
 
@@ -1025,6 +1064,9 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         {
             var name = info?.Name is { Length: > 0 } n ? n : $"Property {property}";
 
+            if (property == DropRateProperty)
+                return DropRateName(name, specialTag, tags);
+
             // "Ailment Chance" with special tag 2 → "Bleed Chance"; other properties get the ailment as a prefix.
             if (specialTag != 0 && ailments.TryGetValue(specialTag, out var ailment))
             {
@@ -1041,6 +1083,29 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 name += " over Time";
 
             return name;
+        }
+
+        /// <summary>"Increased Drop Rate" with what drops more put in, e.g. "Increased Grand Idol Drop Rate".</summary>
+        private string DropRateName(string name, int specialTag, long tags)
+        {
+            string? ItemType() => tags is >= 0 and <= int.MaxValue && itemTypeNames.TryGetValue((int)tags, out var type) ? type : null;
+
+            var target = specialTag switch
+            {
+                0 => ItemType(),
+                1 => DropRateMaterials.GetValueOrDefault(tags),
+                2 => ItemType() is { } type ? $"{type} Shard" : "Shard",
+                3 => DropRateSpecials.GetValueOrDefault(tags),
+                4 => DropRateShardGroups.GetValueOrDefault(tags, "Shard"),
+                _ => null
+            };
+            if (target is null)
+                return name;
+
+            const string dropRate = "Drop Rate";
+            return name.Contains(dropRate, StringComparison.OrdinalIgnoreCase)
+                ? name.Replace(dropRate, $"{target} {dropRate}", StringComparison.OrdinalIgnoreCase)
+                : $"{name} ({target})";
         }
     }
 
