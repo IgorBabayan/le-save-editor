@@ -1003,6 +1003,16 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         private const long DamageOverTimeTag = 4096;
 
         /// <summary>
+        /// Tag bits that make a modifier conditional; their words follow the property name, e.g. Patience of Herkir
+        /// (Armor, 262144) reads "+(400–650) Armor While Channelling" in the game, Defiance of Yulia (Cold, Spell,
+        /// 262144) "Cold Spell Damage While Channelling".
+        /// </summary>
+        private static readonly (long Bit, string Words)[] ConditionTags =
+        [
+            (262144, "While Channelling"), (524288, "While Transformed")
+        ];
+
+        /// <summary>
         /// A property of one specific skill: <c>tags</c> holds the skill's <c>abilityID</c> and <c>specialTag</c> the
         /// index in that skill's property list (e.g. Blood Rage, index 5: "You have Incisive Rage").
         /// </summary>
@@ -1081,6 +1091,12 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
             if ((tags & DamageOverTimeTag) != 0)
                 name += " over Time";
+
+            foreach (var (bit, condition) in ConditionTags)
+            {
+                if ((tags & bit) != 0)
+                    name += $" {condition}";
+            }
 
             return name;
         }
