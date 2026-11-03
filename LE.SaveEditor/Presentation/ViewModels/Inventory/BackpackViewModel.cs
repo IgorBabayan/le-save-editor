@@ -10,7 +10,7 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// Shape of a grid container: the backpack (<see cref="Backpack"/>) or the idol grid (<see cref="Idols"/>).
+/// Shape of a grid container: the backpack (<see cref="Backpack"/>) or the idol grid (<see cref="ForIdols"/>).
 /// </summary>
 /// <param name="ContainerId"><c>containerID</c> of the items in <c>savedItems</c>.</param>
 /// <param name="Columns">Width in cells.</param>
@@ -47,13 +47,16 @@ public sealed record ItemGridLayout(
         SavedItem.BackpackContainerId, BackpackViewModel.Columns, BackpackViewModel.Rows, "backpack",
         new HashSet<(int, int)>(), null, RelocateOnLoad: true);
 
+    /// <summary>Total number of idol slots once all are unlocked.</summary>
+    public static int IdolSlotCount => IdolSlotUnlocks.AllSlots.Count;
+
     /// <summary>
     /// The idol grid as in the game: 5 × 5 cells without the four corners and the centre (20 idol slots); only idols.
-    /// The slots of the top row and of the left and right columns are still locked, matching the character's
-    /// unlocked slots in game: the 3 × 4 block below the top row (without the centre) is open. Idols stored over a
+    /// Slots the character has not unlocked yet (see <see cref="IdolSlotUnlocks"/>) are locked. Idols stored over a
     /// blocked or locked cell are left as they are.
     /// </summary>
-    public static ItemGridLayout Idols { get; } = new(
+    /// <param name="unlocks">Idol unlocks the character has earned (<see cref="IdolSlotUnlocks.CountUnlocks"/>).</param>
+    public static ItemGridLayout ForIdols(int unlocks) => new(
         IdolContainerId, IdolGridSize, IdolGridSize, "idol grid",
         new HashSet<(int, int)>
         {
@@ -61,12 +64,7 @@ public sealed record ItemGridLayout(
             (IdolGridSize / 2, IdolGridSize / 2)
         },
         EquipmentSlot.Idol, RelocateOnLoad: false,
-        LockedCells: new HashSet<(int, int)>
-        {
-            (1, 0), (2, 0), (3, 0),
-            (0, 1), (0, 2), (0, 3),
-            (IdolGridSize - 1, 1), (IdolGridSize - 1, 2), (IdolGridSize - 1, 3)
-        });
+        LockedCells: IdolSlotUnlocks.LockedSlots(unlocks));
 
     /// <summary>Cells the game keeps locked (see <see cref="LockedCells"/>); empty when none.</summary>
     public IReadOnlySet<(int Column, int Row)> Locked => LockedCells ?? EmptyCells;
@@ -87,7 +85,7 @@ public sealed record ItemGridLayout(
 /// <summary>
 /// A grid container of the character: the backpack (a <see cref="Columns"/> × <see cref="Rows"/> grid holding the items of
 /// container <see cref="SavedItem.BackpackContainerId"/>: equipment, idols and crafting materials such as runes, glyphs
-/// and affix shards) or, with <see cref="ItemGridLayout.Idols"/>, the idol grid.
+/// and affix shards) or, with <see cref="ItemGridLayout.ForIdols"/>, the idol grid.
 /// Items cover several cells (<see cref="ItemFootprint"/>), never overlap and never cover a blocked cell.
 /// </summary>
 public sealed partial class BackpackViewModel : ViewModelBase

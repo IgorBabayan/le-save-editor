@@ -59,7 +59,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
         LoadEquippedItems(itemBaseCatalog);
         Backpack = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService);
-        Idols = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService, ItemGridLayout.Idols);
+        IdolUnlocks = IdolSlotUnlocks.CountUnlocks(character.SavedQuests);
+        Idols = new BackpackViewModel(character.SavedItems, iconProvider, itemBaseCatalog, toastService,
+            ItemGridLayout.ForIdols(IdolUnlocks));
 
         foreach (var slot in EquipmentSlots)
             slot.PropertyChanged += (_, e) =>
@@ -107,6 +109,20 @@ public sealed partial class InventoryViewModel : ViewModelBase
     /// as in game) with the character's idols.
     /// </summary>
     public BackpackViewModel Idols { get; }
+
+    /// <summary>Idol unlocks the character has earned: completed quests that reward one.</summary>
+    public int IdolUnlocks { get; }
+
+    /// <summary>Line under the idol grid, e.g. "11 of 20 idol slots unlocked (4 idol quests completed)".</summary>
+    public string IdolSlotsText
+    {
+        get
+        {
+            var unlocked = ItemGridLayout.IdolSlotCount - Idols.Layout.Locked.Count;
+            var quests = IdolUnlocks == 1 ? "1 idol quest" : $"{IdolUnlocks} idol quests";
+            return $"{unlocked} of {ItemGridLayout.IdolSlotCount} idol slots unlocked ({quests} completed)";
+        }
+    }
 
     /// <summary>The "Resources" section: keys and consumables the character's stash keeps (<c>keysList</c>).</summary>
     public ResourcesViewModel Resources { get; }

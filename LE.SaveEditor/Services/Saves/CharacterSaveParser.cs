@@ -50,6 +50,7 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             ChosenMastery = dto.ChosenMastery,
             LastPlayed = dto.LastPlayed,
             SavedItems = ReadSavedItems(dto.SavedItems),
+            SavedQuests = ReadSavedQuests(dto.SavedQuests),
             ContentHash = ComputeContentHash(content)
         };
     }
@@ -95,6 +96,26 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
             {
                 Index = index
             });
+        }
+
+        return result;
+    }
+
+    /// <summary>Reads <c>savedQuests</c> leniently: an entry without a quest and step id is skipped.</summary>
+    private static IReadOnlyList<SavedQuest> ReadSavedQuests(JsonElement savedQuests)
+    {
+        if (savedQuests.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var result = new List<SavedQuest>();
+        foreach (var entry in savedQuests.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object
+                || !entry.TryGetProperty("questID", out var questId) || questId.ValueKind != JsonValueKind.Number
+                || !entry.TryGetProperty("questStepID", out var stepId) || stepId.ValueKind != JsonValueKind.Number)
+                continue;
+
+            result.Add(new SavedQuest(GetInt(entry, "questID"), GetInt(entry, "questStepID")));
         }
 
         return result;
@@ -150,5 +171,8 @@ public sealed class CharacterSaveParser : ICharacterSaveParser
 
         /// <summary>Kept as raw JSON and read by <see cref="ReadSavedItems"/>, so a bad item never fails the save.</summary>
         [JsonPropertyName("savedItems")] public JsonElement SavedItems { get; init; }
+
+        /// <summary>Kept as raw JSON and read by <see cref="ReadSavedQuests"/>, so a bad entry never fails the save.</summary>
+        [JsonPropertyName("savedQuests")] public JsonElement SavedQuests { get; init; }
     }
 }

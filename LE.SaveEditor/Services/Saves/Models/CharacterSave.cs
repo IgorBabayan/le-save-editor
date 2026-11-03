@@ -38,6 +38,12 @@ public sealed record CharacterSave
     public IReadOnlyList<SavedItem> SavedItems { get; init; } = [];
 
     /// <summary>
+    /// The character's <c>savedQuests</c> (quest and step reached); the idol slots it has unlocked follow from them
+    /// (<see cref="LE.SaveEditor.Services.GameData.Items.IdolSlotUnlocks"/>).
+    /// </summary>
+    public IReadOnlyList<SavedQuest> SavedQuests { get; init; } = [];
+
+    /// <summary>
     /// Fingerprint of the file content this character was read from
     /// (<see cref="LE.SaveEditor.Services.Saves.CharacterSaveParser.ComputeContentHash"/>); saving refuses to overwrite
     /// a file whose content no longer matches it.

@@ -451,6 +451,10 @@
                                Style="{StaticResource SecondaryTextStyle}" />
                     <TextBlock HorizontalAlignment="Center"
                                Opacity="0.7"
+                               Text="{Binding IdolSlotsText}"
+                               Style="{StaticResource SecondaryTextStyle}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               Opacity="0.7"
                                Text="Right-click an empty cell to build an idol, or an idol to remove it."
                                Style="{StaticResource SecondaryTextStyle}" />
 

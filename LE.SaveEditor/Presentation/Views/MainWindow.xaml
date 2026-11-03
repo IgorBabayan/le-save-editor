@@ -12,7 +12,7 @@
         xmlns:characterViews="clr-namespace:LE.SaveEditor.Presentation.Views.Characters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=shellVm:MainViewModel, IsDesignTimeCreatable=False}"
-        Title="Last Epoch Save Editor" Height="1250" Width="1140"
+        Title="Last Epoch Save Editor" Height="1310" Width="1140"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource WindowForegroundBrush}">
