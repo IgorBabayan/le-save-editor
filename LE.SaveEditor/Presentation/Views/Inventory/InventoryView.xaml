@@ -229,6 +229,26 @@
             </Setter>
         </Style>
 
+        <!-- A panel of the Woven echoes section ("Encounters", "Bosses", ...): rows of echoes, each row centred. -->
+        <Style x:Key="WovenEchoRowsStyle" TargetType="ItemsControl">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="ItemTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <ItemsControl ItemsSource="{Binding}" Style="{StaticResource ResourceRowStyle}" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Title of a Woven echoes panel, centred above it like in the game. -->
+        <Style x:Key="WovenEchoPanelTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
         <!-- A panel of the Resources section (the game's framed boxes). -->
         <Style x:Key="ResourcePanelStyle" TargetType="Border">
             <Setter Property="Margin" Value="3" />
@@ -900,28 +920,56 @@
                     </StackPanel>
                 </TabItem>
 
-                <!-- ===== Woven echoes: the echoes of the stash's Woven Echoes tab (wovenEchoesList). Type an amount into an
+                <!-- ===== Woven echoes: the echoes of the stash's Woven Echoes tab (wovenEchoesList), laid out like that tab. Type an amount into an
                      echo to add it, 0 removes it; changes are written to the stash file when the character is saved. ===== -->
                 <TabItem Header="Woven echoes">
                     <StackPanel DataContext="{Binding WovenEchoes}">
+                        <!-- Laid out like the game's tab: Encounters on top, Bosses, Crafting and Auras below. -->
                         <Border Padding="6"
+                                HorizontalAlignment="Left"
                                 CornerRadius="6"
                                 BorderThickness="1"
                                 BorderBrush="{DynamicResource ControlBorderBrush}"
-                                Background="{DynamicResource ControlBackgroundBrush}"
-                                Visibility="{Binding IsDatabaseMissing, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                            <Border Style="{StaticResource ResourcePanelStyle}">
-                                <ItemsControl ItemsSource="{Binding Echoes}" Focusable="False" ItemTemplate="{StaticResource ResourceSlotTemplate}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                            </Border>
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Style="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="ENCOUNTERS" Style="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Encounters}" Style="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="BOSSES" Style="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Bosses}" Style="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="CRAFTING" Style="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Crafting}" Style="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="AURAS" Style="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Auras}" Style="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                         </Border>
 
-                        <!-- Echoes the game does not drop (e.g. a Fading Echo, shown as "ERROR" in game), while the stash holds some. -->
+                        <!-- Echoes the game's tab has no slot for (e.g. a Fading Echo, shown as "ERROR" in game), while the stash holds some. -->
                         <StackPanel Margin="0,12,0,0"
                                     Visibility="{Binding HasOthers, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Margin="2,0,0,4" Text="Other woven echoes in the stash" Style="{StaticResource SecondaryTextStyle}" />
@@ -944,7 +992,7 @@
                                    Visibility="{Binding IsTabLocked, Converter={StaticResource BooleanToVisibilityConverter}}" />
                         <TextBlock Margin="2,2,0,0"
                                    Opacity="0.7"
-                                   Text="Woven echoes are missing from the game database: the full list, names and icons show once it is generated or updated (database button in the title bar)."
+                                   Text="Woven echoes are missing from the game database: names and icons show once it is generated or updated (database button in the title bar)."
                                    Style="{StaticResource SecondaryTextStyle}"
                                    Visibility="{Binding IsDatabaseMissing, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     </StackPanel>
