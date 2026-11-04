@@ -198,6 +198,9 @@ public sealed partial class ResourceSlotViewModel(int subTypeId, CraftingMateria
         ? $"{Name} — not in the game database (generate or update it with the database button in the title bar)"
         : string.IsNullOrWhiteSpace(Material.Description) ? Name : $"{Name}\n\n{Material.Description}";
 
+    /// <summary>Tooltip of the amount box.</summary>
+    public string AmountToolTip => "Amount in the stash (0 removes the resource when saved)";
+
     /// <summary>The amount can be changed (the character has a stash file).</summary>
     public bool IsEditable { get; init; }
 

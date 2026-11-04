@@ -15,7 +15,8 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// followed by the "Items", "Resources", "Woven echoes", "Blessings" and "Factions" sections.
 /// Equipment slots show the items the character wears, the idol grid its idols and the "Items" section the backpack
 /// (all read from <c>savedItems</c>), the "Resources" section the keys and consumables of the character's stash
-/// (<see cref="ResourcesViewModel"/>); "Woven echoes" starts empty; "Blessings" holds the blessing picked for each
+/// (<see cref="ResourcesViewModel"/>); "Woven echoes" the echoes of the stash's Woven Echoes tab
+/// (<see cref="WovenEchoesViewModel"/>); "Blessings" holds the blessing picked for each
 /// timeline echo (<see cref="BlessingsViewModel"/>); "Factions" the rank of every faction unlocked in the stash
 /// (<see cref="FactionsViewModel"/>). Clicking an equipment slot, an idol or a backpack
 /// item opens the item inspector (a compact item builder) next to it; right-clicking an empty backpack or idol cell
@@ -105,6 +106,7 @@ public sealed partial class InventoryViewModel : ViewModelBase
         UpdateCurrencies();
         Idols.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         Resources = new ResourcesViewModel(stash, itemBaseCatalog, iconProvider, dialogService);
+        WovenEchoes = new WovenEchoesViewModel(stash, itemBaseCatalog, iconProvider);
         Blessings = new BlessingsViewModel(character, itemBaseCatalog, iconProvider, stash);
         Blessings.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         Factions = new FactionsViewModel(stash);
@@ -223,6 +225,9 @@ public sealed partial class InventoryViewModel : ViewModelBase
 
     /// <summary>The "Resources" section: keys and consumables the character's stash keeps (<c>keysList</c>).</summary>
     public ResourcesViewModel Resources { get; }
+
+    /// <summary>The "Woven echoes" section: the woven echoes of the stash's Woven Echoes tab (<c>wovenEchoesList</c>).</summary>
+    public WovenEchoesViewModel WovenEchoes { get; }
 
     /// <summary>
     /// The material storage of the stash the character uses (the game's "Crafting Materials" panel); <c>null</c> when

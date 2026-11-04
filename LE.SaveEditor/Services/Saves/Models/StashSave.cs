@@ -17,7 +17,10 @@ public readonly record struct CraftingMaterialKey(CraftingMaterialKind Kind, int
 /// resource's slot (<c>"data": [6, id, id, id, id, 104, 4], "inventoryPosition": {"x": 0, "y": 4}, "containerID": 100</c>
 /// = Temporal Sanctum Key). The stash also keeps the gold of its characters (<c>"gold": 2191</c>), their ancient bones
 /// (<c>"ancientBones": 0</c>), their factions with the Circle of Fortune favor (<c>"factions": {"0": {"rank": 1, "favor": 104, ...}}</c>) and the
-/// blessings they have discovered (<c>"unlockedBlessings": [111, 8, ...]</c>, blessing <c>subTypeID</c>s).
+/// blessings they have discovered (<c>"unlockedBlessings": [111, 8, ...]</c>, blessing <c>subTypeID</c>s). The woven echoes
+/// of the game's "Woven Echoes" tab are the <c>wovenEchoesList</c> entries (<c>[6, id, id, id, id, 107, 0, echo]</c> in
+/// container 99 at x 0, y = echo; see <see cref="WovenEchoData"/>), and <c>wovenEchoesTabUnlocked</c> tells whether
+/// the tab has been unlocked in game.
 /// </summary>
 public sealed record StashSave
 {
@@ -59,6 +62,15 @@ public sealed record StashSave
     /// The game shows a blessing a character holds as "Undiscovered" unless its stash lists it here.
     /// </summary>
     public IReadOnlyList<int> UnlockedBlessings { get; init; } = [];
+
+    /// <summary>
+    /// <c>wovenEchoesList</c>: amount of every woven echo of the "Woven Echoes" tab, by echo (<c>subTypeID</c> of item type
+    /// 107; entries of the same echo are added up).
+    /// </summary>
+    public IReadOnlyDictionary<int, int> WovenEchoes { get; init; } = new Dictionary<int, int>();
+
+    /// <summary><c>wovenEchoesTabUnlocked</c>: a character of the stash has unlocked the "Woven Echoes" tab in game.</summary>
+    public bool IsWovenEchoesTabUnlocked { get; init; }
 
     /// <summary>Amount of every material in the storage (entries of the same material are added up).</summary>
     public IReadOnlyDictionary<CraftingMaterialKey, int> Amounts { get; init; } = new Dictionary<CraftingMaterialKey, int>();

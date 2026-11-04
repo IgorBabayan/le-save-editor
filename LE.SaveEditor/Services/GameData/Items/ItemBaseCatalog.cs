@@ -37,6 +37,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     /// <param name="AffixEffectModifiers">Per item type (<c>baseTypeID</c>) its <c>affixEffectModifier</c>.</param>
     /// <param name="Materials">Runes, glyphs, affix shards and resources (key items).</param>
     /// <param name="Timelines">Monolith timelines with the blessings they grant.</param>
+    /// <param name="WovenEchoes">Woven echoes (item type 107).</param>
     private sealed record Catalog(
         IReadOnlyList<ItemBase> Bases,
         IReadOnlyList<ItemBase> Uniques,
@@ -44,9 +45,10 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         bool HasStatNames,
         IReadOnlyDictionary<int, double> AffixEffectModifiers,
         IReadOnlyList<CraftingMaterial> Materials,
-        IReadOnlyList<Timeline> Timelines)
+        IReadOnlyList<Timeline> Timelines,
+        IReadOnlyList<WovenEcho> WovenEchoes)
     {
-        public static Catalog Empty { get; } = new([], [], [], false, new Dictionary<int, double>(), [], []);
+        public static Catalog Empty { get; } = new([], [], [], false, new Dictionary<int, double>(), [], [], []);
 
         /// <summary>Affixes scaled to an item type, by affix id and item type, so each is built once.</summary>
         public Dictionary<(int AffixId, int BaseTypeId), AffixDefinition> Scaled { get; } = [];
@@ -132,6 +134,14 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         GetCatalog().Materials.FirstOrDefault(m => m.Kind == kind && m.SubTypeId == subTypeId);
 
     public IReadOnlyList<Timeline> GetTimelines() => GetCatalog().Timelines;
+
+    public IReadOnlyList<WovenEcho> GetWovenEchoes() =>
+        GetCatalog().WovenEchoes
+            .OrderBy(e => e.CannotDrop)
+            .ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+    public WovenEcho? FindWovenEcho(int id) => GetCatalog().WovenEchoes.FirstOrDefault(e => e.Id == id);
 
     /// <summary>
     /// <paramref name="affix"/> with the values it has on item type <paramref name="baseTypeId"/>. The game scales every
@@ -248,6 +258,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             var result = new List<ItemBase>();
             var affixEffectModifiers = new Dictionary<int, double>();
             var materials = new List<CraftingMaterial>();
+            var wovenEchoes = new List<WovenEcho>();
             foreach (var (key, name, json) in itemTypeRows)
             {
                 using var document = TryParse(json);
@@ -257,6 +268,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 var bases = ParseItemType(key, name, itemType, names, icons);
                 result.AddRange(bases);
                 materials.AddRange(ParseCraftingMaterials(itemType, icons));
+                wovenEchoes.AddRange(ParseWovenEchoes(itemType, icons));
                 // Affix values on this item type are scaled by its affixEffectModifier (see ScaledFor).
                 if ((GetInt(itemType, "baseTypeID") ?? bases.FirstOrDefault()?.BaseTypeId) is { } typeId
                     && GetDouble(itemType, "affixEffectModifier") is { } modifier)
@@ -275,7 +287,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 properties.Count > 0 && abilityProperties.Count > 0 && playerProperties.Count > 0,
                 affixEffectModifiers,
                 NameShards(materials, allAffixes, icons),
-                ReadTimelines(connection, result));
+                ReadTimelines(connection, result),
+                wovenEchoes);
         }
         catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -459,6 +472,38 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
                 GetInt(subItem, "levelRequirement") ?? 0,
                 GetBool(subItem, "cannotDrop") ?? false,
                 kind == CraftingMaterialKind.AffixShard ? shardIcon : icons.Find(typeName, internalName, name)));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// The woven echoes of item type <see cref="WovenEcho.BaseTypeId"/>; empty for any other item type. Their icons are
+    /// in the <c>woven_echo</c> group, named after the internal name (<c>false_temple</c>).
+    /// </summary>
+    private static List<WovenEcho> ParseWovenEchoes(JsonElement itemType, IconIndex icons)
+    {
+        var result = new List<WovenEcho>();
+        if (GetInt(itemType, "baseTypeID") != WovenEcho.BaseTypeId
+            || Find(itemType, "subItems") is not { ValueKind: JsonValueKind.Array } subItems)
+            return result;
+
+        foreach (var subItem in subItems.EnumerateArray())
+        {
+            if (subItem.ValueKind != JsonValueKind.Object || GetInt(subItem, "subTypeID") is not { } id)
+                continue;
+
+            var internalName = GetString(subItem, "name");
+            var name = GetString(subItem, "displayName") ?? internalName;
+            if (name is null)
+                continue;
+
+            result.Add(new WovenEcho(
+                id,
+                name,
+                CleanDescription(GetString(subItem, "description")),
+                GetBool(subItem, "cannotDrop") ?? false,
+                icons.Find("woven_echo", internalName, name)));
         }
 
         return result;

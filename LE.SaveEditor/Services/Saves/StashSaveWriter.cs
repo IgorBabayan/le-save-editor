@@ -7,8 +7,8 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Writes changes of the gold, the Circle of Fortune favor, the ancient bones, the faction ranks, the material storage and
-/// the discovered blessings back into a stash file.
+/// Writes changes of the gold, the Circle of Fortune favor, the ancient bones, the faction ranks, the material storage, the
+/// woven echoes and the discovered blessings back into a stash file.
 /// </summary>
 public interface IStashSaveWriter
 {
@@ -16,7 +16,8 @@ public interface IStashSaveWriter
     /// Writes <paramref name="amounts"/> (every material the storage should hold) and <paramref name="currencies"/> (gold,
     /// favor, ancient bones) into
     /// <paramref name="stash"/>'s file, adds <paramref name="discoveredBlessings"/> to its <c>unlockedBlessings</c> and writes
-    /// <paramref name="factionRanks"/> into the faction entries it already has, keeping everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
+    /// <paramref name="factionRanks"/> into the faction entries it already has and <paramref name="wovenEchoes"/> (every woven
+    /// echo the "Woven Echoes" tab should hold, by echo) into <c>wovenEchoesList</c>, keeping everything else as it is. The previous file is kept as a <c>.bak</c> backup next to it.
     /// </summary>
     /// <returns>The stash as read back from the written file, and the path of the backup.</returns>
     /// <exception cref="SaveFileChangedException">The file changed after it was read (e.g. the game saved it).</exception>
@@ -29,6 +30,7 @@ public interface IStashSaveWriter
         StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
         IReadOnlyDictionary<string, int>? factionRanks = null,
+        IReadOnlyDictionary<int, int>? wovenEchoes = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -43,7 +45,9 @@ public sealed record StashSaveResult(StashSave Stash, string BackupPath);
 /// the game stores it there: <c>[6, id, id, id, id, 104, subTypeID]</c> in container 100 at position 0, subTypeID; the
 /// game drops resource entries in any other shape when it loads the stash, so such entries are rewritten). A changed
 /// gold amount is written into <c>gold</c>, changed ancient bones into <c>ancientBones</c> and a changed favor into the
-/// Circle of Fortune entry (<c>factions["0"].favor</c>, only when the stash has that entry); blessings the stash has not discovered yet are added at the end of
+/// Circle of Fortune entry (<c>factions["0"].favor</c>, only when the stash has that entry); a woven echo whose amount
+/// changed gets it in its <c>wovenEchoesList</c> entry, loses the entry at 0, or gets a new one as the game writes it
+/// (<see cref="WovenEchoData.CreateEntry"/>); blessings the stash has not discovered yet are added at the end of
 /// <c>unlockedBlessings</c> (otherwise the game shows them as "Undiscovered"). Every other field and entry stays as
 /// the game wrote it; the file is written compact, through a temporary file, keeping the old one as a backup.
 /// </summary>
@@ -61,6 +65,7 @@ public sealed class StashSaveWriter : IStashSaveWriter
         StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
         IReadOnlyDictionary<string, int>? factionRanks = null,
+        IReadOnlyDictionary<int, int>? wovenEchoes = null,
         CancellationToken cancellationToken = default)
     {
         var path = stash.FilePath;
@@ -68,7 +73,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
         if (!string.Equals(CharacterSaveParser.ComputeContentHash(content), stash.ContentHash, StringComparison.Ordinal))
             throw new SaveFileChangedException(path);
 
-        var newContent = Apply(content, stash.Amounts, amounts, stash.Currencies, currencies, discoveredBlessings, factionRanks);
+        var newContent = Apply(content, stash.Amounts, amounts, stash.Currencies, currencies, discoveredBlessings, factionRanks,
+            stash.WovenEchoes, wovenEchoes);
 
         // Never write something the editor itself cannot read back.
         var saved = StashSaveParser.Parse(path, newContent);
@@ -96,7 +102,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
     /// The file content with the materials whose amount differs between <paramref name="original"/> and
     /// <paramref name="amounts"/>, the gold, favor and ancient bones of <paramref name="currencies"/> that differ from
     /// <paramref name="originalCurrencies"/>, and the <paramref name="discoveredBlessings"/> missing from
-    /// <c>unlockedBlessings</c> and the <paramref name="factionRanks"/> that differ from the file, written into it.
+    /// <c>unlockedBlessings</c>, the <paramref name="factionRanks"/> that differ from the file and the woven echoes whose
+    /// amount differs between <paramref name="originalWovenEchoes"/> and <paramref name="wovenEchoes"/>, written into it.
     /// </summary>
     public static string Apply(
         string content,
@@ -105,7 +112,9 @@ public sealed class StashSaveWriter : IStashSaveWriter
         StashCurrencies originalCurrencies,
         StashCurrencies currencies,
         IReadOnlyCollection<int>? discoveredBlessings = null,
-        IReadOnlyDictionary<string, int>? factionRanks = null)
+        IReadOnlyDictionary<string, int>? factionRanks = null,
+        IReadOnlyDictionary<int, int>? originalWovenEchoes = null,
+        IReadOnlyDictionary<int, int>? wovenEchoes = null)
     {
         var start = content.IndexOf('{');
         var end = content.LastIndexOf('}');
@@ -124,7 +133,8 @@ public sealed class StashSaveWriter : IStashSaveWriter
         var currenciesChanged = ApplyCurrencies(root, originalCurrencies, currencies);
         var blessingsAdded = AddBlessings(root, discoveredBlessings);
         var ranksChanged = ApplyFactionRanks(root, factionRanks);
-        if (changes.Count == 0 && !currenciesChanged && !blessingsAdded && !ranksChanged)
+        var echoesChanged = wovenEchoes is not null && ApplyWovenEchoes(root, originalWovenEchoes ?? new Dictionary<int, int>(), wovenEchoes);
+        if (changes.Count == 0 && !currenciesChanged && !blessingsAdded && !ranksChanged && !echoesChanged)
             return content;
 
         if (changes.Count == 0)
@@ -327,6 +337,51 @@ public sealed class StashSaveWriter : IStashSaveWriter
         }
 
         return changed;
+    }
+
+    /// <summary>
+    /// Writes the woven echoes whose amount differs between <paramref name="original"/> and <paramref name="echoes"/> into
+    /// <c>wovenEchoesList</c>: the first entry of a changed echo takes its new amount (further entries of it are removed),
+    /// an echo set to 0 loses its entries and an echo without an entry gets a new one. Entries that are not a woven echo
+    /// stay. <c>true</c> when something was written.
+    /// </summary>
+    private static bool ApplyWovenEchoes(JsonObject root, IReadOnlyDictionary<int, int> original, IReadOnlyDictionary<int, int> echoes)
+    {
+        var changes = echoes.Keys.Concat(original.Keys)
+            .Distinct()
+            .Select(id => (Id: id, Quantity: Math.Max(0, echoes.GetValueOrDefault(id))))
+            .Where(c => c.Quantity != original.GetValueOrDefault(c.Id))
+            .ToDictionary(c => c.Id, c => c.Quantity);
+        if (changes.Count == 0)
+            return false;
+
+        var list = GetArray(root, StashSaveParser.WovenEchoList);
+        var written = new HashSet<int>();
+        var entries = list.ToList();
+        list.Clear();
+
+        foreach (var entry in entries)
+        {
+            if (WovenEchoData.Read(entry) is not { } id || !changes.TryGetValue(id, out var quantity))
+            {
+                list.Add(entry);
+                continue;
+            }
+
+            if (quantity <= 0 || !written.Add(id))
+                continue;
+
+            ((JsonObject)entry!)["quantity"] = quantity;
+            list.Add(entry);
+        }
+
+        foreach (var (id, quantity) in changes.OrderBy(c => c.Key))
+        {
+            if (quantity > 0 && !written.Contains(id))
+                list.Add(WovenEchoData.CreateEntry(id, quantity));
+        }
+
+        return true;
     }
 
     /// <summary>

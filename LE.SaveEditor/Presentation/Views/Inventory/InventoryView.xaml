@@ -137,7 +137,8 @@
 
         <!-- ===== Resources section ===== -->
 
-        <!-- One resource: its icon (dimmed while the stash holds none) and, in a strip below it, its amount to type in. -->
+        <!-- One resource (or woven echo): its icon (dimmed while the stash holds none) and, in a strip below it, its amount
+             to type in. -->
         <DataTemplate x:Key="ResourceSlotTemplate" DataType="{x:Type inventoryVm:ResourceSlotViewModel}">
             <Border x:Name="Bd"
                     Width="68"
@@ -185,7 +186,7 @@
                              BorderThickness="0"
                              Background="{DynamicResource TitleBarBackgroundBrush}"
                              IsReadOnly="{Binding IsEditable, Converter={StaticResource InverseBooleanConverter}}"
-                             ToolTip="Amount in the stash (0 removes the resource when saved)"
+                             ToolTip="{Binding AmountToolTip}"
                              behaviors:NumericInput.IsEnabled="True"
                              behaviors:NumericInput.Maximum="{x:Static inventoryVm:CraftingMaterialStorageViewModel.MaxQuantity}"
                              behaviors:SelectOnClick.IsEnabled="True"
@@ -675,7 +676,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ===== Sections: backpack ("Items"), resources (keys and consumables of the stash), woven echoes (not parsed yet), blessings, factions ===== -->
+            <!-- ===== Sections: backpack ("Items"), resources (keys and consumables of the stash), woven echoes (of the stash), blessings, factions ===== -->
             <TabControl Grid.Row="1"
                         Margin="0,24,0,0"
                         Padding="0,12,0,0"
@@ -899,10 +900,54 @@
                     </StackPanel>
                 </TabItem>
 
+                <!-- ===== Woven echoes: the echoes of the stash's Woven Echoes tab (wovenEchoesList). Type an amount into an
+                     echo to add it, 0 removes it; changes are written to the stash file when the character is saved. ===== -->
                 <TabItem Header="Woven echoes">
-                    <Border Style="{StaticResource InventorySectionBorderStyle}">
-                        <TextBlock Text="Woven echoes will appear here." Style="{StaticResource EmptyPageTextStyle}" />
-                    </Border>
+                    <StackPanel DataContext="{Binding WovenEchoes}">
+                        <Border Padding="6"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}"
+                                Visibility="{Binding IsDatabaseMissing, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            <Border Style="{StaticResource ResourcePanelStyle}">
+                                <ItemsControl ItemsSource="{Binding Echoes}" Focusable="False" ItemTemplate="{StaticResource ResourceSlotTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Border>
+                        </Border>
+
+                        <!-- Echoes the game does not drop (e.g. a Fading Echo, shown as "ERROR" in game), while the stash holds some. -->
+                        <StackPanel Margin="0,12,0,0"
+                                    Visibility="{Binding HasOthers, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Margin="2,0,0,4" Text="Other woven echoes in the stash" Style="{StaticResource SecondaryTextStyle}" />
+                            <Border Style="{StaticResource ResourcePanelStyle}" Margin="0">
+                                <ItemsControl ItemsSource="{Binding Others}" Focusable="False" ItemTemplate="{StaticResource ResourceSlotTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Border>
+                        </StackPanel>
+
+                        <TextBlock Margin="2,8,0,0" Text="{Binding Summary}" Style="{StaticResource SecondaryTextStyle}" />
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="No character of this stash has unlocked the Woven Echoes tab in game yet: the game shows these echoes once it is unlocked."
+                                   Style="{StaticResource SecondaryTextStyle}"
+                                   Visibility="{Binding IsTabLocked, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="Woven echoes are missing from the game database: the full list, names and icons show once it is generated or updated (database button in the title bar)."
+                                   Style="{StaticResource SecondaryTextStyle}"
+                                   Visibility="{Binding IsDatabaseMissing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </StackPanel>
                 </TabItem>
 
                 <!-- ===== Blessings: one per timeline echo, picked from the blessings the timeline grants ===== -->

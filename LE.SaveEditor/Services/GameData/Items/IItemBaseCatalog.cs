@@ -50,6 +50,15 @@ public interface IItemBaseCatalog
     CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId);
 
     /// <summary>
+    /// Woven echoes (item type <see cref="WovenEcho.BaseTypeId"/>), echoes that drop first, then by name; empty when
+    /// <c>base.db</c> is missing.
+    /// </summary>
+    IReadOnlyList<WovenEcho> GetWovenEchoes();
+
+    /// <summary>The woven echo with <paramref name="id"/> (its <c>subTypeID</c>), or <c>null</c> when <c>base.db</c> does not know it.</summary>
+    WovenEcho? FindWovenEcho(int id);
+
+    /// <summary>
     /// Monolith timelines with the blessings each can grant, ordered by timeline id; empty when <c>base.db</c> is missing
     /// or was generated before the <c>Timelines</c> table existed.
     /// </summary>

@@ -4,7 +4,7 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 /// <summary>
-/// The gold, Circle of Fortune favor, ancient bones, faction ranks and the material storage of one stash file with the changes made in the editor. Every character that uses the stash
+/// The gold, Circle of Fortune favor, ancient bones, faction ranks, woven echoes and the material storage of one stash file with the changes made in the editor. Every character that uses the stash
 /// shares this instance (softcore characters of a cycle share their stash), so a change shows for all of them and is
 /// written once.
 /// </summary>
@@ -24,11 +24,12 @@ public sealed class StashMaterialsViewModel(StashSave stash)
     private int _favor = stash.Favor ?? 0;
     private int _ancientBones = stash.AncientBones;
     private Dictionary<string, int> _factionRanks = new(stash.FactionRanks, StringComparer.Ordinal);
+    private Dictionary<int, int> _wovenEchoes = new(stash.WovenEchoes);
 
     /// <summary>The stash as read from (or last written to) its file.</summary>
     public StashSave Stash { get; private set; } = stash;
 
-    /// <summary>The amounts, the gold, the favor, the ancient bones or a faction rank changed, or the stash was saved.</summary>
+    /// <summary>The amounts, the gold, the favor, the ancient bones, a faction rank or a woven echo changed, or the stash was saved.</summary>
     public event EventHandler? Changed;
 
     /// <summary>Every material of the storage with its current amount (with entries the game keeps at 0).</summary>
@@ -59,9 +60,20 @@ public sealed class StashMaterialsViewModel(StashSave stash)
     public int? GetFactionRank(string factionId) =>
         _factionRanks.TryGetValue(factionId, out var rank) ? rank : null;
 
-    /// <summary>The gold, the favor, the ancient bones, a faction rank or some amount differs from the file.</summary>
+    /// <summary>
+    /// Amount of every woven echo of the "Woven Echoes" tab, by echo (<c>subTypeID</c> of item type 107), with the changes
+    /// made in the editor.
+    /// </summary>
+    public IReadOnlyDictionary<int, int> WovenEchoes => _wovenEchoes;
+
+    /// <summary>The "Woven Echoes" tab has been unlocked in game by a character of the stash.</summary>
+    public bool IsWovenEchoesTabUnlocked => Stash.IsWovenEchoesTabUnlocked;
+
+    /// <summary>The gold, the favor, the ancient bones, a faction rank, a woven echo or some amount differs from the file.</summary>
     public bool HasChanges =>
         Currencies != Stash.Currencies
+        || _wovenEchoes.Keys.Concat(Stash.WovenEchoes.Keys).Distinct()
+            .Any(id => _wovenEchoes.GetValueOrDefault(id) != Stash.WovenEchoes.GetValueOrDefault(id))
         || _factionRanks.Any(r => Stash.FactionRanks.GetValueOrDefault(r.Key) != r.Value)
         || _amounts.Keys.Concat(Stash.Amounts.Keys).Distinct()
             .Any(key => _amounts.GetValueOrDefault(key) != Stash.Amounts.GetValueOrDefault(key));
@@ -111,6 +123,26 @@ public sealed class StashMaterialsViewModel(StashSave stash)
             updated.Remove(key);
 
         _amounts = updated;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Sets the amount of the woven echo <paramref name="echoId"/> (0 removes it on the next save); nothing happens when it
+    /// is the current one.
+    /// </summary>
+    public void SetWovenEchoAmount(int echoId, int quantity)
+    {
+        quantity = Math.Max(0, quantity);
+        if (_wovenEchoes.GetValueOrDefault(echoId) == quantity)
+            return;
+
+        var updated = new Dictionary<int, int>(_wovenEchoes);
+        if (quantity > 0)
+            updated[echoId] = quantity;
+        else
+            updated.Remove(echoId);
+
+        _wovenEchoes = updated;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -173,6 +205,7 @@ public sealed class StashMaterialsViewModel(StashSave stash)
         _favor = saved.Favor ?? 0;
         _ancientBones = saved.AncientBones;
         _factionRanks = new Dictionary<string, int>(saved.FactionRanks, StringComparer.Ordinal);
+        _wovenEchoes = new Dictionary<int, int>(saved.WovenEchoes);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }
