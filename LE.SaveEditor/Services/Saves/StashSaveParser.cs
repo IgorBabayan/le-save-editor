@@ -6,7 +6,7 @@ using LE.SaveEditor.Services.Saves.Models;
 namespace LE.SaveEditor.Services.Saves;
 
 /// <summary>
-/// Reads the gold, the ancient bones, the Circle of Fortune favor, the faction ranks, the material storage and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
+/// Reads the gold, the ancient bones, the Circle of Fortune favor, the faction ranks, the material storage, the woven echoes and the discovered blessings of a stash file (<see cref="StashSave"/>); everything
 /// else in it is ignored.
 /// </summary>
 public static class StashSaveParser
@@ -19,6 +19,12 @@ public static class StashSaveParser
 
     /// <summary>List of resources (key items).</summary>
     internal const string KeyList = "keysList";
+
+    /// <summary>Woven echoes of the "Woven Echoes" tab.</summary>
+    internal const string WovenEchoList = "wovenEchoesList";
+
+    /// <summary>Whether the "Woven Echoes" tab is unlocked.</summary>
+    internal const string WovenEchoesTabUnlockedField = "wovenEchoesTabUnlocked";
 
     /// <summary>Gold of the stash.</summary>
     internal const string GoldField = "gold";
@@ -81,6 +87,8 @@ public static class StashSaveParser
             Favor = ReadFavor(root),
             FactionRanks = ReadFactionRanks(root),
             UnlockedBlessings = ReadUnlockedBlessings(root),
+            WovenEchoes = ReadWovenEchoes(root),
+            IsWovenEchoesTabUnlocked = root.TryGetProperty(WovenEchoesTabUnlockedField, out var unlocked) && unlocked.ValueKind == JsonValueKind.True,
             Amounts = amounts,
             ContentHash = CharacterSaveParser.ComputeContentHash(content)
         };
@@ -148,6 +156,42 @@ public static class StashSaveParser
         return CraftingMaterialData.Read(bytes) is { Kind: not CraftingMaterialKind.AffixShard } material
             ? new CraftingMaterialKey(material.Kind, material.SubTypeId)
             : null;
+    }
+
+    /// <summary>
+    /// <c>wovenEchoesList</c>: the amount of every echo (entries of the same echo added up); entries that are not a woven
+    /// echo are skipped.
+    /// </summary>
+    internal static IReadOnlyDictionary<int, int> ReadWovenEchoes(JsonElement root)
+    {
+        var echoes = new Dictionary<int, int>();
+        if (!root.TryGetProperty(WovenEchoList, out var list) || list.ValueKind != JsonValueKind.Array)
+            return echoes;
+
+        foreach (var entry in list.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object
+                || !entry.TryGetProperty("data", out var data)
+                || data.ValueKind != JsonValueKind.Array)
+                continue;
+
+            var bytes = new List<byte>();
+            foreach (var value in data.EnumerateArray())
+            {
+                if (value.ValueKind != JsonValueKind.Number || !value.TryGetByte(out var b))
+                {
+                    bytes = null;
+                    break;
+                }
+
+                bytes.Add(b);
+            }
+
+            if (bytes is not null && WovenEchoData.Read(bytes) is { } echo)
+                echoes[echo] = echoes.GetValueOrDefault(echo) + Math.Max(0, GetInt(entry, "quantity", 1));
+        }
+
+        return echoes;
     }
 
     /// <summary><c>unlockedBlessings</c>, in file order; empty when the file has none.</summary>
