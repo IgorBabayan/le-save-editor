@@ -254,7 +254,9 @@ jobs:
               return 1
             fi
           }
-          find "$contents/MacOS" -type f -print0 | while IFS= read -r -d '' file; do
+          # The main executable is left to the bundle signature: signing it on its own makes codesign check the
+          # rest of Contents/MacOS, which may not be signed yet ("code object is not signed at all").
+          find "$contents/MacOS" -type f ! -path "$contents/MacOS/LE.SaveEditor" -print0 | while IFS= read -r -d '' file; do
             sign "$file"
           done
           find "$contents/Resources" -type f -print0 | while IFS= read -r -d '' file; do
