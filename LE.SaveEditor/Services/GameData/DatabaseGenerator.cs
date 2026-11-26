@@ -18,8 +18,21 @@ public sealed class DatabaseGenerator : IDatabaseGenerator
     /// <summary>At most this many stderr lines are added to a failed result.</summary>
     private const int MaxErrorLines = 10;
 
-    public string ExecutablePath { get; } =
-        Path.Combine(AppContext.BaseDirectory, "Tools", "LE.SaveEditor.DB", ExecutableName);
+    public string ExecutablePath { get; } = FindExecutable();
+
+    /// <summary>
+    /// <c>Tools/LE.SaveEditor.DB</c> next to the editor (Windows, Linux, local builds); in the macOS app bundle the tool
+    /// lives in <c>Contents/Resources/Tools</c>, because code signing does not accept folders in <c>Contents/MacOS</c>.
+    /// </summary>
+    private static string FindExecutable()
+    {
+        var besideEditor = Path.Combine(AppContext.BaseDirectory, "Tools", "LE.SaveEditor.DB", ExecutableName);
+        if (!OperatingSystem.IsMacOS() || File.Exists(besideEditor))
+            return besideEditor;
+
+        var inBundle = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources", "Tools", "LE.SaveEditor.DB", ExecutableName));
+        return File.Exists(inBundle) ? inBundle : besideEditor;
+    }
 
     public async Task<DatabaseGenerationResult> RunAsync(
         IProgress<DatabaseGeneratorEvent>? progress,

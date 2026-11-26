@@ -201,6 +201,8 @@ jobs:
           -p:DebugType=none
           -o "publish/${{ env.APP }}/Contents/MacOS"
 
+      # In Contents/Resources: codesign rejects sub-folders of Contents/MacOS ("bundle format unrecognized").
+      # The editor looks for the tool there on macOS (Services/GameData/DatabaseGenerator.cs).
       - name: Publish database generator (self-contained)
         run: >
           dotnet publish ${{ env.DB_PROJECT }}
@@ -209,7 +211,7 @@ jobs:
           --self-contained true
           -p:Version=${{ env.VERSION }}
           -p:DebugType=none
-          -o "publish/${{ env.APP }}/Contents/MacOS/Tools/LE.SaveEditor.DB"
+          -o "publish/${{ env.APP }}/Contents/Resources/Tools/LE.SaveEditor.DB"
 
       - name: Build app bundle
         run: |
@@ -237,10 +239,17 @@ jobs:
           </dict>
           </plist>
           EOF
-          chmod +x "$contents/MacOS/LE.SaveEditor" "$contents/MacOS/Tools/LE.SaveEditor.DB/LE.SaveEditor.DB"
-          # Ad-hoc signature: required to run on Apple silicon; the app is not notarized
-          # (first start: right-click the app → Open).
-          codesign --force --deep --sign - "publish/${APP}"
+          chmod +x "$contents/MacOS/LE.SaveEditor" "$contents/Resources/Tools/LE.SaveEditor.DB/LE.SaveEditor.DB"
+          # Ad-hoc signature (required to run on Apple silicon; the app is not notarized, so the first start is
+          # right-click → Open). Every Mach-O file is signed on its own first, then the bundle (no --deep: it would
+          # take the tool's folder for a nested bundle).
+          find "$contents" -type f -print0 | while IFS= read -r -d '' file; do
+            if file -b "$file" | grep -q 'Mach-O'; then
+              codesign --force --sign - "$file"
+            fi
+          done
+          codesign --force --sign - "publish/${APP}"
+          codesign --verify --verbose "publish/${APP}"
           mkdir -p dist
           ditto -c -k --keepParent "publish/${APP}" "dist/LE.SaveEditor-${VERSION}-${RUNTIME}.zip"
           ls -l dist
