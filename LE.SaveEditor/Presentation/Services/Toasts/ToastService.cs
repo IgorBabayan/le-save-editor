@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows.Threading;
+using Avalonia.Threading;
 using LE.SaveEditor.Services.Notifications;
 
 namespace LE.SaveEditor.Presentation.Services.Toasts;

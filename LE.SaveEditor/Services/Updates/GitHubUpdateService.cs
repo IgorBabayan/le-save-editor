@@ -39,7 +39,8 @@ public sealed class GitHubUpdateService : IUpdateService, IDisposable
     {
         var version = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0);
         CurrentVersion = Normalize(version);
-        IsInstalled = File.Exists(Path.Combine(AppContext.BaseDirectory, UninstallerFileName));
+        // Only the Windows installer can update in place; Linux and macOS builds are updated by hand.
+        IsInstalled = OperatingSystem.IsWindows() && File.Exists(Path.Combine(AppContext.BaseDirectory, UninstallerFileName));
 
         // Timeouts are controlled per call with cancellation tokens (downloads may take a while).
         _http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };

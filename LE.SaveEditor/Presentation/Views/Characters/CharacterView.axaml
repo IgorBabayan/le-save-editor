@@ -1,0 +1,22 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Characters.CharacterView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:charactersVm="using:LE.SaveEditor.Presentation.ViewModels.Characters"
+             xmlns:inventoryViews="using:LE.SaveEditor.Presentation.Views.Inventory"
+             xmlns:waypointsViews="using:LE.SaveEditor.Presentation.Views.Waypoints"
+             x:DataType="charactersVm:CharacterViewModel">
+
+    <!--
+        Details of the selected character. The TabControl itself stays the same while the selection changes
+        (only its DataContext is replaced), so the open tab is kept when switching between characters.
+    -->
+    <TabControl x:Name="Tabs" Theme="{StaticResource UnderlineTabControlStyle}">
+        <TabItem x:Name="InventoryTab" Header="Inventory">
+            <inventoryViews:InventoryView DataContext="{Binding Inventory}" />
+        </TabItem>
+
+        <TabItem x:Name="WaypointsTab" Header="Waypoints">
+            <waypointsViews:WaypointsView DataContext="{Binding Waypoints}" />
+        </TabItem>
+    </TabControl>
+</UserControl>

@@ -52,6 +52,33 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
         /// <summary>Affixes scaled to an item type, by affix id and item type, so each is built once.</summary>
         public Dictionary<(int AffixId, int BaseTypeId), AffixDefinition> Scaled { get; } = [];
+
+        // ===== Lookups (built once per database load) =====
+        // Saves are read item by item and every item looks up its base, unique and affixes: dictionaries instead of a
+        // scan over thousands of rows per lookup. The first row wins, like the scans they replace.
+
+        public Dictionary<(int BaseTypeId, int SubTypeId), ItemBase> BasesByKey { get; } = FirstByKey(Bases, b => (b.BaseTypeId, b.SubTypeId));
+
+        public Dictionary<int, ItemBase> UniquesById { get; } = FirstByKey(Uniques, u => u.UniqueId);
+
+        public Dictionary<int, AffixDefinition[]> AffixesById { get; } =
+            Affixes.GroupBy(a => a.Id).ToDictionary(g => g.Key, g => g.ToArray());
+
+        public Dictionary<(CraftingMaterialKind Kind, int SubTypeId), CraftingMaterial> MaterialsByKey { get; } =
+            FirstByKey(Materials, m => (m.Kind, m.SubTypeId));
+
+        public Dictionary<int, WovenEcho> WovenEchoesById { get; } = FirstByKey(WovenEchoes, e => e.Id);
+
+        /// <summary>Sorted lists asked for again and again (every builder, every search), built on first use.</summary>
+        public System.Collections.Concurrent.ConcurrentDictionary<object, object> Sorted { get; } = new();
+
+        private static Dictionary<TKey, T> FirstByKey<TKey, T>(IEnumerable<T> items, Func<T, TKey> key) where TKey : notnull
+        {
+            var map = new Dictionary<TKey, T>();
+            foreach (var item in items)
+                map.TryAdd(key(item), item);
+            return map;
+        }
     }
 
     public bool IsAvailable => GetAll().Count > 0;
@@ -66,7 +93,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
     }
 
     public IReadOnlyList<ItemBase> GetBases(EquipmentSlot slot) =>
-        GetAll()
+        (IReadOnlyList<ItemBase>)GetCatalog().Sorted.GetOrAdd(("bases", slot), _ => GetAll()
             .Where(b => b.BaseTypeId >= 0
                 ? slot.AcceptsBaseType(b.BaseTypeId)
                 : slot.AcceptsTypeName(Normalize(b.TypeName)))
@@ -75,7 +102,7 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             .ThenBy(b => b.BaseTypeId)
             .ThenBy(b => b.LevelRequirement)
             .ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+            .ToList());
 
     public IReadOnlyList<ItemBase> GetUniques(EquipmentSlot slot, bool sets)
     {
@@ -83,12 +110,12 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         lock (_sync)
             catalog = _catalog ??= Load();
 
-        return catalog.Uniques
+        return (IReadOnlyList<ItemBase>)catalog.Sorted.GetOrAdd(("uniques", slot, sets), _ => catalog.Uniques
             .Where(u => u.IsSet == sets && slot.AcceptsBaseType(u.BaseTypeId))
             .OrderBy(u => u.BaseTypeId)
             .ThenBy(u => u.LevelRequirement)
             .ThenBy(u => u.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+            .ToList());
     }
 
     public IReadOnlyList<AffixDefinition> GetAffixes(int baseTypeId)
@@ -97,22 +124,26 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
         lock (_sync)
             catalog = _catalog ??= Load();
 
-        lock (_sync)
-            return catalog.Affixes.Where(a => a.CanRollOnType(baseTypeId)).Select(a => ScaledFor(catalog, a, baseTypeId)).ToList();
+        // Every key stroke in an affix search asks again: the scaled list of an item type is built once.
+        return (IReadOnlyList<AffixDefinition>)catalog.Sorted.GetOrAdd(("affixes", baseTypeId), _ =>
+        {
+            lock (_sync)
+                return catalog.Affixes.Where(a => a.CanRollOnType(baseTypeId)).Select(a => ScaledFor(catalog, a, baseTypeId)).ToList();
+        });
     }
 
     public ItemBase? FindBase(int baseTypeId, int subTypeId) =>
-        GetCatalog().Bases.FirstOrDefault(b => b.BaseTypeId == baseTypeId && b.SubTypeId == subTypeId);
+        GetCatalog().BasesByKey.GetValueOrDefault((baseTypeId, subTypeId));
 
     public ItemBase? FindUnique(int uniqueId) =>
-        GetCatalog().Uniques.FirstOrDefault(u => u.UniqueId == uniqueId);
+        GetCatalog().UniquesById.GetValueOrDefault(uniqueId);
 
     public AffixDefinition? FindAffix(int affixId, int? baseTypeId = null)
     {
         var catalog = GetCatalog();
 
         // Equipment and idol affixes are separate lists in the data; prefer the one that can roll on the item.
-        var matches = catalog.Affixes.Where(a => a.Id == affixId).ToList();
+        var matches = catalog.AffixesById.GetValueOrDefault(affixId) ?? [];
         var affix = (baseTypeId is { } type ? matches.FirstOrDefault(a => a.CanRollOnType(type)) : null)
                     ?? matches.FirstOrDefault();
         if (affix is null || baseTypeId is not { } itemType)
@@ -122,26 +153,32 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
             return ScaledFor(catalog, affix, itemType);
     }
 
-    public IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind) =>
-        GetCatalog().Materials
+    public IReadOnlyList<CraftingMaterial> GetCraftingMaterials(CraftingMaterialKind kind)
+    {
+        var catalog = GetCatalog();
+        return (IReadOnlyList<CraftingMaterial>)catalog.Sorted.GetOrAdd(("materials", kind), _ => catalog.Materials
             .Where(m => m.Kind == kind)
             // Materials that still drop first, then by name.
             .OrderBy(m => m.CannotDrop)
             .ThenBy(m => m.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+            .ToList());
+    }
 
     public CraftingMaterial? FindCraftingMaterial(CraftingMaterialKind kind, int subTypeId) =>
-        GetCatalog().Materials.FirstOrDefault(m => m.Kind == kind && m.SubTypeId == subTypeId);
+        GetCatalog().MaterialsByKey.GetValueOrDefault((kind, subTypeId));
 
     public IReadOnlyList<Timeline> GetTimelines() => GetCatalog().Timelines;
 
-    public IReadOnlyList<WovenEcho> GetWovenEchoes() =>
-        GetCatalog().WovenEchoes
+    public IReadOnlyList<WovenEcho> GetWovenEchoes()
+    {
+        var catalog = GetCatalog();
+        return (IReadOnlyList<WovenEcho>)catalog.Sorted.GetOrAdd("wovenEchoes", _ => catalog.WovenEchoes
             .OrderBy(e => e.CannotDrop)
             .ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+            .ToList());
+    }
 
-    public WovenEcho? FindWovenEcho(int id) => GetCatalog().WovenEchoes.FirstOrDefault(e => e.Id == id);
+    public WovenEcho? FindWovenEcho(int id) => GetCatalog().WovenEchoesById.GetValueOrDefault(id);
 
     /// <summary>
     /// <paramref name="affix"/> with the values it has on item type <paramref name="baseTypeId"/>. The game scales every

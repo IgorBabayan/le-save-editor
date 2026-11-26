@@ -11,8 +11,10 @@
     <ItemGroup>
         <!-- SQLite through EF Core: base.db is a single file the editor reads next to its exe. -->
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
-        <!-- WPF has no built-in WebP decoder, so icons are converted to PNG (MIT licensed). -->
+        <!-- Icons are converted from WebP to PNG, which the editor shows on every platform (MIT licensed). -->
         <PackageReference Include="SkiaSharp" Version="3.119.1" />
+        <!-- SkiaSharp ships its Windows and macOS libraries; Linux needs its own package. -->
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
     </ItemGroup>
 
     <ItemGroup>

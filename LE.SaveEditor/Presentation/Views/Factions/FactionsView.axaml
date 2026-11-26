@@ -1,0 +1,109 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Factions.FactionsView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:factionsVm="using:LE.SaveEditor.Presentation.ViewModels.Factions"
+             xmlns:mi="using:Material.Icons.Avalonia"
+             x:DataType="factionsVm:FactionsViewModel"
+>
+
+    <StackPanel>
+        <Border Padding="16,12"
+                VerticalAlignment="Top"
+                Theme="{StaticResource InventorySectionBorderStyle}">
+            <ItemsControl Focusable="False" ItemsSource="{Binding Factions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="factionsVm:FactionViewModel">
+                        <!-- One faction: greyed out and without a usable slider until it is unlocked in game. -->
+                        <Border Name="Row"
+                                Classes.locked="{Binding !IsUnlocked}"
+                                Margin="0,6"
+                                Padding="12,10"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource TitleBarBackgroundBrush}"
+                                ToolTip.Tip="{Binding ToolTip}"
+                                ToolTip.ShowOnDisabled="True"
+                                IsEnabled="{Binding IsUnlocked}">
+                            <Border.Styles>
+                                <Style Selector="Border.locked">
+                                    <Setter Property="Opacity" Value="0.55" />
+                                </Style>
+                                <Style Selector="Border.locked mi|MaterialIcon#StateIcon">
+                                    <Setter Property="Kind" Value="LockOutline" />
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+                                </Style>
+                            </Border.Styles>
+                            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+
+                                <mi:MaterialIcon Name="StateIcon"
+                                                  Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                                  Width="22"
+                                                  Height="22"
+                                                  Margin="0,0,12,0"
+                                                  VerticalAlignment="Center"
+                                                  Kind="ShieldStarOutline"
+                                                  Foreground="{DynamicResource AccentBrush}" />
+
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock VerticalAlignment="Center" Text="{Binding Name}" Theme="{StaticResource SectionHeaderTextStyle}" />
+                                    <!-- Not saved yet. -->
+                                    <Ellipse Width="7"
+                                             Height="7"
+                                             Margin="8,0,0,0"
+                                             VerticalAlignment="Center"
+                                             Fill="{DynamicResource AccentBrush}"
+                                             ToolTip.Tip="Changed, not saved yet"
+                                             IsVisible="{Binding HasChanges}" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding StatusText}"
+                                           Theme="{StaticResource SecondaryTextStyle}" />
+
+                                <!-- Rank slider: whole ranks 0 … MaxRank; only shown once the faction is unlocked. -->
+                                <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                      Margin="0,8,0,0"
+                                      IsVisible="{Binding IsUnlocked}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Margin="0,0,8,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               Text="0"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                    <Slider Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Minimum="0"
+                                            Maximum="{Binding MaxRank, Mode=OneTime}"
+                                            TickFrequency="1"
+                                            SmallChange="1"
+                                            LargeChange="1"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding Rank}" />
+                                    <TextBlock Grid.Column="2"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               Text="{Binding MaxRank, Mode=OneTime}"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <TextBlock Margin="2,8,0,0" Text="{Binding Summary}" Theme="{StaticResource SecondaryTextStyle}" />
+        <TextBlock Margin="2,2,0,0"
+                   Text="Faction ranks are kept in the stash file and shared by every character using it. Changing a rank resets the reputation towards the next one."
+                   Theme="{StaticResource SecondaryTextStyle}" />
+    </StackPanel>
+</UserControl>

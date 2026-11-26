@@ -1,0 +1,613 @@
+<views:ChromeWindow x:Class="LE.SaveEditor.Presentation.Views.Inventory.ItemBuilderWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:LE.SaveEditor.Presentation.Views"
+        xmlns:viewModels="using:LE.SaveEditor.Presentation.ViewModels"
+        xmlns:converters="using:LE.SaveEditor.Presentation.Converters"
+        xmlns:inventoryVm="using:LE.SaveEditor.Presentation.ViewModels.Inventory"
+        xmlns:mi="using:Material.Icons.Avalonia"
+        xmlns:behaviors="using:LE.SaveEditor.Presentation.Behaviors"
+        x:DataType="inventoryVm:ItemBuilderViewModel"
+        Title="{Binding Title}"
+        Width="1180"
+        Height="760"
+        MinWidth="900"
+        MinHeight="520"
+        CanResize="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource WindowForegroundBrush}">
+
+    <views:ChromeWindow.Resources>
+        <!-- One implicit / unique modifier: its tooltip line, its range and a slider over the 0…255 roll. -->
+        <DataTemplate x:Key="StatTemplate" x:DataType="inventoryVm:ItemStatViewModel">
+            <StackPanel Margin="0,0,0,14">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Text="{Binding DisplayText}" />
+                    <TextBlock Grid.Column="1"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding RangeText}" />
+                </Grid>
+                <!-- Fixed 0…255 range (the roll the game stores): no binding order can clamp the value. -->
+                <Slider Margin="0,6,0,0"
+                        Minimum="0"
+                        Maximum="{x:Static inventoryVm:ItemStatViewModel.MaxRoll}"
+                        TickFrequency="1"
+                        SmallChange="1"
+                        LargeChange="16"
+                        IsSnapToTickEnabled="True"
+                        IsEnabled="{Binding IsEditable, Mode=OneTime}"
+                        Value="{Binding Roll}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- One card of the item grid: fixed width, highlighted when hovered and outlined in the accent color when selected. -->
+        <ControlTheme x:Key="ItemCardStyle" TargetType="ListBoxItem">
+            <Setter Property="Width" Value="300" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+            <!-- Group titles (GroupedRows) are disabled rows: neither selectable nor highlighted. -->
+            <Setter Property="IsEnabled" Value="{ReflectionBinding Converter={x:Static converters:ValueConverters.IsNotGroupHeader}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Bd"
+                            Padding="12,10"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#Bd">
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+                <Setter Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+            </Style>
+            <Style Selector="^:focus-visible /template/ Border#Bd">
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+            </Style>
+            <!-- Declared last so it wins over hover. -->
+            <Style Selector="^:selected /template/ Border#Bd">
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                <Setter Property="BorderThickness" Value="2" />
+                <Setter Property="Padding" Value="11,9" />
+            </Style>
+            <!-- A group title takes a whole row of the wrapping list, without a card around it. -->
+            <Style Selector="^:disabled">
+                <Setter Property="Width" Value="NaN" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Cursor" Value="Arrow" />
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}" />
+                    </ControlTemplate>
+                </Setter>
+            </Style>
+        </ControlTheme>
+
+        <!-- One affix slot: "Add prefix" when empty; otherwise the affix, its tier and a slider per stat. -->
+        <DataTemplate x:Key="AffixSlotTemplate" x:DataType="inventoryVm:AffixSlotViewModel">
+            <Border Name="Box"
+                    Classes.sealed="{Binding IsSealed}"
+                    Classes.enchant="{Binding IsEnchant}"
+                    Classes.uniqueAffix="{Binding IsUniqueAffix}"
+                    Classes.corrupted="{Binding IsCorrupted}"
+                    Margin="0,0,0,8"
+                    Padding="10,8"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                    Background="{DynamicResource TitleBarBackgroundBrush}">
+                <Border.Styles>
+                    <Style Selector="Border.sealed TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                    </Style>
+                    <!-- The enchantment of a Heretical idol, in the game's enchantment blue. -->
+                    <Style Selector="Border.enchant TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{StaticResource ItemTooltipEnchantBrush}" />
+                    </Style>
+                    <Style Selector="Border#Box.enchant">
+                        <Setter Property="BorderBrush" Value="{StaticResource ItemTooltipEnchantBrush}" />
+                    </Style>
+                    <!-- The unique's own legendary affix (e.g. Blood Rage on Unsated Rage). -->
+                    <Style Selector="Border.uniqueAffix TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                    </Style>
+                    <Style Selector="Border.corrupted TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                    </Style>
+                    <Style Selector="Border#Box.corrupted">
+                        <Setter Property="BorderBrush" Value="{DynamicResource ErrorForegroundBrush}" />
+                    </Style>
+                </Border.Styles>
+                <StackPanel>
+                    <DockPanel LastChildFill="False">
+                        <TextBlock Name="SlotLabel"
+                                   DockPanel.Dock="Left"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                   Text="{Binding Label}" />
+                        <Button DockPanel.Dock="Right"
+                                Margin="8,0,0,0"
+                                Theme="{StaticResource TextLinkButtonStyle}"
+                                Content="Remove"
+                                Command="{Binding RemoveCommand}"
+                                IsVisible="{Binding HasAffix}" />
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource TextLinkButtonStyle}"
+                                Content="Change"
+                                Command="{Binding ChooseCommand}"
+                                IsVisible="{Binding HasAffix}" />
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource TextLinkButtonStyle}"
+                                Content="{Binding AddText}"
+                                Command="{Binding ChooseCommand}"
+                                IsVisible="{Binding !HasAffix}" />
+                    </DockPanel>
+
+                    <StackPanel Margin="0,6,0,0" IsVisible="{Binding HasAffix}">
+                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Name}" />
+
+                        <!-- Tier 1 … highest tier of the affix. -->
+                        <Grid Margin="0,6,0,8" IsVisible="{Binding HasTiers}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Theme="{StaticResource SecondaryTextStyle}" Text="{Binding TierText}" />
+                            <Slider Grid.Column="1"
+                                    Minimum="1"
+                                    Maximum="{Binding MaxTier}"
+                                    TickFrequency="1"
+                                    SmallChange="1"
+                                    LargeChange="1"
+                                    IsSnapToTickEnabled="True"
+                                    Value="{Binding TierNumber}" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding Stats}"
+                                      ItemTemplate="{StaticResource StatTemplate}"
+                                      Focusable="False" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </views:ChromeWindow.Resources>
+
+    <views:ChromeWindow.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
+    </views:ChromeWindow.KeyBindings>
+
+    <Border BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1">
+        <Grid RowDefinitions="32,Auto,*,Auto">
+
+            <!-- ===== Title bar ===== -->
+            <Grid Grid.Row="0" Classes="titlebar" Background="{DynamicResource TitleBarBackgroundBrush}">
+                <TextBlock Margin="12,0,0,0"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Text="{Binding Title}" />
+                <Button HorizontalAlignment="Right"
+                        Theme="{StaticResource CloseCaptionButtonStyle}"
+                        ToolTip.Tip="Close"
+                        Command="{Binding CancelCommand}">
+                    <mi:MaterialIcon Width="14" Height="14" Kind="WindowClose" />
+                </Button>
+            </Grid>
+
+            <!-- ===== Rarity ===== -->
+            <StackPanel Grid.Row="1" Margin="20,16,20,4">
+                <TextBlock Margin="0,0,0,8" Text="Rarity" Theme="{StaticResource SectionHeaderTextStyle}" />
+                <!-- Pills ask the view model; only it marks a rarity as selected (a declined change moves nothing). -->
+                <ItemsControl ItemsSource="{Binding Rarities}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="inventoryVm:RarityOptionViewModel">
+                            <Button Theme="{StaticResource RarityPillButtonStyle}"
+                                    Command="{Binding $parent[Window].((inventoryVm:ItemBuilderViewModel)DataContext).SelectRarityCommand}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ===== Preview + stats (left) | bases (right) ===== -->
+            <Grid Grid.Row="2" Margin="20,8,20,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="400" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Preview card: background follows the rarity. -->
+                <Border Grid.Column="0"
+                        CornerRadius="8"
+                        BorderThickness="1"
+                        BorderBrush="{Binding RarityForeground}"
+                        Background="{DynamicResource ControlBackgroundBrush}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Header tinted with the rarity color. -->
+                        <Border Grid.Row="0"
+                                Padding="16,14"
+                                CornerRadius="8,8,0,0"
+                                BorderThickness="0,0,0,1"
+                                BorderBrush="{Binding RarityForeground}"
+                                Background="{Binding RarityBackground}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0"
+                                        Width="72"
+                                        Height="72"
+                                        Margin="0,0,14,0"
+                                        CornerRadius="6"
+                                        BorderThickness="1"
+                                        BorderBrush="{Binding RarityForeground}"
+                                        Background="{Binding RarityBackground}">
+                                    <Grid>
+                                        <Image Margin="6"
+                                               Stretch="Uniform"
+                                               RenderOptions.BitmapInterpolationMode="HighQuality"
+                                               Source="{Binding Icon}" />
+                                        <mi:MaterialIcon Width="28"
+                                                          Height="28"
+                                                          Kind="ShieldOutline"
+                                                          Opacity="0.6"
+                                                          Foreground="{Binding RarityForeground}"
+                                                          IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNull}}">
+                                            <!-- Placeholder while the base has no icon. -->
+                                        </mi:MaterialIcon>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock FontSize="18"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="{Binding RarityForeground}"
+                                               Text="{Binding ItemName}" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding Subtitle}" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding LevelText}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource WarningForegroundBrush}"
+                                               Text="{Binding ClassWarningText}"
+                                               IsVisible="{Binding IsSelectedBaseForOtherClass}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Implicits of the selected base, one slider each. -->
+                        <ScrollViewer Grid.Row="1" Padding="16,12" VerticalScrollBarVisibility="Auto">
+                            <Grid>
+                                <TextBlock Theme="{StaticResource EmptyPageTextStyle}"
+                                           Text="{Binding EmptyStatsText}"
+                                           IsVisible="{Binding !HasSelectedBase}" />
+
+                                <StackPanel IsVisible="{Binding HasSelectedBase}">
+                                    <TextBlock Margin="0,0,0,8" Text="Implicit stats" Theme="{StaticResource SectionHeaderTextStyle}" />
+                                    <!-- base.db from before stat names were stored: names read "Property 10". -->
+                                    <Border Margin="0,0,0,12"
+                                            Padding="10,6"
+                                            CornerRadius="4"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource WarningForegroundBrush}"
+                                            IsVisible="{Binding IsDatabaseOutdated}">
+                                        <TextBlock FontSize="12"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource WarningForegroundBrush}"
+                                                   Text="Stat names are missing because the game database is out of date. Update it with the database button in the title bar, then reopen the builder." />
+                                    </Border>
+                                    <TextBlock Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="No implicit stats."
+                                               IsVisible="{Binding !HasStats}" />
+
+                                    <ItemsControl ItemsSource="{Binding Stats}"
+                                                  ItemTemplate="{StaticResource StatTemplate}"
+                                                  Focusable="False" />
+
+                                    <!-- Modifiers and effect lines of a unique / set item. -->
+                                    <StackPanel Margin="0,8,0,0"
+                                                IsVisible="{Binding HasUniqueSection}">
+                                        <TextBlock Margin="0,0,0,8"
+                                                   Foreground="{Binding RarityForeground}"
+                                                   Text="{Binding ModStatsHeader}"
+                                                   Theme="{StaticResource SectionHeaderTextStyle}" />
+                                        <ItemsControl ItemsSource="{Binding ModStats}"
+                                                      ItemTemplate="{StaticResource StatTemplate}"
+                                                      Focusable="False" />
+                                        <!-- Effects that do not roll, e.g. "You are immune to Blind and Chill". -->
+                                        <ItemsControl ItemsSource="{Binding Effects}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="x:String">
+                                                    <TextBlock Margin="0,0,0,6"
+                                                               FontStyle="Italic"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{Binding $parent[Window].((inventoryVm:ItemBuilderViewModel)DataContext).RarityForeground}"
+                                                               Text="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
+                                    <!-- Crafted affixes: one box per slot of the current rarity. -->
+                                    <StackPanel Margin="0,12,0,0"
+                                                IsVisible="{Binding HasAffixSlots}">
+                                        <TextBlock Margin="0,0,0,8" Text="{Binding AffixesHeader}" Theme="{StaticResource SectionHeaderTextStyle}" />
+                                        <ItemsControl ItemsSource="{Binding AffixSlots}"
+                                                      ItemTemplate="{StaticResource AffixSlotTemplate}"
+                                                      Focusable="False" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- Affix picker: replaces the item grid while a slot is being filled. -->
+                <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*" IsVisible="{Binding IsPickingAffix}">
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding AffixPickerTitle}" Theme="{StaticResource SectionHeaderTextStyle}" />
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource TextLinkButtonStyle}"
+                                Content="Back to items"
+                                Command="{Binding CloseAffixPickerCommand}" />
+                    </DockPanel>
+
+                    <TextBox Grid.Row="1"
+                             Margin="0,0,0,8"
+                             Padding="6,4"
+                             ToolTip.Tip="Filter affixes by name, title or category"
+                             Text="{Binding AffixSearchText}" />
+
+                    <Border Grid.Row="2"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource ControlBackgroundBrush}">
+                        <Grid>
+                            <ListBox ItemsSource="{Binding AffixRows}"
+                                     SelectedItem="{Binding SelectedAffixOption}"
+                                     behaviors:SelectOnClick.IsEnabled="True"
+                                     Theme="{StaticResource PlainListBoxStyle}"
+                                     ItemContainerTheme="{StaticResource ListRowItemStyle}"
+                                     Padding="0,4">
+                                <ListBox.DataTemplates>
+                                    <DataTemplate DataType="viewModels:ListGroupHeader" x:DataType="viewModels:ListGroupHeader">
+                                        <TextBlock Margin="12,10,8,4"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                   Text="{Binding Name}" />
+                                    </DataTemplate>
+                                    <DataTemplate DataType="inventoryVm:AffixOptionViewModel" x:DataType="inventoryVm:AffixOptionViewModel">
+                                        <StackPanel>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Grid.Column="0" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Margin="12,0,0,0"
+                                                           Theme="{StaticResource SecondaryTextStyle}"
+                                                           Text="{Binding Details}" />
+                                            </Grid>
+                                            <TextBlock Margin="0,2,0,0"
+                                                       Theme="{StaticResource SecondaryTextStyle}"
+                                                       Text="{Binding TopTierText}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.DataTemplates>
+                            </ListBox>
+
+                            <TextBlock Margin="12"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Theme="{StaticResource EmptyPageTextStyle}"
+                                       Text="No affixes of this kind can be crafted on this item."
+                                       IsVisible="{Binding !HasAffixOptions}" />
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Bases of the slot -->
+                <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*" IsVisible="{Binding !IsPickingAffix}">
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding ListHeader}" Theme="{StaticResource SectionHeaderTextStyle}" />
+                        <CheckBox DockPanel.Dock="Right"
+                                  VerticalAlignment="Center"
+                                  FontSize="12"
+                                  Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                  IsEnabled="{Binding IsDatabaseAvailable}"
+                                  Content="{Binding OnlyUsableText}"
+                                  ToolTip.Tip="Hide bases this character's class cannot equip"
+                                  IsChecked="{Binding ShowOnlyUsable}" />
+                    </DockPanel>
+
+                    <TextBox Grid.Row="1"
+                             Margin="0,0,0,8"
+                             Padding="6,4"
+                             IsEnabled="{Binding IsDatabaseAvailable}"
+                             ToolTip.Tip="Search bases, unique and set items by name, type or class"
+                             Text="{Binding SearchText}" />
+
+                    <Border Grid.Row="2"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource ControlBackgroundBrush}">
+                        <Grid>
+                            <!-- Item cards, grouped by class and wrapping into as many columns as fit. -->
+                            <ListBox x:Name="BaseList"
+                                     ItemsSource="{Binding BaseRows}"
+                                     SelectedItem="{Binding SelectedBaseOption}"
+                                     behaviors:SelectOnClick.IsEnabled="True"
+                                     Theme="{StaticResource PlainListBoxStyle}"
+                                     ItemContainerTheme="{StaticResource ItemCardStyle}"
+                                     Padding="6,2,6,6">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.DataTemplates>
+                                    <!-- Group title: a whole row of the wrapping list (as wide as the list's viewport). -->
+                                    <DataTemplate DataType="viewModels:ListGroupHeader" x:DataType="viewModels:ListGroupHeader">
+                                        <TextBlock Margin="6,12,8,4"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                   Width="{Binding $parent[ScrollViewer].Viewport.Width, Converter={x:Static converters:ValueConverters.Subtract}, ConverterParameter=26}"
+                                                   Text="{Binding Name}" />
+                                    </DataTemplate>
+                                    <!-- Card laid out like the game's item tooltip. Other classes' items stay selectable but are dimmed. -->
+                                    <DataTemplate DataType="inventoryVm:BaseOptionViewModel" x:DataType="inventoryVm:BaseOptionViewModel">
+                                        <Grid ToolTip.Tip="{Binding ToolTip}" Classes.unusable="{Binding !IsUsable}">
+                                            <Grid.Styles>
+                                                <Style Selector="Grid.unusable">
+                                                    <Setter Property="Opacity" Value="0.5" />
+                                                </Style>
+                                            </Grid.Styles>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="64" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <Image Grid.Row="0"
+                                                   Grid.Column="0"
+                                                   Width="56"
+                                                   MaxHeight="96"
+                                                   VerticalAlignment="Top"
+                                                   Stretch="Uniform"
+                                                   RenderOptions.BitmapInterpolationMode="HighQuality"
+                                                   Source="{Binding Icon}" />
+
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
+                                                <TextBlock FontSize="14"
+                                                           FontWeight="Bold"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{Binding TitleForeground}"
+                                                           Text="{Binding Title}" />
+                                                <!-- Found by a search in another list than the selected rarity's. -->
+                                                <TextBlock Margin="0,1,0,0"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="{Binding TitleForeground}"
+                                                           Text="{Binding KindLabel}"
+                                                           IsVisible="{Binding IsFromOtherList}" />
+                                                <TextBlock Margin="0,1,0,6"
+                                                           FontSize="11"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                           Text="{Binding TypeLine}" />
+                                                <ItemsControl ItemsSource="{Binding StatLines}" Focusable="False">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <TextBlock Margin="0,0,0,2" FontSize="12" TextWrapping="Wrap" Text="{Binding}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <ItemsControl ItemsSource="{Binding Effects}" Focusable="False">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <TextBlock Margin="0,2,0,0"
+                                                                       FontSize="11"
+                                                                       FontStyle="Italic"
+                                                                       TextWrapping="Wrap"
+                                                                       Foreground="{Binding $parent[ItemsControl].((inventoryVm:BaseOptionViewModel)DataContext).TitleForeground}"
+                                                                       Text="{Binding}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- Requirements, bottom right like the game. -->
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0" HorizontalAlignment="Right">
+                                                <TextBlock HorizontalAlignment="Right"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Text="{Binding LevelText}"
+                                                           IsVisible="{Binding HasLevelRequirement}" />
+                                                <TextBlock HorizontalAlignment="Right"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Text="{Binding ClassText}"
+                                                           IsVisible="{Binding HasClassRequirement}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.DataTemplates>
+                            </ListBox>
+
+                            <TextBlock Margin="12"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Theme="{StaticResource EmptyPageTextStyle}"
+                                       Text="{Binding EmptyBasesText}"
+                                       IsVisible="{Binding !HasBases}" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ===== Footer ===== -->
+            <Border Grid.Row="3"
+                    Padding="20,12"
+                    Background="{DynamicResource TitleBarBackgroundBrush}"
+                    BorderBrush="{DynamicResource WindowBorderBrush}"
+                    BorderThickness="0,1,0,0">
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button Margin="0,0,24,0"
+                            Theme="{StaticResource DialogButtonStyle}"
+                            Content="_Remove item"
+                            ToolTip.Tip="Remove this item from the character"
+                            Command="{Binding RemoveCommand}"
+                            IsVisible="{Binding CanRemove}" />
+                    <Button Theme="{StaticResource AccentButtonStyle}"
+                            Content="_Apply"
+                            IsDefault="True"
+                            Command="{Binding ApplyCommand}" />
+                    <Button Margin="8,0,0,0"
+                            Theme="{StaticResource DialogButtonStyle}"
+                            Content="_Cancel"
+                            Command="{Binding CancelCommand}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</views:ChromeWindow>

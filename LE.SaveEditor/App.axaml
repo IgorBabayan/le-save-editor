@@ -1,0 +1,35 @@
+﻿<Application x:Class="LE.SaveEditor.App"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="using:Material.Icons.Avalonia"
+             xmlns:viewModels="using:LE.SaveEditor.Presentation.ViewModels"
+             RequestedThemeVariant="Dark">
+
+    <Application.Styles>
+        <!-- Base look of the controls that are not restyled (text selection, tooltips, menus). -->
+        <FluentTheme />
+        <mi:MaterialIconStyles />
+        <StyleInclude Source="avares://LE.SaveEditor/Themes/ControlStyles.axaml" />
+    </Application.Styles>
+
+    <Application.DataTemplates>
+        <!-- Title row of a grouped list (see GroupedRows): item lists of the item builder and inspector, affix pickers. -->
+        <DataTemplate DataType="viewModels:ListGroupHeader" x:DataType="viewModels:ListGroupHeader">
+            <TextBlock Margin="8,8,8,2"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                       Text="{Binding Name}" />
+        </DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- The active color palette (Themes/Colors) is inserted first by IThemeService at startup and swapped at runtime. -->
+                <ResourceInclude Source="avares://LE.SaveEditor/Themes/WindowChrome.axaml" />
+                <ResourceInclude Source="avares://LE.SaveEditor/Themes/Controls.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

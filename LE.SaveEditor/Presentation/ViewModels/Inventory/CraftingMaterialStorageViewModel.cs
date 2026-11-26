@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows.Data;
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 
@@ -40,9 +39,8 @@ public sealed partial class CraftingMaterialStorageViewModel : ViewModelBase
         foreach (var (subTypeId, quantity) in amounts.OrderBy(a => a.Key))
             AddEntry(subTypeId, quantity);
 
-        EntriesView = CollectionViewSource.GetDefaultView(Entries);
-        EntriesView.Filter = o => o is CraftingMaterialAmountViewModel entry && Matches(entry);
-        EntriesView.SortDescriptions.Add(new SortDescription(nameof(CraftingMaterialAmountViewModel.Name), ListSortDirection.Ascending));
+        Entries.CollectionChanged += (_, _) => RefreshEntriesView();
+        RefreshEntriesView();
     }
 
     public CraftingMaterialKind Kind { get; }
@@ -59,7 +57,8 @@ public sealed partial class CraftingMaterialStorageViewModel : ViewModelBase
     public ObservableCollection<CraftingMaterialAmountViewModel> Entries { get; } = [];
 
     /// <summary><see cref="Entries"/> filtered by <see cref="SearchText"/>, by name.</summary>
-    public ICollectionView EntriesView { get; }
+    [ObservableProperty]
+    private IReadOnlyList<CraftingMaterialAmountViewModel> _entriesView = [];
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -84,7 +83,7 @@ public sealed partial class CraftingMaterialStorageViewModel : ViewModelBase
     /// <summary>The user applied the amounts; the view closes.</summary>
     public event EventHandler? Applied;
 
-    partial void OnSearchTextChanged(string value) => EntriesView.Refresh();
+    partial void OnSearchTextChanged(string value) => RefreshEntriesView();
 
     /// <summary>Picks a material and adds it with an amount of 1, or selects its row when it is listed already.</summary>
     [RelayCommand]
@@ -152,9 +151,18 @@ public sealed partial class CraftingMaterialStorageViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasEntries));
     }
 
-    private bool Matches(CraftingMaterialAmountViewModel entry) =>
-        SearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .All(w => entry.SearchText.Contains(w, StringComparison.CurrentCultureIgnoreCase));
+    /// <summary>
+    /// Rebuilds the visible list in one go (one change notification for the list instead of one per row).
+    /// The search words are split once per refresh, not once per entry.
+    /// </summary>
+    private void RefreshEntriesView()
+    {
+        var words = SearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        EntriesView = Entries
+            .Where(e => Array.TrueForAll(words, w => e.SearchText.Contains(w, StringComparison.CurrentCultureIgnoreCase)))
+            .OrderBy(e => e.Name, StringComparer.CurrentCulture)
+            .ToList();
+    }
 }
 
 /// <summary>One material of the material storage dialog and its amount.</summary>
@@ -173,7 +181,7 @@ public sealed partial class CraftingMaterialAmountViewModel(
 
     public string Name => Material?.Name ?? $"{Kind.DisplayName} #{SubTypeId}";
 
-    public ImageSource? Icon => iconProvider.Get(Material?.IconPath);
+    public IImage? Icon => iconProvider.Get(Material?.IconPath);
 
     /// <summary>Second line, e.g. "Prefix · Melee"; empty for runes and glyphs.</summary>
     public string Details => Material is null

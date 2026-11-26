@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows.Data;
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Blessings;
@@ -66,9 +65,11 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
         }
 
         Options = options;
-        var view = new ListCollectionView(options);
-        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(BlessingOptionViewModel.Group)));
-        OptionsView = view;
+        // Groups in the order they first appear in the list, like a grouped collection view.
+        OptionsView = options
+            .GroupBy(o => o.Group)
+            .Select(g => new BlessingOptionGroup(g.Key, g.ToList()))
+            .ToList();
 
         _isRestoring = true;
         try
@@ -94,7 +95,7 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
     public IReadOnlyList<BlessingOptionViewModel> Options { get; }
 
     /// <summary><see cref="Options"/> grouped into normal, Grand and other blessings, for the list.</summary>
-    public ICollectionView OptionsView { get; }
+    public IReadOnlyList<BlessingOptionGroup> OptionsView { get; }
 
     /// <summary>The blessing in the slot; <c>null</c> for an empty slot.</summary>
     [ObservableProperty]
@@ -121,7 +122,7 @@ public sealed partial class BlessingEchoViewModel : ViewModelBase
     /// <summary>The blessing name, or "No blessing".</summary>
     public string SelectedName => Selected?.Name ?? "No blessing";
 
-    public ImageSource? Icon => Selected?.Icon;
+    public IImage? Icon => Selected?.Icon;
 
     public bool HasIcon => Icon is not null;
 
@@ -299,7 +300,7 @@ public sealed partial class BlessingOptionViewModel(ItemBase blessing, string gr
 
     public string Name => Base.Name;
 
-    public ImageSource? Icon => iconProvider.Get(Base.IconPath);
+    public IImage? Icon => iconProvider.Get(Base.IconPath);
 
     public bool HasIcon => Icon is not null;
 
@@ -308,3 +309,6 @@ public sealed partial class BlessingOptionViewModel(ItemBase blessing, string gr
         ? "No stats known"
         : string.Join(Environment.NewLine, Base.Implicits.Select(ItemStatViewModel.FormatRange));
 }
+
+/// <summary>A titled group of the blessing list ("Blessings", "Grand blessings (empowered timeline)", "Other").</summary>
+public sealed record BlessingOptionGroup(string Name, IReadOnlyList<BlessingOptionViewModel> Items);

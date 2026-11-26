@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 
 namespace LE.SaveEditor.Services.GameData;
 
@@ -10,7 +10,7 @@ public interface IIconProvider
     /// or <c>null</c> when the image is missing. The result is frozen and cached, so it can be
     /// bound from any thread and shared by any number of controls.
     /// </summary>
-    ImageSource? Get(string? iconPath);
+    IImage? Get(string? iconPath);
 
     /// <summary>Forgets loaded (and missing) icons, so files written by the generator are picked up.</summary>
     void ClearCache();

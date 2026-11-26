@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 
@@ -137,7 +137,7 @@ public sealed partial class WovenEchoSlotViewModel(int id, WovenEcho? echo, IIco
 
     public string Name => Echo?.Name ?? $"Woven echo #{Id}";
 
-    public ImageSource? Icon => iconProvider.Get(Echo?.IconPath);
+    public IImage? Icon => iconProvider.Get(Echo?.IconPath);
 
     public bool HasIcon => Icon is not null;
 

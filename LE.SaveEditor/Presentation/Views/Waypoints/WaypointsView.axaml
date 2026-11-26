@@ -1,0 +1,115 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Waypoints.WaypointsView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:waypointsVm="using:LE.SaveEditor.Presentation.ViewModels.Waypoints"
+             x:DataType="waypointsVm:WaypointsViewModel"
+>
+
+    <!-- Unlocked waypoints of the character, by chapter: tick the ones to unlock, or unlock a chapter / everything at once. -->
+    <Grid Margin="0,16,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== Summary and actions for every waypoint ===== -->
+        <Border Grid.Row="0"
+                Padding="12,8"
+                CornerRadius="6"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource ControlBorderBrush}"
+                Background="{DynamicResource TitleBarBackgroundBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Waypoints" Theme="{StaticResource SectionHeaderTextStyle}" />
+                    <TextBlock Margin="0,2,0,0" Text="{Binding Summary}" Theme="{StaticResource SecondaryTextStyle}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Revert"
+                            Margin="0,0,8,0"
+                            ToolTip.Tip="Back to the waypoints of the save file"
+                            Command="{Binding RevertCommand}"
+                            IsEnabled="{Binding HasChanges}"
+                            Theme="{StaticResource DialogButtonStyle}" />
+                    <Button Content="Lock all"
+                            Margin="0,0,8,0"
+                            Command="{Binding LockAllCommand}"
+                            Theme="{StaticResource DialogButtonStyle}" />
+                    <Button Content="Unlock all"
+                            Command="{Binding UnlockAllCommand}"
+                            Theme="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Chapters ===== -->
+        <ScrollViewer Grid.Row="1"
+                      Margin="0,12,0,0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="waypointsVm:WaypointGroupViewModel">
+                        <Border Margin="0,0,0,12"
+                                Padding="12,8,12,12"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               VerticalAlignment="Center"
+                                               Text="{Binding Name}"
+                                               Theme="{StaticResource SectionHeaderTextStyle}" />
+                                    <TextBlock Grid.Column="1"
+                                               Margin="10,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Text="{Binding Progress}"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Button Content="Unlock chapter"
+                                                Command="{Binding UnlockAllCommand}"
+                                                Theme="{StaticResource TextLinkButtonStyle}" />
+                                        <Button Content="Lock chapter"
+                                                Command="{Binding LockAllCommand}"
+                                                Theme="{StaticResource TextLinkButtonStyle}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding Items}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="waypointsVm:WaypointItemViewModel">
+                                            <CheckBox Width="230"
+                                                      Margin="0,4,8,4"
+                                                      Content="{Binding Name}"
+                                                      ToolTip.Tip="{Binding ToolTip}"
+                                                      IsChecked="{Binding IsUnlocked}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -12,7 +12,8 @@ namespace LE.SaveEditor.Services.GameData;
 /// </summary>
 public sealed class DatabaseGenerator : IDatabaseGenerator
 {
-    private const string ExecutableName = "LE.SaveEditor.DB.exe";
+    /// <summary>Apphost of the generator: <c>.exe</c> on Windows, no extension on Linux and macOS.</summary>
+    private static readonly string ExecutableName = OperatingSystem.IsWindows() ? "LE.SaveEditor.DB.exe" : "LE.SaveEditor.DB";
 
     /// <summary>At most this many stderr lines are added to a failed result.</summary>
     private const int MaxErrorLines = 10;

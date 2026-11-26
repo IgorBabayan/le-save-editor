@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Saves.Models;
@@ -56,7 +56,7 @@ public sealed partial class BaseOptionViewModel : ObservableObject
 
     /// <summary>Color of the card title: the selected rarity for its own list, the list's own rarity otherwise.</summary>
     [ObservableProperty]
-    private Brush? _titleForeground;
+    private IBrush? _titleForeground;
 
     /// <summary>
     /// The item belongs to one of the builder's extra search slots (an off-hand in a backpack weapon builder): it is
@@ -89,7 +89,7 @@ public sealed partial class BaseOptionViewModel : ObservableObject
     /// <summary>Effects of a unique / set item that do not roll.</summary>
     public IReadOnlyList<string> Effects => Base.Effects;
 
-    public ImageSource? Icon => _iconProvider.Get(Base.IconPath);
+    public IImage? Icon => _iconProvider.Get(Base.IconPath);
 
     /// <summary>Header of the grid group, e.g. "Mage" or "Any class".</summary>
     public string GroupName { get; }

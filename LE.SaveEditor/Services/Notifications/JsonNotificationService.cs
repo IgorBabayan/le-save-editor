@@ -3,8 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Windows;
-using System.Windows.Threading;
+using Avalonia.Threading;
 
 namespace LE.SaveEditor.Services.Notifications;
 
@@ -12,7 +11,7 @@ namespace LE.SaveEditor.Services.Notifications;
 /// Notification history persisted as JSON in <c>%APPDATA%\LE.SaveEditor\notifications.json</c>,
 /// so earlier notifications are still there after a restart.
 /// </summary>
-public sealed class JsonNotificationService : INotificationService
+public sealed class JsonNotificationService : INotificationService, IDisposable
 {
     /// <summary>Oldest notifications are dropped beyond this count.</summary>
     private const int MaxNotifications = 200;
@@ -33,7 +32,7 @@ public sealed class JsonNotificationService : INotificationService
 
     public JsonNotificationService()
     {
-        _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+        _dispatcher = Dispatcher.UIThread;
         Notifications = new ReadOnlyObservableCollection<Notification>(_notifications);
 
         foreach (var notification in Load().OrderByDescending(n => n.CreatedAt).Take(MaxNotifications))
@@ -52,7 +51,7 @@ public sealed class JsonNotificationService : INotificationService
 
         if (!_dispatcher.CheckAccess())
         {
-            _dispatcher.InvokeAsync(() => Notify(title, message, severity));
+            _dispatcher.Post(() => Notify(title, message, severity));
             return;
         }
 
@@ -167,7 +166,34 @@ public sealed class JsonNotificationService : INotificationService
 
     #region Persistence
 
+    /// <summary>Last queued write; writes run one after another, in the order of the changes.</summary>
+    private Task _pendingWrite = Task.CompletedTask;
+
+    /// <summary>
+    /// Snapshots the list (on the UI thread, where it changes) and writes it on the thread pool, so marking or removing
+    /// notifications never waits for the disk.
+    /// </summary>
     private void Persist()
+    {
+        var json = JsonSerializer.Serialize(_notifications, SerializerOptions);
+        _pendingWrite = _pendingWrite.ContinueWith(_ => Write(json), CancellationToken.None,
+            TaskContinuationOptions.None, TaskScheduler.Default);
+    }
+
+    /// <summary>Waits (briefly) for the last write when the app shuts down, so no change is lost.</summary>
+    public void Dispose()
+    {
+        try
+        {
+            _pendingWrite.Wait(TimeSpan.FromSeconds(3));
+        }
+        catch (AggregateException)
+        {
+            // Write logs its own problems; nothing else can fail here.
+        }
+    }
+
+    private void Write(string json)
     {
         try
         {
@@ -175,7 +201,7 @@ public sealed class JsonNotificationService : INotificationService
 
             // Write to a temp file first so a crash mid-write never leaves a corrupted file.
             var tempPath = _filePath + ".tmp";
-            File.WriteAllText(tempPath, JsonSerializer.Serialize(_notifications, SerializerOptions));
+            File.WriteAllText(tempPath, json);
             File.Move(tempPath, _filePath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 
@@ -122,7 +122,7 @@ public sealed class CraftingMaterialOptionViewModel(CraftingMaterial material, I
 
     public string Name => Material.Name;
 
-    public ImageSource? Icon => iconProvider.Get(Material.IconPath);
+    public IImage? Icon => iconProvider.Get(Material.IconPath);
 
     /// <summary>Second line, e.g. "Prefix · Melee", "Lv 15" or "Does not drop".</summary>
     public string Details
