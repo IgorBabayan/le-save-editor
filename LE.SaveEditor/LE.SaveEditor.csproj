@@ -11,9 +11,8 @@
         <VersionPrefix>0.1.0</VersionPrefix>
         <!-- Every binding is checked at build time and runs without reflection. -->
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-        <AvaloniaVersion>11.3.6</AvaloniaVersion>
-        <!-- Same Material.Icons release as the WPF version had: identical icon names. -->
-        <MaterialIconsAvaloniaVersion>3.0.3-nightly.0.2</MaterialIconsAvaloniaVersion>
+        <!-- Newest Avalonia 11.3 patch: the views use the Avalonia 11 APIs. -->
+        <AvaloniaVersion>11.3.*</AvaloniaVersion>
     </PropertyGroup>
 
     <!-- Runtime identifiers released by CI (.github/workflows): Windows, Linux, macOS (Intel and Apple silicon). -->
@@ -28,7 +27,8 @@
       <!-- Inspector (F12) in debug builds only. -->
       <PackageReference Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" Condition="'$(Configuration)' == 'Debug'" />
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-      <PackageReference Include="Material.Icons.Avalonia" Version="$(MaterialIconsAvaloniaVersion)" />
+      <!-- Icon path data only (no UI dependency); drawn by Presentation/Controls/MaterialIcon. Same release as the WPF version. -->
+      <PackageReference Include="Material.Icons" Version="3.0.3-nightly.0.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.2.26504.105" />
       <!-- Read-only access to base.db (item bases for the item builder); same SQLite as LE.SaveEditor.DB. -->
       <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />

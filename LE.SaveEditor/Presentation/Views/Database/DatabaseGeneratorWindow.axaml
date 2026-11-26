@@ -5,7 +5,7 @@
                     xmlns:generatorVm="using:LE.SaveEditor.Presentation.ViewModels.Database"
                     xmlns:gameData="using:LE.SaveEditor.Services.GameData"
                     xmlns:converters="using:LE.SaveEditor.Presentation.Converters"
-                    xmlns:mi="using:Material.Icons.Avalonia"
+                    xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
                     x:DataType="generatorVm:DatabaseGeneratorViewModel"
                     Title="Database"
                     Width="560"

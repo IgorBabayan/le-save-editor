@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.VisualTree;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Presentation.Views.Database;

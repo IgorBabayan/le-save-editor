@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:blessingsVm="using:LE.SaveEditor.Presentation.ViewModels.Blessings"
              xmlns:inventoryVm="using:LE.SaveEditor.Presentation.ViewModels.Inventory"
-             xmlns:mi="using:Material.Icons.Avalonia"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
              x:DataType="blessingsVm:BlessingsViewModel">
 
     <UserControl.Resources>

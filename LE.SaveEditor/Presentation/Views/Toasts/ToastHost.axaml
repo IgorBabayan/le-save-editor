@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:toasts="using:LE.SaveEditor.Presentation.Services.Toasts"
              xmlns:converters="using:LE.SaveEditor.Presentation.Converters"
-             xmlns:mi="using:Material.Icons.Avalonia"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
              x:DataType="toasts:ToastService"
              HorizontalAlignment="Right"
              VerticalAlignment="Bottom"

@@ -2,7 +2,7 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:inventoryVm="using:LE.SaveEditor.Presentation.ViewModels.Inventory"
-             xmlns:mi="using:Material.Icons.Avalonia"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
              xmlns:behaviors="using:LE.SaveEditor.Presentation.Behaviors"
              xmlns:blessingsViews="using:LE.SaveEditor.Presentation.Views.Blessings"
              xmlns:factionsViews="using:LE.SaveEditor.Presentation.Views.Factions"

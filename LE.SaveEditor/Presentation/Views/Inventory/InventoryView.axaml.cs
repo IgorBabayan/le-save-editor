@@ -11,7 +11,7 @@ using Avalonia.VisualTree;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Services.GameData.Items;
 using Material.Icons;
-using Material.Icons.Avalonia;
+using LE.SaveEditor.Presentation.Controls;
 
 namespace LE.SaveEditor.Presentation.Views.Inventory;
 

@@ -1,14 +1,12 @@
 ﻿<Application x:Class="LE.SaveEditor.App"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mi="using:Material.Icons.Avalonia"
              xmlns:viewModels="using:LE.SaveEditor.Presentation.ViewModels"
              RequestedThemeVariant="Dark">
 
     <Application.Styles>
         <!-- Base look of the controls that are not restyled (text selection, tooltips, menus). -->
         <FluentTheme />
-        <mi:MaterialIconStyles />
         <StyleInclude Source="avares://LE.SaveEditor/Themes/ControlStyles.axaml" />
     </Application.Styles>
 

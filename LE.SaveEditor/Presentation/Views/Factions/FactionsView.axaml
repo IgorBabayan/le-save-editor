@@ -2,7 +2,7 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:factionsVm="using:LE.SaveEditor.Presentation.ViewModels.Factions"
-             xmlns:mi="using:Material.Icons.Avalonia"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
              x:DataType="factionsVm:FactionsViewModel"
 >
 
