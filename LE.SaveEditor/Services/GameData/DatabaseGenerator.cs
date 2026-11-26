@@ -22,7 +22,8 @@ public sealed class DatabaseGenerator : IDatabaseGenerator
 
     /// <summary>
     /// <c>Tools/LE.SaveEditor.DB</c> next to the editor (Windows, Linux, local builds); in the macOS app bundle the tool
-    /// lives in <c>Contents/Resources/Tools</c>, because code signing does not accept folders in <c>Contents/MacOS</c>.
+    /// lives in <c>Contents/Resources/DatabaseTool</c>, because code signing does not accept folders in <c>Contents/MacOS</c>
+    /// and takes any folder with a dot in its name (like <c>LE.SaveEditor.DB</c>) for a nested bundle.
     /// </summary>
     private static string FindExecutable()
     {
@@ -30,7 +31,7 @@ public sealed class DatabaseGenerator : IDatabaseGenerator
         if (!OperatingSystem.IsMacOS() || File.Exists(besideEditor))
             return besideEditor;
 
-        var inBundle = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources", "Tools", "LE.SaveEditor.DB", ExecutableName));
+        var inBundle = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources", "DatabaseTool", ExecutableName));
         return File.Exists(inBundle) ? inBundle : besideEditor;
     }
 
