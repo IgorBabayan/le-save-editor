@@ -4,6 +4,7 @@
         xmlns:views="using:LE.SaveEditor.Presentation.Views"
         xmlns:converters="using:LE.SaveEditor.Presentation.Converters"
         xmlns:shellVm="using:LE.SaveEditor.Presentation.ViewModels.Shell"
+        xmlns:notificationsVm="using:LE.SaveEditor.Presentation.ViewModels.Notifications"
         xmlns:models="using:LE.SaveEditor.Services.Saves.Models"
         xmlns:notifications="using:LE.SaveEditor.Services.Notifications"
         xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
@@ -161,7 +162,7 @@
                         a click on it then only closes the popup (light dismiss) instead of reopening it.
                     -->
                     <ToggleButton x:Name="NotificationsButton"
-                                  x:DataType="shellVm:NotificationCenterViewModel"
+                                  x:DataType="notificationsVm:NotificationCenterViewModel"
                                   DataContext="{ReflectionBinding NotificationCenter}"
                                   Theme="{StaticResource TitleBarToggleButtonStyle}"
                                   ToolTip.Tip="{Binding BellToolTip}"
@@ -174,7 +175,7 @@
                     </ToggleButton>
 
                     <Popup x:Name="NotificationsPopup"
-                           x:DataType="shellVm:NotificationCenterViewModel"
+                           x:DataType="notificationsVm:NotificationCenterViewModel"
                            DataContext="{ReflectionBinding NotificationCenter}"
                            PlacementTarget="{Binding #NotificationsButton}"
                            Placement="BottomEdgeAlignedRight"
@@ -270,7 +271,7 @@
                                                             </Grid.Styles>
                                                             <!-- Clicking the row marks it as read. -->
                                                             <Button Theme="{StaticResource ListRowButtonStyle}"
-                                                                    Command="{Binding $parent[ItemsControl].((shellVm:NotificationCenterViewModel)DataContext).MarkAsReadCommand}"
+                                                                    Command="{Binding $parent[ItemsControl].((notificationsVm:NotificationCenterViewModel)DataContext).MarkAsReadCommand}"
                                                                     CommandParameter="{Binding}">
                                                                 <!-- Columns: unread dot, severity icon, text, room for the remove button. -->
                                                                 <Grid ColumnDefinitions="12,Auto,*,28">
@@ -317,7 +318,7 @@
                                                                     VerticalAlignment="Top"
                                                                     ToolTip.Tip="Remove"
                                                                     Theme="{StaticResource SubtleIconButtonStyle}"
-                                                                    Command="{Binding $parent[ItemsControl].((shellVm:NotificationCenterViewModel)DataContext).RemoveCommand}"
+                                                                    Command="{Binding $parent[ItemsControl].((notificationsVm:NotificationCenterViewModel)DataContext).RemoveCommand}"
                                                                     CommandParameter="{Binding}">
                                                                 <mi:MaterialIcon Kind="Close" Width="14" Height="14" />
                                                             </Button>
