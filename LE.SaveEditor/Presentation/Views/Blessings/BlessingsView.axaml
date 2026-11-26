@@ -1,0 +1,327 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Blessings.BlessingsView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:blessingsVm="using:LE.SaveEditor.Presentation.ViewModels.Blessings"
+             xmlns:inventoryVm="using:LE.SaveEditor.Presentation.ViewModels.Inventory"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
+             x:DataType="blessingsVm:BlessingsViewModel">
+
+    <UserControl.Resources>
+        <!-- Square icon box: the blessing icon, or the placeholder without one. -->
+        <ControlTheme x:Key="BlessingIconBoxStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+        </ControlTheme>
+
+        <!-- Header of a blessing group: chevron, group name and how many blessings it holds; click to collapse. -->
+        <ControlTheme x:Key="BlessingGroupToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Bd"
+                            Margin="4,8,4,2"
+                            Padding="6,4"
+                            CornerRadius="4"
+                            Background="{TemplateBinding Background}">
+                        <StackPanel Orientation="Horizontal">
+                            <mi:MaterialIcon Name="Chevron"
+                                             Width="16"
+                                             Height="16"
+                                             Margin="0,0,6,0"
+                                             VerticalAlignment="Center"
+                                             Kind="ChevronDown"
+                                             Foreground="{TemplateBinding Foreground}" />
+                            <ContentPresenter Name="PART_ContentPresenter"
+                                              VerticalAlignment="Center"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:unchecked /template/ mi|MaterialIcon#Chevron">
+                <Setter Property="Kind" Value="ChevronRight" />
+            </Style>
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#Bd">
+                <Setter Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+            </Style>
+        </ControlTheme>
+
+        <!-- One rolled stat of the selected blessing: its tooltip line and a slider over the 0…255 roll. -->
+        <DataTemplate x:Key="BlessingStatTemplate" x:DataType="inventoryVm:ItemStatViewModel">
+            <StackPanel Margin="0,6,0,0">
+                <TextBlock TextWrapping="Wrap" Text="{Binding DisplayText}" />
+                <Grid Margin="0,2,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MaxWidth="320" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Fixed 0…255 range (the roll the game stores): no binding order can clamp the value. -->
+                    <Slider Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Minimum="0"
+                            Maximum="{x:Static inventoryVm:ItemStatViewModel.MaxRoll}"
+                            TickFrequency="1"
+                            SmallChange="1"
+                            LargeChange="16"
+                            IsSnapToTickEnabled="True"
+                            IsEnabled="{Binding IsEditable, Mode=OneTime}"
+                            Value="{Binding Roll}" />
+                    <TextBlock Grid.Column="1"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding RangeText}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- ===== No timelines in the game database ===== -->
+        <Border Theme="{StaticResource InventorySectionBorderStyle}"
+                IsVisible="{Binding IsDatabaseMissing}">
+            <TextBlock MaxWidth="520"
+                       TextWrapping="Wrap"
+                       Text="The game database holds no timelines yet, so blessings cannot be listed. Generate or update it with the database button in the title bar. The blessings in the save stay as they are."
+                       Theme="{StaticResource EmptyPageTextStyle}" />
+        </Border>
+
+        <Grid IsVisible="{Binding HasEchoes}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" MinWidth="360" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- ===== Echoes (timelines) with the blessing each holds ===== -->
+            <Border Grid.Row="0" Grid.Column="0"
+                    Padding="0,4"
+                    VerticalAlignment="Top"
+                    Theme="{StaticResource InventorySectionBorderStyle}">
+                <!--
+                    Plain rows that select the echo with a command, not a ListBox: a ListBox also selects the rows the mouse
+                    passes over while the button is down, and the page shifts under the mouse when the echo's panel changes
+                    height, so a click selected another echo.
+                -->
+                <ItemsControl x:Name="EchoList"
+                              Focusable="False"
+                              ItemsSource="{Binding Echoes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="blessingsVm:BlessingEchoViewModel">
+                            <Button Theme="{StaticResource SelectableRowButtonStyle}"
+                                    Classes.selected="{Binding IsSelected}"
+                                    Command="{Binding $parent[UserControl].((blessingsVm:BlessingsViewModel)DataContext).SelectEchoCommand}"
+                                    CommandParameter="{Binding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="36" Height="36" Theme="{StaticResource BlessingIconBoxStyle}">
+                                    <Grid>
+                                        <Image Margin="3"
+                                               Stretch="Uniform"
+                                               RenderOptions.BitmapInterpolationMode="HighQuality"
+                                               Source="{Binding Icon}" />
+                                        <mi:MaterialIcon Width="18" Height="18" Kind="StarOutline" Opacity="0.5" Foreground="{DynamicResource SecondaryForegroundBrush}" IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNull}}" />
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                                    <TextBlock TextTrimming="CharacterEllipsis"
+                                               Text="{Binding SelectedName}"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                </StackPanel>
+                                <!-- Not saved yet. -->
+                                <Ellipse Grid.Column="2"
+                                         Width="7"
+                                         Height="7"
+                                         Margin="6,0,0,0"
+                                         VerticalAlignment="Center"
+                                         Fill="{DynamicResource AccentBrush}"
+                                         ToolTip.Tip="Changed, not saved yet"
+                                         IsVisible="{Binding HasChanges}" />
+                            </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <!-- ===== Blessing of the selected echo and the blessings its timeline grants ===== -->
+            <Border Grid.Row="0" Grid.Column="2"
+                    Padding="16,12"
+                    VerticalAlignment="Top"
+                    Theme="{StaticResource InventorySectionBorderStyle}">
+                <StackPanel x:DataType="blessingsVm:BlessingEchoViewModel" DataContext="{ReflectionBinding SelectedEcho}">
+                    <!-- Header: timeline name and level, revert / remove actions. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" Theme="{StaticResource SectionHeaderTextStyle}" />
+                            <TextBlock Margin="0,2,0,0" Text="{Binding LevelText}" Theme="{StaticResource SecondaryTextStyle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Theme="{StaticResource TextLinkButtonStyle}"
+                                    ToolTip.Tip="Back to the blessing in the save file"
+                                    Command="{Binding RevertCommand}"
+                                    IsVisible="{Binding HasChanges}">
+                                <StackPanel Orientation="Horizontal">
+                                    <mi:MaterialIcon Width="14" Height="14" Margin="0,0,4,0" VerticalAlignment="Center" Kind="Undo" />
+                                    <TextBlock VerticalAlignment="Center" Text="Revert" />
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="4,0,0,0"
+                                    Theme="{StaticResource TextLinkButtonStyle}"
+                                    ToolTip.Tip="Empty the blessing slot of this echo"
+                                    Command="{Binding RemoveCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <mi:MaterialIcon Width="14" Height="14" Margin="0,0,4,0" VerticalAlignment="Center" Kind="TrashCanOutline" />
+                                    <TextBlock VerticalAlignment="Center" Text="Remove" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- The blessing in the slot with its roll sliders. -->
+                    <Border Margin="0,12,0,0"
+                            Padding="12,10"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Width="56"
+                                    Height="56"
+                                    VerticalAlignment="Top"
+                                    Theme="{StaticResource BlessingIconBoxStyle}"
+                                    Background="{DynamicResource ControlBackgroundBrush}">
+                                <Grid>
+                                    <Image Margin="4"
+                                           Stretch="Uniform"
+                                           RenderOptions.BitmapInterpolationMode="HighQuality"
+                                           Source="{Binding Icon}" />
+                                    <mi:MaterialIcon Width="26" Height="26" Kind="StarOutline" Opacity="0.5" Foreground="{DynamicResource SecondaryForegroundBrush}" IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNull}}" />
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="{Binding SelectedName}" />
+                                <TextBlock Margin="0,2,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningForegroundBrush}"
+                                           Text="Not discovered in the stash yet: saving marks it as discovered."
+                                           IsVisible="{Binding IsUndiscovered}" />
+                                <TextBlock Margin="0,2,0,0"
+                                           Text="Pick one of the blessings below."
+                                           Theme="{StaticResource SecondaryTextStyle}"
+                                           IsVisible="{Binding !HasBlessing}" />
+                                <ItemsControl Focusable="False"
+                                              ItemsSource="{Binding Stats}"
+                                              ItemTemplate="{StaticResource BlessingStatTemplate}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Blessings the timeline grants, normal ones first, then the Grand ones. -->
+                    <TextBlock Margin="2,16,0,4" Text="Choose a blessing" Theme="{StaticResource SecondaryTextStyle}" />
+                    <!--
+                        Plain rows that pick the blessing with a command, not a ListBox: a list bound to a collection view
+                        follows the view's current item, which selected (and so picked) the first blessing of every echo
+                        that was opened.
+                    -->
+                    <!-- Collapsible groups: Blessings, Grand blessings, Other. Collapsed groups are remembered in the code-behind. -->
+                    <ItemsControl x:Name="OptionList"
+                                  Focusable="False"
+                                  ItemsSource="{Binding OptionsView}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="blessingsVm:BlessingOptionGroup">
+                                <StackPanel>
+                                    <ToggleButton Name="Toggle"
+                                                  IsChecked="True"
+                                                  Theme="{StaticResource BlessingGroupToggleStyle}"
+                                                  Tag="{Binding Name}"
+                                                  Loaded="GroupToggle_OnLoaded"
+                                                  Click="GroupToggle_OnClick">
+                                        <TextBlock FontWeight="SemiBold">
+                                            <Run Text="{Binding Name, Mode=OneWay}" />
+                                            <Run Text="{Binding Items.Count, Mode=OneWay, StringFormat='({0})'}" FontWeight="Normal" />
+                                        </TextBlock>
+                                    </ToggleButton>
+                                    <ItemsControl Focusable="False"
+                                                  ItemsSource="{Binding Items}"
+                                                  IsVisible="{Binding #Toggle.IsChecked}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="blessingsVm:BlessingOptionViewModel">
+                                                <Button Theme="{StaticResource SelectableRowButtonStyle}"
+                                                        Classes.selected="{Binding IsSelected}"
+                                                        Command="{Binding $parent[UserControl].((blessingsVm:BlessingsViewModel)DataContext).SelectedEcho.PickCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <Grid ColumnDefinitions="Auto,*">
+                                                        <Border Grid.Column="0"
+                                                                Width="32"
+                                                                Height="32"
+                                                                VerticalAlignment="Top"
+                                                                Theme="{StaticResource BlessingIconBoxStyle}">
+                                                            <Panel>
+                                                                <Image Margin="2"
+                                                                       Stretch="Uniform"
+                                                                       RenderOptions.BitmapInterpolationMode="HighQuality"
+                                                                       Source="{Binding Icon}" />
+                                                                <mi:MaterialIcon Width="16" Height="16" Kind="StarOutline" Opacity="0.5" Foreground="{DynamicResource SecondaryForegroundBrush}" IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNull}}" />
+                                                            </Panel>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                                            <TextBlock TextWrapping="Wrap"
+                                                                       Text="{Binding StatsText}"
+                                                                       Theme="{StaticResource SecondaryTextStyle}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="2,8,0,0">
+                <TextBlock Text="{Binding Summary}" Theme="{StaticResource SecondaryTextStyle}" />
+                <!-- Held blessings the stash has not discovered (the game shows them as "Undiscovered"). -->
+                <TextBlock Margin="0,2,0,0"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource WarningForegroundBrush}"
+                           Text="{Binding DiscoveryHint}"
+                           IsVisible="{Binding HasDiscoveryHint}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

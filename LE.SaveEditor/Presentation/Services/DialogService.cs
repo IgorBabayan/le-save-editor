@@ -1,7 +1,8 @@
-using System.Windows;
-using System.Windows.Controls.Primitives;
-using System.Windows.Input;
-using System.Windows.Media;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.VisualTree;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 using LE.SaveEditor.Presentation.Views.Database;
 using LE.SaveEditor.Presentation.Views.Dialogs;
@@ -18,24 +19,19 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
     public bool ShowSettings()
     {
         var window = services.GetRequiredService<SettingsWindow>();
-        window.Owner = WindowHelper.GetActiveWindow();
-        return window.ShowDialog() == true;
+        return WindowHelper.ShowModal(window) is true;
     }
 
     public bool Confirm(string title, string message)
     {
-        var window = new ConfirmationWindow(title, message)
-        {
-            Owner = WindowHelper.GetActiveWindow()
-        };
-        return window.ShowDialog() == true;
+        var window = new ConfirmationWindow(title, message);
+        return WindowHelper.ShowModal(window) is true;
     }
 
     public DatabaseGenerationResult? ShowDatabaseGenerator()
     {
         var window = services.GetRequiredService<DatabaseGeneratorWindow>();
-        window.Owner = WindowHelper.GetActiveWindow();
-        window.ShowDialog();
+        WindowHelper.ShowModal(window);
         return window.Result;
     }
 
@@ -62,7 +58,7 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
         // New items are only built in grids (backpack, idol grid).
         var viewModel = CreateItemBuilder(slot, characterClass, null, slot.ExtraSearchSlots);
 
-        if (anchor is FrameworkElement element
+        if (anchor is Control element
             && ItemInspectorAdorner.TryShow(element, viewModel, applied, vm => ShowItemBuilderWindow(vm)))
             return;
 
@@ -77,11 +73,8 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
             services.GetRequiredService<IIconProvider>(),
             kind,
             current);
-        var window = new CraftingMaterialPickerWindow(viewModel)
-        {
-            Owner = WindowHelper.GetActiveWindow()
-        };
-        window.ShowDialog();
+        var window = new CraftingMaterialPickerWindow(viewModel);
+        WindowHelper.ShowModal(window);
         return window.Result;
     }
 
@@ -97,11 +90,8 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
             kind,
             amounts,
             stashName);
-        var window = new CraftingMaterialStorageWindow(viewModel)
-        {
-            Owner = WindowHelper.GetActiveWindow()
-        };
-        window.ShowDialog();
+        var window = new CraftingMaterialStorageWindow(viewModel);
+        WindowHelper.ShowModal(window);
         return window.Result;
     }
 
@@ -120,11 +110,8 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
 
     private static BuiltItem? ShowItemBuilderWindow(ItemBuilderViewModel viewModel)
     {
-        var window = new ItemBuilderWindow(viewModel)
-        {
-            Owner = WindowHelper.GetActiveWindow()
-        };
-        window.ShowDialog();
+        var window = new ItemBuilderWindow(viewModel);
+        WindowHelper.ShowModal(window);
         return window.Result;
     }
 
@@ -132,17 +119,26 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
     /// The button that was just used to open <paramref name="slot"/>: the focused element (a clicked button takes
     /// the focus) or the one under the mouse, whichever belongs to a button bound to the slot.
     /// </summary>
-    private static FrameworkElement? FindSlotControl(EquipmentSlotViewModel slot)
+    private static Control? FindSlotControl(EquipmentSlotViewModel slot)
     {
-        foreach (var start in new[] { Keyboard.FocusedElement as DependencyObject, Mouse.DirectlyOver as DependencyObject })
+        if (WindowHelper.GetActiveWindow() is not { } window)
+            return null;
+
+        // Buttons take the focus when clicked; the pointer is the fallback (e.g. a button that is not focusable).
+        var starts = new[] { window.FocusManager?.GetFocusedElement() as Visual, window.IsPointerOver ? PointerOverVisual(window) : null };
+        foreach (var start in starts)
         {
-            for (var node = start; node is not null; node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node))
+            for (var node = start; node is not null; node = node.GetVisualParent())
             {
-                if (node is ButtonBase button && ReferenceEquals(button.DataContext, slot))
+                if (node is Button button && ReferenceEquals(button.DataContext, slot))
                     return button;
             }
         }
 
         return null;
     }
+
+    /// <summary>Deepest control under the pointer, as last reported to the window.</summary>
+    private static Visual? PointerOverVisual(Window window) =>
+        window.GetVisualDescendants().OfType<InputElement>().LastOrDefault(e => e.IsPointerOver && e.IsEffectivelyVisible);
 }

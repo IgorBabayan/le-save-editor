@@ -1,0 +1,158 @@
+<views:ChromeWindow x:Class="LE.SaveEditor.Presentation.Views.Database.DatabaseGeneratorWindow"
+                    xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:views="using:LE.SaveEditor.Presentation.Views"
+                    xmlns:generatorVm="using:LE.SaveEditor.Presentation.ViewModels.Database"
+                    xmlns:gameData="using:LE.SaveEditor.Services.GameData"
+                    xmlns:converters="using:LE.SaveEditor.Presentation.Converters"
+                    xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
+                    x:DataType="generatorVm:DatabaseGeneratorViewModel"
+                    Title="Database"
+                    Width="560"
+                    SizeToContent="Height"
+                    CanResize="False"
+                    ShowInTaskbar="False"
+                    WindowStartupLocation="CenterOwner"
+                    Background="{DynamicResource WindowBackgroundBrush}"
+                    Foreground="{DynamicResource WindowForegroundBrush}">
+
+    <!-- Severity colors of the status line and of the generator's messages (classes set from the bound enums). -->
+    <views:ChromeWindow.Styles>
+        <Style Selector="TextBlock.success">
+            <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+        </Style>
+        <Style Selector="TextBlock.warning">
+            <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+        </Style>
+        <Style Selector="TextBlock.error">
+            <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+        </Style>
+    </views:ChromeWindow.Styles>
+
+    <!-- No close button and no Escape binding: the dialog stays open until the generator has exited. -->
+    <Border BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1">
+        <Grid RowDefinitions="32,*,Auto">
+
+            <!-- ===== Title bar ===== -->
+            <Grid Grid.Row="0" Classes="titlebar" Background="{DynamicResource TitleBarBackgroundBrush}">
+                <TextBlock Margin="12,0,0,0"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Text="{Binding $parent[Window].Title}" />
+            </Grid>
+
+            <!-- ===== Content ===== -->
+            <StackPanel Grid.Row="1" Margin="20,16,20,20">
+                <TextBlock Theme="{StaticResource SectionHeaderTextStyle}"
+                           Text="{Binding StatusText}"
+                           TextWrapping="Wrap"
+                           Classes.success="{Binding StatusSeverity, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Success}"
+                           Classes.warning="{Binding StatusSeverity, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Warning}"
+                           Classes.error="{Binding StatusSeverity, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Error}" />
+
+                <!-- One bar per progress bar of LE.SaveEditor.DB, added as the generator starts them. -->
+                <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding Steps}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="generatorVm:DatabaseGeneratorStepViewModel">
+                            <Grid Margin="0,8,0,0"
+                                  ColumnDefinitions="Auto,*,Auto"
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  Classes.completed="{Binding State, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Completed}"
+                                  Classes.stopped="{Binding State, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Stopped}">
+                                <Grid.Styles>
+                                    <Style Selector="Grid.completed > mi|MaterialIcon#StateIcon">
+                                        <Setter Property="IsVisible" Value="True" />
+                                    </Style>
+                                    <Style Selector="Grid.stopped > mi|MaterialIcon#StateIcon">
+                                        <Setter Property="IsVisible" Value="True" />
+                                        <Setter Property="Kind" Value="AlertCircle" />
+                                        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                                    </Style>
+                                    <Style Selector="Grid.stopped > ProgressBar#Bar">
+                                        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                                    </Style>
+                                </Grid.Styles>
+                                <mi:MaterialIcon Name="StateIcon"
+                                                 Grid.Row="0"
+                                                 Grid.Column="0"
+                                                 Width="16"
+                                                 Height="16"
+                                                 Margin="0,0,6,0"
+                                                 VerticalAlignment="Center"
+                                                 Kind="CheckCircle"
+                                                 Foreground="{DynamicResource SuccessForegroundBrush}"
+                                                 IsVisible="False" />
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Title}" />
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="2"
+                                           Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Theme="{StaticResource SecondaryTextStyle}"
+                                           Text="{Binding PercentText}" />
+                                <ProgressBar Name="Bar"
+                                             Grid.Row="1"
+                                             Grid.Column="0"
+                                             Grid.ColumnSpan="3"
+                                             Margin="0,6,0,0"
+                                             Minimum="0"
+                                             Maximum="100"
+                                             Value="{Binding Percent, Mode=OneWay}" />
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="3"
+                                           Margin="0,4,0,0"
+                                           Theme="{StaticResource SecondaryTextStyle}"
+                                           TextWrapping="NoWrap"
+                                           TextTrimming="CharacterEllipsis"
+                                           Text="{Binding Detail}"
+                                           ToolTip.Tip="{Binding Detail}"
+                                           IsVisible="{Binding HasDetail}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- What the generator printed: the same lines end up in the notification. -->
+                <Border Margin="0,16,0,0"
+                        Padding="10,8"
+                        CornerRadius="4"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource ControlBorderBrush}"
+                        Background="{DynamicResource ControlBackgroundBrush}"
+                        IsVisible="{Binding HasMessages}">
+                    <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Messages}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="gameData:DatabaseGeneratorMessage">
+                                    <TextBlock Margin="0,1"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding Text}"
+                                               Classes.success="{Binding Level, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Success}"
+                                               Classes.warning="{Binding Level, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Warning}"
+                                               Classes.error="{Binding Level, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Error}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== Footer ===== -->
+            <Border Grid.Row="2"
+                    Padding="20,12"
+                    Background="{DynamicResource TitleBarBackgroundBrush}"
+                    BorderBrush="{DynamicResource WindowBorderBrush}"
+                    BorderThickness="0,1,0,0">
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button Theme="{StaticResource AccentButtonStyle}"
+                            Content="OK"
+                            IsDefault="True"
+                            Command="{Binding OkCommand}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</views:ChromeWindow>

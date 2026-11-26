@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
-using System.Windows;
+
 using LE.SaveEditor.Presentation.Services.Toasts;
 using LE.SaveEditor.Services.Notifications;
 using LE.SaveEditor.Services.Settings;
@@ -123,7 +123,7 @@ public sealed partial class AutoUpdater(
             updateService.LaunchInstaller(installerPath);
 
             // Exit now so the installer can replace the files; it starts the new version afterwards.
-            Application.Current.Shutdown();
+            App.Shutdown();
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {

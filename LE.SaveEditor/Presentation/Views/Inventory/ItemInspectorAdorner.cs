@@ -1,9 +1,10 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using LE.SaveEditor.Presentation.ViewModels.Inventory;
 
 namespace LE.SaveEditor.Presentation.Views.Inventory;
@@ -15,7 +16,7 @@ namespace LE.SaveEditor.Presentation.Views.Inventory;
 /// It closes on Apply / Cancel, Esc, a click outside it, or when the slot leaves the screen; only Apply changes the slot.
 /// One inspector is open at a time.
 /// </summary>
-internal sealed class ItemInspectorAdorner : Adorner
+internal sealed class ItemInspectorAdorner : Control
 {
     /// <summary>Space between the slot and the inspector.</summary>
     private const double Gap = 8;
@@ -25,9 +26,10 @@ internal sealed class ItemInspectorAdorner : Adorner
 
     private static ItemInspectorAdorner? _current;
 
+    private readonly Control _root;
     private readonly AdornerLayer _layer;
     private readonly Window _window;
-    private readonly FrameworkElement _anchor;
+    private readonly Control _anchor;
     private readonly ItemBuilderViewModel _viewModel;
     private readonly ItemInspectorView _view;
     private readonly Action<BuiltItem> _applied;
@@ -36,15 +38,15 @@ internal sealed class ItemInspectorAdorner : Adorner
     private bool _isClosed;
 
     private ItemInspectorAdorner(
-        UIElement root,
+        Control root,
         AdornerLayer layer,
         Window window,
-        FrameworkElement anchor,
+        Control anchor,
         ItemBuilderViewModel viewModel,
         Action<BuiltItem> applied,
         Action<ItemBuilderViewModel> openFullBuilder)
-        : base(root)
     {
+        _root = root;
         _layer = layer;
         _window = window;
         _anchor = anchor;
@@ -52,7 +54,9 @@ internal sealed class ItemInspectorAdorner : Adorner
         _applied = applied;
         _openFullBuilder = openFullBuilder;
         _view = new ItemInspectorView(viewModel);
-        AddVisualChild(_view);
+        LogicalChildren.Add(_view);
+        VisualChildren.Add(_view);
+        AdornerLayer.SetAdornedElement(this, root);
     }
 
     /// <summary>
@@ -62,15 +66,15 @@ internal sealed class ItemInspectorAdorner : Adorner
     /// <param name="openFullBuilder">Shows the full item builder window (modal) over the same view model.</param>
     /// <returns><c>false</c> when the anchor is not in a window with an adorner layer (nothing was opened).</returns>
     public static bool TryShow(
-        FrameworkElement anchor,
+        Control anchor,
         ItemBuilderViewModel viewModel,
         Action<BuiltItem> applied,
         Action<ItemBuilderViewModel> openFullBuilder)
     {
         _current?.Close();
 
-        if (Window.GetWindow(anchor) is not { Content: UIElement root } window
-            || !root.IsAncestorOf(anchor)
+        if (TopLevel.GetTopLevel(anchor) is not Window { Content: Control root } window
+            || !root.IsVisualAncestorOf(anchor)
             || AdornerLayer.GetAdornerLayer(root) is not { } layer)
             return false;
 
@@ -88,12 +92,12 @@ internal sealed class ItemInspectorAdorner : Adorner
     {
         _viewModel.CloseRequested += OnCloseRequested;
         _view.ExpandRequested += OnExpandRequested;
-        _window.PreviewMouseDown += OnWindowPreviewMouseDown;
-        _window.PreviewKeyDown += OnWindowPreviewKeyDown;
+        _window.AddHandler(PointerPressedEvent, OnWindowPointerPressed, RoutingStrategies.Tunnel);
+        _window.AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel);
         _window.Closed += OnWindowClosed;
         // A scrolled inventory moves the slot; follow it.
-        _window.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(OnScrollChanged), true);
-        _anchor.Unloaded += OnAnchorUnloaded;
+        _window.AddHandler(ScrollViewer.ScrollChangedEvent, OnScrollChanged, RoutingStrategies.Bubble, handledEventsToo: true);
+        _anchor.DetachedFromVisualTree += OnAnchorDetached;
 
         AddToLayer();
     }
@@ -106,11 +110,11 @@ internal sealed class ItemInspectorAdorner : Adorner
 
         _viewModel.CloseRequested -= OnCloseRequested;
         _view.ExpandRequested -= OnExpandRequested;
-        _window.PreviewMouseDown -= OnWindowPreviewMouseDown;
-        _window.PreviewKeyDown -= OnWindowPreviewKeyDown;
+        _window.RemoveHandler(PointerPressedEvent, OnWindowPointerPressed);
+        _window.RemoveHandler(KeyDownEvent, OnWindowKeyDown);
         _window.Closed -= OnWindowClosed;
-        _window.RemoveHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(OnScrollChanged));
-        _anchor.Unloaded -= OnAnchorUnloaded;
+        _window.RemoveHandler(ScrollViewer.ScrollChangedEvent, OnScrollChanged);
+        _anchor.DetachedFromVisualTree -= OnAnchorDetached;
 
         var hadFocus = _view.IsKeyboardFocusWithin;
         RemoveFromLayer();
@@ -118,7 +122,7 @@ internal sealed class ItemInspectorAdorner : Adorner
             _current = null;
 
         // Hand the keyboard back to the slot so Tab / Space keep working from where the user was.
-        if (hadFocus && _anchor.IsLoaded)
+        if (hadFocus && _anchor.GetVisualRoot() is not null)
             _anchor.Focus();
     }
 
@@ -126,9 +130,9 @@ internal sealed class ItemInspectorAdorner : Adorner
     {
         if (_isOnLayer)
             return;
-        _layer.Add(this);
+        _layer.Children.Add(this);
         _isOnLayer = true;
-        Dispatcher.InvokeAsync(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             if (!_isClosed)
                 _view.FocusFirst();
@@ -139,7 +143,7 @@ internal sealed class ItemInspectorAdorner : Adorner
     {
         if (!_isOnLayer)
             return;
-        _layer.Remove(this);
+        _layer.Children.Remove(this);
         _isOnLayer = false;
     }
 
@@ -165,19 +169,19 @@ internal sealed class ItemInspectorAdorner : Adorner
             AddToLayer();
     }
 
-    private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (IsWithin(_view, e.OriginalSource))
+        if (IsWithin(_view, e.Source))
             return;
 
         // A click outside cancels; a click on the same slot only closes it (instead of reopening it).
-        var onAnchor = IsWithin(_anchor, e.OriginalSource);
+        var onAnchor = IsWithin(_anchor, e.Source);
         Close();
         if (onAnchor)
             e.Handled = true;
     }
 
-    private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key != Key.Escape)
             return;
@@ -190,20 +194,20 @@ internal sealed class ItemInspectorAdorner : Adorner
         e.Handled = true;
     }
 
-    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
-        if (!IsWithin(_view, e.OriginalSource))
+        if (!IsWithin(_view, e.Source))
             InvalidateArrange();
     }
 
-    private void OnAnchorUnloaded(object sender, RoutedEventArgs e) => Close();
+    private void OnAnchorDetached(object? sender, VisualTreeAttachmentEventArgs e) => Close();
 
     private void OnWindowClosed(object? sender, EventArgs e) => Close();
 
     /// <summary><c>true</c> when <paramref name="source"/> is <paramref name="ancestor"/> or inside it.</summary>
-    private static bool IsWithin(DependencyObject ancestor, object? source)
+    private static bool IsWithin(Visual ancestor, object? source)
     {
-        for (var node = source as DependencyObject; node is not null; node = GetParent(node))
+        for (var node = source as Visual; node is not null; node = node.GetVisualParent())
         {
             if (ReferenceEquals(node, ancestor))
                 return true;
@@ -212,21 +216,11 @@ internal sealed class ItemInspectorAdorner : Adorner
         return false;
     }
 
-    private static DependencyObject? GetParent(DependencyObject node) =>
-        node is Visual or System.Windows.Media.Media3D.Visual3D
-            ? VisualTreeHelper.GetParent(node) ?? LogicalTreeHelper.GetParent(node)
-            : LogicalTreeHelper.GetParent(node);
+    // ===== Layout =====
 
-    // ===== Visual child and layout =====
-
-    protected override int VisualChildrenCount => 1;
-
-    protected override Visual GetVisualChild(int index) =>
-        index == 0 ? _view : throw new ArgumentOutOfRangeException(nameof(index));
-
-    protected override Size MeasureOverride(Size constraint)
+    protected override Size MeasureOverride(Size availableSize)
     {
-        var area = AdornedElement.RenderSize;
+        var area = _root.Bounds.Size;
         // Never taller than the window: the inspector scrolls its properties instead.
         var maxHeight = Math.Max(160, area.Height - 2 * EdgeMargin);
         if (!_view.MaxHeight.Equals(maxHeight))
@@ -239,7 +233,7 @@ internal sealed class ItemInspectorAdorner : Adorner
     protected override Size ArrangeOverride(Size finalSize)
     {
         var size = _view.DesiredSize;
-        var area = AdornedElement.RenderSize;
+        var area = _root.Bounds.Size;
         var slot = GetAnchorBounds();
 
         // Right of the slot when it fits, else left of it, else as far right as possible.
@@ -262,10 +256,10 @@ internal sealed class ItemInspectorAdorner : Adorner
     /// <summary>Bounds of the slot in the adorned root's coordinates (the root's middle if it cannot be found).</summary>
     private Rect GetAnchorBounds()
     {
-        if (_anchor.IsLoaded && AdornedElement.IsAncestorOf(_anchor))
-            return _anchor.TransformToAncestor(AdornedElement).TransformBounds(new Rect(_anchor.RenderSize));
+        if (_anchor.GetVisualRoot() is not null && _anchor.TranslatePoint(default, _root) is { } topLeft)
+            return new Rect(topLeft, _anchor.Bounds.Size);
 
-        var area = AdornedElement.RenderSize;
+        var area = _root.Bounds.Size;
         return new Rect(area.Width / 2, area.Height / 4, 0, 0);
     }
 }

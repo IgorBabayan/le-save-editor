@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
@@ -162,9 +162,9 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// <summary>List offered for the selected rarity.</summary>
     public ItemListKind ListKind { get; private set; }
 
-    public Brush RarityForeground => RarityPalette.Foreground(SelectedRarity.Rarity);
+    public IBrush RarityForeground => RarityPalette.Foreground(SelectedRarity.Rarity);
 
-    public Brush RarityBackground => RarityPalette.Background(SelectedRarity.Rarity);
+    public IBrush RarityBackground => RarityPalette.Background(SelectedRarity.Rarity);
 
     private static ItemListKind KindOf(ItemRarity rarity) => rarity switch
     {
@@ -284,7 +284,11 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     /// Items matching <see cref="SearchText"/> (and <see cref="ShowOnlyUsable"/>), in group order: the selected
     /// rarity's list without a search, all three lists of the slot while searching.
     /// </summary>
-    public ObservableCollection<BaseOptionViewModel> Bases { get; } = [];
+    public IReadOnlyList<BaseOptionViewModel> Bases { get; private set; } = [];
+
+    /// <summary><see cref="Bases"/> with a title row above each group, for the item list.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<object> _baseRows = [];
 
     public bool HasBases => Bases.Count > 0;
 
@@ -362,7 +366,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
                 .ThenBy(o => o.Base.LevelRequirement)
                 .ThenBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase);
 
-        Bases.Clear();
+        var bases = new List<BaseOptionViewModel>();
         foreach (var option in candidates)
         {
             // The current choice always stays listed (the ListBox would clear it otherwise), in its own group;
@@ -375,8 +379,12 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
                                                 || (option.Base.BaseName?.Contains(w, StringComparison.CurrentCultureIgnoreCase) ?? false)
                                                 || option.GroupName.Contains(w, StringComparison.CurrentCultureIgnoreCase)));
             if (matches)
-                Bases.Add(option);
+                bases.Add(option);
         }
+
+        // One notification for the whole list instead of one per item (the list is rebuilt on every key stroke).
+        Bases = bases;
+        BaseRows = GroupedRows.Build(bases, o => o.GroupName);
 
         OnPropertyChanged(nameof(HasBases));
         OnPropertyChanged(nameof(EmptyBasesText));
@@ -481,7 +489,7 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     public bool HasLevelText => SelectedBase is { LevelRequirement: > 0 };
 
-    public ImageSource? Icon => _iconProvider.Get(SelectedBase?.IconPath);
+    public IImage? Icon => _iconProvider.Get(SelectedBase?.IconPath);
 
     partial void OnSelectedBaseOptionChanged(BaseOptionViewModel? value)
     {
@@ -588,7 +596,11 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
     public string AffixPickerTitle => AffixPickerSlot is { } slot ? $"Choose {slot.Label.ToLowerInvariant()}" : string.Empty;
 
     /// <summary>Affixes for <see cref="AffixPickerSlot"/> matching <see cref="AffixSearchText"/>, in group order.</summary>
-    public ObservableCollection<AffixOptionViewModel> AffixOptions { get; } = [];
+    public IReadOnlyList<AffixOptionViewModel> AffixOptions { get; private set; } = [];
+
+    /// <summary><see cref="AffixOptions"/> with a title row above each group, for the affix list.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<object> _affixRows = [];
 
     public bool HasAffixOptions => AffixOptions.Count > 0;
 
@@ -768,9 +780,10 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
 
     private void LoadAffixOptions()
     {
-        AffixOptions.Clear();
         if (AffixPickerSlot is not { } slot || SelectedBase is not { } item)
         {
+            AffixOptions = [];
+            AffixRows = [];
             OnPropertyChanged(nameof(HasAffixOptions));
             return;
         }
@@ -805,8 +818,8 @@ public sealed partial class ItemBuilderViewModel : ViewModelBase
             .ThenBy(a => a.GroupName, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase);
 
-        foreach (var affix in options)
-            AffixOptions.Add(new AffixOptionViewModel(affix));
+        AffixOptions = options.Select(a => new AffixOptionViewModel(a)).ToList();
+        AffixRows = GroupedRows.Build(AffixOptions, a => a.GroupName);
 
         OnPropertyChanged(nameof(HasAffixOptions));
     }

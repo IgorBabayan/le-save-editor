@@ -1,0 +1,928 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Inventory.InventoryView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:inventoryVm="using:LE.SaveEditor.Presentation.ViewModels.Inventory"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
+             xmlns:behaviors="using:LE.SaveEditor.Presentation.Behaviors"
+             xmlns:blessingsViews="using:LE.SaveEditor.Presentation.Views.Blessings"
+             xmlns:factionsViews="using:LE.SaveEditor.Presentation.Views.Factions"
+             x:DataType="inventoryVm:InventoryViewModel">
+
+    <UserControl.Resources>
+        <!-- Refracted idol slots of an idol altar: the same in every theme, like the rarity colors. -->
+        <SolidColorBrush x:Key="RefractedBorderBrush" Color="#4FC3F7" />
+        <SolidColorBrush x:Key="RefractedFillBrush" Color="#334FC3F7" />
+
+        <!-- An item of a grid (backpack, idol grid), placed over the cells of its footprint. -->
+        <ControlTheme x:Key="GridItemContainerStyle" TargetType="ContentPresenter" x:DataType="inventoryVm:BackpackItemViewModel">
+            <Setter Property="Grid.Column" Value="{Binding Column}" />
+            <Setter Property="Grid.Row" Value="{Binding Row}" />
+            <Setter Property="Grid.ColumnSpan" Value="{Binding Width}" />
+            <Setter Property="Grid.RowSpan" Value="{Binding Height}" />
+        </ControlTheme>
+
+        <!-- Tile of a crafting material in the backpack: its icon, or the initials of its name without one. -->
+        <ControlTheme x:Key="CraftingMaterialButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Bd"
+                            x:DataType="inventoryVm:BackpackItemViewModel"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource ControlBackgroundBrush}">
+                        <Panel>
+                            <Image Margin="4"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapInterpolationMode="HighQuality"
+                                   Source="{Binding MaterialIcon}"
+                                   IsVisible="{Binding HasMaterialIcon}" />
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding MaterialShortLabel}"
+                                       IsVisible="{Binding !HasMaterialIcon}" />
+                        </Panel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#Bd">
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+            </Style>
+            <Style Selector="^:focus-visible /template/ Border#Bd">
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            </Style>
+        </ControlTheme>
+
+        <DataTemplate x:Key="GridItemTemplate" x:DataType="inventoryVm:BackpackItemViewModel">
+            <!-- The item stays in its cells, dimmed, until it is dropped. -->
+            <Panel Classes.dragging="{Binding IsDragging}">
+                <Panel.Styles>
+                    <Style Selector="Panel.dragging">
+                        <Setter Property="Opacity" Value="0.4" />
+                    </Style>
+                </Panel.Styles>
+                <!-- Equipment and idols the editor can decode: same tile as an equipment slot.
+                     The wrapper carries the visibility, the button binds to the slot. -->
+                <Grid IsVisible="{Binding IsEquipment}">
+                    <Button Margin="2"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Equipment}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                </Grid>
+
+                <!-- Runes, glyphs, affix shards and resources: their icon; a click opens the crafting material picker. -->
+                <Grid IsVisible="{Binding IsMaterial}">
+                    <Button Margin="2"
+                            Theme="{StaticResource CraftingMaterialButtonStyle}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).EditCraftingMaterialCommand}"
+                            CommandParameter="{Binding}">
+                        <!-- Tooltip: name, kind and what the material does. -->
+                        <ToolTip.Tip>
+                            <ToolTip>
+                                <StackPanel MaxWidth="320">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding MaterialName}" />
+                                    <TextBlock FontSize="11"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding MaterialKindName}" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding MaterialDescription}"
+                                               IsVisible="{Binding HasMaterialDescription}" />
+                                </StackPanel>
+                            </ToolTip>
+                        </ToolTip.Tip>
+                    </Button>
+                </Grid>
+
+                <!-- An idol over a refracted slot of the idol altar gets a refracted frame. -->
+                <Border Margin="1"
+                        CornerRadius="7"
+                        BorderThickness="2"
+                        BorderBrush="{StaticResource RefractedBorderBrush}"
+                        IsHitTestVisible="False"
+                        IsVisible="{Binding IsInRefractedSlot}" />
+
+                <!-- Items, idols or materials missing from base.db keep their cells taken. -->
+                <Border Margin="2"
+                        CornerRadius="6"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource WindowBorderBrush}"
+                        Background="{DynamicResource ControlBackgroundBrush}"
+                        ToolTip.Tip="{Binding PlaceholderToolTip}"
+                        IsVisible="{Binding IsPlaceholder}">
+                    <TextBlock HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Opacity="0.7"
+                               Foreground="{DynamicResource SecondaryForegroundBrush}"
+                               Text="{Binding PlaceholderLabel}" />
+                </Border>
+            </Panel>
+        </DataTemplate>
+
+        <!-- ===== Resources section ===== -->
+
+        <!-- One resource (or woven echo): its icon (dimmed while the stash holds none) and, in a strip below it, its amount
+             to type in. -->
+        <!-- Used for ResourceSlotViewModel and WovenEchoSlotViewModel alike (same members), hence reflection bindings. -->
+        <DataTemplate x:Key="ResourceSlotTemplate" x:CompileBindings="False">
+            <Border Name="Bd"
+                    Classes.empty="{Binding IsEmpty}"
+                    Width="68"
+                    Height="84"
+                    Margin="4"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                    Background="{DynamicResource ControlBackgroundBrush}">
+                <Border.Styles>
+                    <Style Selector="Border#Bd:pointerover">
+                        <Setter Property="BorderBrush" Value="{DynamicResource ControlHoverBorderBrush}" />
+                    </Style>
+                    <Style Selector="Border.empty Image#Icon, Border.empty TextBlock#Initials">
+                        <Setter Property="Opacity" Value="0.35" />
+                    </Style>
+                </Border.Styles>
+                <ToolTip.Tip>
+                    <TextBlock MaxWidth="320" TextWrapping="Wrap" Text="{Binding ToolTip}" />
+                </ToolTip.Tip>
+                <Grid RowDefinitions="*,Auto">
+                    <Image Name="Icon"
+                           Grid.Row="0"
+                           Margin="8,6,8,4"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"
+                           Source="{Binding Icon}"
+                           IsVisible="{Binding HasIcon}" />
+                    <TextBlock Name="Initials"
+                               Grid.Row="0"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Text="{Binding Initials}"
+                               IsVisible="{Binding !HasIcon}" />
+                    <TextBox Grid.Row="1"
+                             MinHeight="0"
+                             Margin="3,0,3,3"
+                             Padding="2,1"
+                             HorizontalAlignment="Stretch"
+                             TextAlignment="Center"
+                             FontSize="12"
+                             FontWeight="SemiBold"
+                             BorderThickness="0"
+                             Background="{DynamicResource TitleBarBackgroundBrush}"
+                             IsReadOnly="{Binding !IsEditable}"
+                             ToolTip.Tip="{Binding AmountToolTip}"
+                             behaviors:NumericInput.IsEnabled="True"
+                             behaviors:NumericInput.Maximum="{x:Static inventoryVm:CraftingMaterialStorageViewModel.MaxQuantity}"
+                             behaviors:SelectOnClick.IsEnabled="True"
+                             Text="{Binding Amount, TargetNullValue=0}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- A row (or column) of resource slots. -->
+        <ControlTheme x:Key="ResourceRowStyle" TargetType="ItemsControl">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="ItemTemplate" Value="{StaticResource ResourceSlotTemplate}" />
+            <Setter Property="ItemsPanel">
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="ResourceColumnStyle" TargetType="ItemsControl" BasedOn="{StaticResource ResourceRowStyle}">
+            <Setter Property="ItemsPanel">
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <!-- A panel of the Woven echoes section ("Encounters", "Bosses", ...): rows of echoes, each row centred. -->
+        <ControlTheme x:Key="WovenEchoRowsStyle" TargetType="ItemsControl" BasedOn="{StaticResource ResourceRowStyle}">
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="ItemsPanel">
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </Setter>
+            <Setter Property="ItemTemplate">
+                <DataTemplate x:CompileBindings="False">
+                    <ItemsControl ItemsSource="{Binding}" Theme="{StaticResource ResourceRowStyle}" />
+                </DataTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <!-- Title of a Woven echoes panel, centred above it like in the game. -->
+        <ControlTheme x:Key="WovenEchoPanelTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </ControlTheme>
+
+        <!-- A panel of the Resources section (the game's framed boxes). -->
+        <ControlTheme x:Key="ResourcePanelStyle" TargetType="Border">
+            <Setter Property="Margin" Value="3" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+        </ControlTheme>
+
+        <!-- Vertical label on the left of a group ("KEYS", "CONSUMABLES"); turned by a LayoutTransformControl. -->
+        <ControlTheme x:Key="ResourceGroupLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+        </ControlTheme>
+
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- Numeric fields of the Currencies box. -->
+        <Style Selector="TextBox.currency">
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBox.currency[IsReadOnly=True]">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid Margin="0,16,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ===== Main information: equipment (left) | idols + crafting materials (right) ===== -->
+            <Grid Grid.Row="0" HorizontalAlignment="Left">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="32" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- ===== Equipment: click a slot to open the item builder for it, right-click to edit or remove its item ===== -->
+                <Grid Grid.Column="0"
+                      VerticalAlignment="Top"
+                      x:Name="EquipmentGrid"
+                      Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="112" />
+                        <ColumnDefinition Width="144" />
+                        <ColumnDefinition Width="112" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="96" />
+                        <RowDefinition Height="200" />
+                        <RowDefinition Height="64" />
+                        <RowDefinition Height="96" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0: helmet, amulet -->
+                    <Button Grid.Row="0" Grid.Column="1" Width="96"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Helmet}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="0" Grid.Column="2" Width="64" Height="64"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Amulet}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+
+                    <!-- Row 1: weapon, body armour, off-hand -->
+                    <Button Grid.Row="1" Grid.Column="0"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Weapon}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="1" Grid.Column="1"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding BodyArmour}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="1" Grid.Column="2"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding OffHand}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+
+                    <!-- Row 2: ring, belt, ring -->
+                    <Button Grid.Row="2" Grid.Column="0" Width="56"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding LeftRing}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="2" Grid.Column="1"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Belt}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="2" Grid.Column="2" Width="56"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding RightRing}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+
+                    <!-- Row 3: gloves, boots, relic -->
+                    <Button Grid.Row="3" Grid.Column="0"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Gloves}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="3" Grid.Column="1"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Boots}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Row="3" Grid.Column="2"
+                            Theme="{StaticResource EquipmentSlotButtonStyle}"
+                            DataContext="{Binding Relic}"
+                            Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                            CommandParameter="{Binding}" />
+                </Grid>
+
+                <!-- ===== Idols + crafting materials ===== -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                    <TextBlock Margin="0,0,0,8"
+                               HorizontalAlignment="Center"
+                               Text="Idols"
+                               Theme="{StaticResource SectionHeaderTextStyle}" />
+
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <!-- Idol altar slot, centred beside the idol grid: its altar gives the grid its shape and refracted slots.
+                             Click to build or edit the altar, right-click to edit or remove it. -->
+                        <StackPanel Margin="0,0,12,0"
+                                    VerticalAlignment="Center"
+                                    x:Name="IdolAltarSlot"
+                                    Background="Transparent">
+                            <Button Width="96" Height="96" Margin="0"
+                                    Theme="{StaticResource EquipmentSlotButtonStyle}"
+                                    DataContext="{Binding IdolAltar}"
+                                    Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).OpenItemBuilderCommand}"
+                                    CommandParameter="{Binding}" />
+                        </StackPanel>
+
+                        <!-- Idol grid: 5 × 5 cells shaped by the idol altar (without one: no corners and centre, slots still
+                             locked in game show a lock); refracted slots of the altar are highlighted.
+                             60 px pitch, matching the item layer.
+                             Click an idol to edit it, drag it to move it, right-click an empty cell to build a new one. -->
+                        <Border Padding="6"
+                                HorizontalAlignment="Center"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource TitleBarBackgroundBrush}">
+                            <Grid x:DataType="inventoryVm:BackpackViewModel" DataContext="{ReflectionBinding Idols}">
+                                <ItemsControl x:Name="IdolCells"
+                                              ItemsSource="{Binding Cells}"
+                                              Focusable="False"
+                                              IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}"
+                                                         Columns="{x:Static inventoryVm:InventoryViewModel.IdolGridSize}" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="inventoryVm:BackpackCellViewModel">
+                                            <Border Name="Cell"
+                                                    Width="56"
+                                                    Height="56"
+                                                    Margin="2"
+                                                    CornerRadius="4"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                    Background="{DynamicResource ControlBackgroundBrush}"
+                                                    Classes.refracted="{Binding IsRefracted}"
+                                                    Classes.blocked="{Binding IsBlocked}"
+                                                    Classes.locked="{Binding IsLocked}">
+                                                <Border.Styles>
+                                                    <!-- Refracted slots of the idol altar modify the effects of the idols in them. -->
+                                                    <Style Selector="Border.refracted">
+                                                        <Setter Property="Background" Value="{StaticResource RefractedFillBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{StaticResource RefractedBorderBrush}" />
+                                                        <Setter Property="BorderThickness" Value="2" />
+                                                    </Style>
+                                                    <!-- Blocked cells (corners and centre, or the gaps of the altar) can never hold an idol. -->
+                                                    <Style Selector="Border.blocked">
+                                                        <Setter Property="Background" Value="Transparent" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                                        <Setter Property="Opacity" Value="0.5" />
+                                                    </Style>
+                                                    <!-- Locked slots: not unlocked in game yet, so no idol goes there. -->
+                                                    <Style Selector="Border.locked">
+                                                        <Setter Property="Background" Value="{DynamicResource TitleBarBackgroundBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+                                                    </Style>
+                                                </Border.Styles>
+                                                <mi:MaterialIcon Width="20"
+                                                                 Height="20"
+                                                                 Opacity="0.6"
+                                                                 Kind="Lock"
+                                                                 Foreground="{DynamicResource ControlBorderBrush}"
+                                                                 IsVisible="{Binding IsLocked}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Idols, each spanning the cells of its footprint; dragged and built like backpack items. -->
+                                <ItemsControl x:Name="IdolItems"
+                                              ItemsSource="{Binding Items}"
+                                              Background="Transparent"
+                                              Focusable="False"
+                                              ItemContainerTheme="{StaticResource GridItemContainerStyle}"
+                                              ItemTemplate="{StaticResource GridItemTemplate}"
+>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Grid ColumnDefinitions="60,60,60,60,60" RowDefinitions="60,60,60,60,60" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+
+                                <!-- Cells the dragged idol would take: green when it fits there, red otherwise. -->
+                                <Canvas IsHitTestVisible="False" ClipToBounds="True">
+                                    <Border x:Name="IdolDropPreview"
+                                            IsVisible="False"
+                                            CornerRadius="6"
+                                            BorderThickness="2" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Margin="0,6,0,0"
+                               HorizontalAlignment="Center"
+                               Opacity="0.7"
+                               Text="{Binding Idols.Summary}"
+                               Theme="{StaticResource SecondaryTextStyle}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               Opacity="0.7"
+                               Text="{Binding IdolSlotsText}"
+                               Theme="{StaticResource SecondaryTextStyle}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               Opacity="0.85"
+                               Foreground="{StaticResource RefractedBorderBrush}"
+                               Text="Highlighted slots are refracted: they modify the effects of the idols in them."
+                               IsVisible="{Binding Idols.HasRefractedCells}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               Opacity="0.7"
+                               Text="Right-click an empty cell to build an idol, or an idol to remove it."
+                               Theme="{StaticResource SecondaryTextStyle}" />
+
+                    <!-- Crafting materials -->
+                    <Border Margin="0,16,0,0"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <StackPanel>
+                            <Border Padding="12,6"
+                                    CornerRadius="6,6,0,0"
+                                    BorderThickness="0,0,0,1"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    Background="{DynamicResource ControlBackgroundBrush}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Text="Crafting materials"
+                                           Theme="{StaticResource SectionHeaderTextStyle}" />
+                            </Border>
+
+                            <ItemsControl Margin="8,10" ItemsSource="{Binding CraftingMaterials}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <!-- One kind: its name, how many the material storage holds and its own edit action. -->
+                                    <DataTemplate x:DataType="inventoryVm:CraftingMaterialViewModel">
+                                        <StackPanel Margin="4,0" HorizontalAlignment="Center">
+                                            <TextBlock HorizontalAlignment="Center"
+                                                       Text="{Binding Name}"
+                                                       Theme="{StaticResource SecondaryTextStyle}" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       HorizontalAlignment="Center"
+                                                       FontSize="16"
+                                                       FontWeight="SemiBold"
+                                                       ToolTip.Tip="In the material storage"
+                                                       Text="{Binding Amount, StringFormat='{}{0:N0}', TargetNullValue='—'}" />
+                                            <Button Margin="0,6,0,0"
+                                                    HorizontalAlignment="Center"
+                                                    Theme="{StaticResource TextLinkButtonStyle}"
+                                                    ToolTip.Tip="{Binding EditToolTip}"
+                                                    ToolTip.ShowOnDisabled="True"
+                                                    Command="{Binding $parent[UserControl].((inventoryVm:InventoryViewModel)DataContext).EditCraftingMaterialsCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <mi:MaterialIcon Width="14"
+                                                                      Height="14"
+                                                                      Margin="0,0,4,0"
+                                                                      VerticalAlignment="Center"
+                                                                      Kind="PencilOutline" />
+                                                    <TextBlock VerticalAlignment="Center" Text="Edit" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!--
+                        Currencies of the stash, in the game's order (favor, ancient bones, gold): typed in, written to the
+                        stash file when the character is saved. Favor stays read-only until the stash has a Circle of Fortune entry.
+                    -->
+                    <Border Margin="0,12,0,0"
+                            CornerRadius="6"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}"
+                            Background="{DynamicResource TitleBarBackgroundBrush}">
+                        <StackPanel>
+                            <Border Padding="12,6"
+                                    CornerRadius="6,6,0,0"
+                                    BorderThickness="0,0,0,1"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    Background="{DynamicResource ControlBackgroundBrush}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Text="Currencies"
+                                           Theme="{StaticResource SectionHeaderTextStyle}" />
+                            </Border>
+
+                            <Grid Margin="8,10" ColumnDefinitions="*,*,*">
+                            <StackPanel Grid.Column="0"
+                                        Margin="4,0"
+                                        Background="Transparent"
+                                        ToolTip.Tip="{Binding FavorToolTip}"
+                                        ToolTip.ShowOnDisabled="True">
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <mi:MaterialIcon Width="14"
+                                                      Height="14"
+                                                      Margin="0,0,4,0"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="#FF9B5DE5"
+                                                      Kind="Rhombus" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="Favor"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                </StackPanel>
+                                <TextBox IsReadOnly="{Binding !HasFavor}"
+                                         Classes="currency"
+                                         behaviors:NumericInput.IsEnabled="True"
+                                         behaviors:NumericInput.Maximum="{x:Static inventoryVm:StashMaterialsViewModel.MaxFavor}"
+                                         behaviors:SelectOnClick.IsEnabled="True"
+                                         Text="{Binding Favor, TargetNullValue=0}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1"
+                                        Margin="4,0"
+                                        Background="Transparent"
+                                        ToolTip.Tip="{Binding AncientBonesToolTip}"
+                                        ToolTip.ShowOnDisabled="True">
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <mi:MaterialIcon Width="14"
+                                                      Height="14"
+                                                      Margin="0,0,4,0"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="#FFD8CFC0"
+                                                      Kind="Bone" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="Bones"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                </StackPanel>
+                                <TextBox IsReadOnly="{Binding !HasStash}"
+                                         Classes="currency"
+                                         behaviors:NumericInput.IsEnabled="True"
+                                         behaviors:NumericInput.Maximum="{x:Static inventoryVm:StashMaterialsViewModel.MaxAncientBones}"
+                                         behaviors:SelectOnClick.IsEnabled="True"
+                                         Text="{Binding AncientBones, TargetNullValue=0}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2"
+                                        Margin="4,0"
+                                        Background="Transparent"
+                                        ToolTip.Tip="{Binding GoldToolTip}"
+                                        ToolTip.ShowOnDisabled="True">
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <mi:MaterialIcon Width="14"
+                                                      Height="14"
+                                                      Margin="0,0,4,0"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="#FFD4A72C"
+                                                      Kind="CircleMultiple" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="Gold"
+                                               Theme="{StaticResource SecondaryTextStyle}" />
+                                </StackPanel>
+                                <TextBox IsReadOnly="{Binding !HasStash}"
+                                         Classes="currency"
+                                         behaviors:NumericInput.IsEnabled="True"
+                                         behaviors:NumericInput.Maximum="{x:Static inventoryVm:StashMaterialsViewModel.MaxGold}"
+                                         behaviors:SelectOnClick.IsEnabled="True"
+                                         Text="{Binding Gold, TargetNullValue=0}" />
+                            </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- ===== Sections: backpack ("Items"), resources (keys and consumables of the stash), woven echoes (of the stash), blessings, factions ===== -->
+            <TabControl Grid.Row="1"
+                        Margin="0,24,0,0"
+                        Padding="0,12,0,0"
+                        Theme="{StaticResource PillTabControlStyle}">
+                <!-- ===== Backpack: 14 × 8 cells; items cover several cells, equipment opens the inspector ===== -->
+                <TabItem Header="Items">
+                    <StackPanel HorizontalAlignment="Left" x:DataType="inventoryVm:BackpackViewModel" DataContext="{ReflectionBinding Backpack}">
+                        <Border Padding="6"
+                                HorizontalAlignment="Left"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource TitleBarBackgroundBrush}">
+                            <Grid>
+                                <!-- Background cells (one 50 px pitch per cell, matching the item layer below). -->
+                                <ItemsControl x:Name="BackpackCells" ItemsSource="{Binding Cells}" Focusable="False" IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="{x:Static inventoryVm:BackpackViewModel.Rows}"
+                                                         Columns="{x:Static inventoryVm:BackpackViewModel.Columns}" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="inventoryVm:BackpackCellViewModel">
+                                            <Border Width="48"
+                                                    Height="48"
+                                                    Margin="1"
+                                                    CornerRadius="3"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                    Background="{DynamicResource ControlBackgroundBrush}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Items, each spanning the cells of its footprint. Items are dragged with the mouse
+                                     inside the grid only (code-behind); a click without moving opens the inspector.
+                                     The transparent background lets empty cells take a right-click (new item). -->
+                                <ItemsControl x:Name="BackpackItems"
+                                              ItemsSource="{Binding Items}"
+                                              Background="Transparent"
+                                              Focusable="False"
+                                              ItemContainerTheme="{StaticResource GridItemContainerStyle}"
+                                              ItemTemplate="{StaticResource GridItemTemplate}"
+>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Grid ColumnDefinitions="50,50,50,50,50,50,50,50,50,50,50,50,50,50" RowDefinitions="50,50,50,50,50,50,50,50" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+
+                                <!-- Cells the dragged item would take: green when it fits there, red otherwise. -->
+                                <Canvas IsHitTestVisible="False" ClipToBounds="True">
+                                    <Border x:Name="DropPreview"
+                                            IsVisible="False"
+                                            CornerRadius="6"
+                                            BorderThickness="2" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Margin="2,8,0,0"
+                                   Text="{Binding Summary}"
+                                   Theme="{StaticResource SecondaryTextStyle}" />
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="Right-click an empty cell to build a new item there, or an item to edit or remove it."
+                                   Theme="{StaticResource SecondaryTextStyle}" />
+                    </StackPanel>
+                </TabItem>
+
+                <!-- ===== Resources: keys and consumables the stash keeps (keysList), laid out like the game's tab.
+                     Type an amount into a slot; changes are written to the stash file when the character is saved. ===== -->
+                <TabItem Header="Resources">
+                    <StackPanel x:DataType="inventoryVm:ResourcesViewModel" DataContext="{ReflectionBinding Resources}">
+                        <Border Padding="6"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" />
+                                    <ColumnDefinition Width="3*" MinWidth="440" />
+                                    <ColumnDefinition Width="*" MinWidth="120" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- ===== Keys ===== -->
+                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Theme="{StaticResource ResourcePanelStyle}" Padding="0">
+                                    <LayoutTransformControl HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <LayoutTransformControl.LayoutTransform>
+                                            <RotateTransform Angle="-90" />
+                                        </LayoutTransformControl.LayoutTransform>
+                                        <TextBlock Text="KEYS" Theme="{StaticResource ResourceGroupLabelStyle}" />
+                                    </LayoutTransformControl>
+                                </Border>
+                                <!-- Harbinger Eye -->
+                                <Border Grid.Row="0" Grid.Column="1" Theme="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding HarbingerKeys}" Theme="{StaticResource ResourceRowStyle}" />
+                                </Border>
+                                <!-- Dungeon keys, one panel each -->
+                                <ItemsControl Grid.Row="1" Grid.Column="1"
+                                              Focusable="False"
+                                              ItemsSource="{Binding DungeonKeys}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="inventoryVm:ResourceSlotViewModel">
+                                            <Border Theme="{StaticResource ResourcePanelStyle}">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  Content="{Binding}"
+                                                                  ContentTemplate="{StaticResource ResourceSlotTemplate}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- Arena keys -->
+                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Theme="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding ArenaKeys}" Theme="{StaticResource ResourceColumnStyle}" />
+                                </Border>
+
+                                <!-- ===== Consumables ===== -->
+                                <Border Grid.Row="2" Grid.RowSpan="2" Grid.Column="0" Theme="{StaticResource ResourcePanelStyle}" Padding="0">
+                                    <LayoutTransformControl HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <LayoutTransformControl.LayoutTransform>
+                                            <RotateTransform Angle="-90" />
+                                        </LayoutTransformControl.LayoutTransform>
+                                        <TextBlock Text="CONSUMABLES" Theme="{StaticResource ResourceGroupLabelStyle}" />
+                                    </LayoutTransformControl>
+                                </Border>
+                                <!-- Portal and Scale charms -->
+                                <Border Grid.Row="2" Grid.Column="1" Theme="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding Charms}" Theme="{StaticResource ResourceRowStyle}" />
+                                </Border>
+                                <!-- Crystallized Heart and the primordial materials -->
+                                <Border Grid.Row="3" Grid.Column="1" Theme="{StaticResource ResourcePanelStyle}">
+                                    <ItemsControl ItemsSource="{Binding PrimordialMaterials}" Theme="{StaticResource ResourceRowStyle}" />
+                                </Border>
+                                <!-- Temporal Keystones and Timeglass Fragments -->
+                                <Border Grid.Row="2" Grid.Column="2" Theme="{StaticResource ResourcePanelStyle}">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Content="{Binding TimelineMaterials[0]}"
+                                                      ContentTemplate="{StaticResource ResourceSlotTemplate}" />
+                                </Border>
+                                <Border Grid.Row="3" Grid.Column="2" Theme="{StaticResource ResourcePanelStyle}">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Content="{Binding TimelineMaterials[1]}"
+                                                      ContentTemplate="{StaticResource ResourceSlotTemplate}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Resources the game's tab does not show, while the stash holds some. -->
+                        <StackPanel Margin="0,12,0,0"
+                                    IsVisible="{Binding HasOthers}">
+                            <TextBlock Margin="2,0,0,4" Text="Other resources in the stash" Theme="{StaticResource SecondaryTextStyle}" />
+                            <Border Theme="{StaticResource ResourcePanelStyle}" Margin="0">
+                                <ItemsControl ItemsSource="{Binding Others}" Focusable="False" ItemTemplate="{StaticResource ResourceSlotTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Margin="2,8,0,0" Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Summary}" Theme="{StaticResource SecondaryTextStyle}" />
+                            <Button Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Theme="{StaticResource TextLinkButtonStyle}"
+                                    ToolTip.Tip="Edit every resource in the stash, or add one from the game database"
+                                    Command="{Binding EditAllCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <mi:MaterialIcon Width="14" Height="14" Margin="0,0,4,0" VerticalAlignment="Center" Kind="PencilOutline" />
+                                    <TextBlock VerticalAlignment="Center" Text="Edit all…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="Resources are missing from the game database: names and icons show once it is generated or updated (database button in the title bar)."
+                                   Theme="{StaticResource SecondaryTextStyle}"
+                                   IsVisible="{Binding IsDatabaseMissing}" />
+                    </StackPanel>
+                </TabItem>
+
+                <!-- ===== Woven echoes: the echoes of the stash's Woven Echoes tab (wovenEchoesList), laid out like that tab. Type an amount into an
+                     echo to add it, 0 removes it; changes are written to the stash file when the character is saved. ===== -->
+                <TabItem Header="Woven echoes">
+                    <StackPanel x:DataType="inventoryVm:WovenEchoesViewModel" DataContext="{ReflectionBinding WovenEchoes}">
+                        <!-- Laid out like the game's tab: Encounters on top, Bosses, Crafting and Auras below. -->
+                        <Border Padding="6"
+                                HorizontalAlignment="Left"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Theme="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="ENCOUNTERS" Theme="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Encounters}" Theme="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="0" Theme="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="BOSSES" Theme="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Bosses}" Theme="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="1" Theme="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="CRAFTING" Theme="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Crafting}" Theme="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="2" Theme="{StaticResource ResourcePanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="AURAS" Theme="{StaticResource WovenEchoPanelTitleStyle}" />
+                                        <ItemsControl ItemsSource="{Binding Auras}" Theme="{StaticResource WovenEchoRowsStyle}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Margin="2,8,0,0" Text="{Binding Summary}" Theme="{StaticResource SecondaryTextStyle}" />
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="No character of this stash has unlocked the Woven Echoes tab in game yet: the game shows these echoes once it is unlocked."
+                                   Theme="{StaticResource SecondaryTextStyle}"
+                                   IsVisible="{Binding IsTabLocked}" />
+                        <TextBlock Margin="2,2,0,0"
+                                   Opacity="0.7"
+                                   Text="Woven echoes are missing from the game database: names and icons show once it is generated or updated (database button in the title bar)."
+                                   Theme="{StaticResource SecondaryTextStyle}"
+                                   IsVisible="{Binding IsDatabaseMissing}" />
+                    </StackPanel>
+                </TabItem>
+
+                <!-- ===== Blessings: one per timeline echo, picked from the blessings the timeline grants ===== -->
+                <TabItem Header="Blessings">
+                    <blessingsViews:BlessingsView DataContext="{Binding Blessings}" />
+                </TabItem>
+
+                <!-- ===== Factions: rank of every faction unlocked in the stash ===== -->
+                <TabItem Header="Factions">
+                    <factionsViews:FactionsView DataContext="{Binding Factions}" />
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

@@ -1,24 +1,32 @@
 using System.IO;
-using Microsoft.Win32;
+using Avalonia.Platform.Storage;
 
 namespace LE.SaveEditor.Presentation.Services;
 
+/// <summary>Native folder picker of the platform (Windows, GTK / portal on Linux, NSOpenPanel on macOS).</summary>
 public sealed class FolderPickerService : IFolderPickerService
 {
     public string? PickFolder(string title, string? initialDirectory = null)
     {
-        var dialog = new OpenFolderDialog
+        var owner = WindowHelper.GetActiveWindow();
+        if (owner is null)
+            return null;
+
+        var storage = owner.StorageProvider;
+        if (!storage.CanPickFolder)
+            return null;
+
+        IStorageFolder? start = null;
+        if (!string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory))
+            start = WindowHelper.Wait(storage.TryGetFolderFromPathAsync(initialDirectory));
+
+        var folders = WindowHelper.Wait(storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             Title = title,
-            Multiselect = false
-        };
+            AllowMultiple = false,
+            SuggestedStartLocation = start
+        }));
 
-        if (!string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory))
-            dialog.InitialDirectory = initialDirectory;
-
-        var owner = WindowHelper.GetActiveWindow();
-        var result = owner is null ? dialog.ShowDialog() : dialog.ShowDialog(owner);
-
-        return result == true ? dialog.FolderName : null;
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 }

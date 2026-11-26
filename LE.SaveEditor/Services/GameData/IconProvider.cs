@@ -1,15 +1,17 @@
 using System.Collections.Concurrent;
 using System.IO;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
 
 namespace LE.SaveEditor.Services.GameData;
 
 public sealed class IconProvider : IIconProvider
 {
-    private readonly ConcurrentDictionary<string, ImageSource?> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, IImage?> _cache = new(StringComparer.OrdinalIgnoreCase);
 
-    public ImageSource? Get(string? iconPath)
+    private static readonly string[] Extensions = [".png", ".webp"];
+
+    public IImage? Get(string? iconPath)
     {
         var path = Normalize(iconPath);
         return path is null ? null : _cache.GetOrAdd(path, Load);
@@ -17,7 +19,7 @@ public sealed class IconProvider : IIconProvider
 
     public void ClearCache() => _cache.Clear();
 
-    private static ImageSource? Load(string iconPath)
+    private static IImage? Load(string iconPath)
     {
         var file = Path.Combine(GameDataPaths.IconsDirectory, iconPath.Replace('/', Path.DirectorySeparatorChar) + ".png");
         if (!File.Exists(file))
@@ -25,17 +27,11 @@ public sealed class IconProvider : IIconProvider
 
         try
         {
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.UriSource = new Uri(file, UriKind.Absolute);
             // Read the file now and release it, so the generator can replace icons while the editor runs.
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-            image.EndInit();
-            image.Freeze();
-            return image;
+            using var stream = File.OpenRead(file);
+            return new Bitmap(stream);
         }
-        catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException or FileFormatException)
+        catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
             // A broken icon must never break a view; it simply shows nothing.
             return null;
@@ -48,7 +44,7 @@ public sealed class IconProvider : IIconProvider
             return null;
 
         var path = iconPath.Trim().Replace('\\', '/').TrimStart('/');
-        foreach (var extension in new[] { ".png", ".webp" })
+        foreach (var extension in Extensions)
         {
             if (path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
                 return path[..^extension.Length];

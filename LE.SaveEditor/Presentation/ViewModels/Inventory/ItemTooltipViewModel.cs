@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Saves.Models;
 
@@ -35,7 +35,7 @@ public sealed class ItemTooltipViewModel
     /// <summary>Lowest tier that only drops (cannot be crafted) and makes an item exalted.</summary>
     private const int ExaltedTier = 6;
 
-    public ItemTooltipViewModel(BuiltItem item, ImageSource? icon, Brush rarityBrush)
+    public ItemTooltipViewModel(BuiltItem item, IImage? icon, IBrush rarityBrush)
     {
         Icon = icon;
         RarityBrush = rarityBrush;
@@ -75,12 +75,12 @@ public sealed class ItemTooltipViewModel
         Requirements = requirements;
     }
 
-    public ImageSource? Icon { get; }
+    public IImage? Icon { get; }
 
     public bool HasIcon => Icon is not null;
 
     /// <summary>Name and border color of the item's rarity.</summary>
-    public Brush RarityBrush { get; }
+    public IBrush RarityBrush { get; }
 
     /// <summary>"CERULEAN INFANTRY HAUBERK OF SPARKS".</summary>
     public string Title { get; }

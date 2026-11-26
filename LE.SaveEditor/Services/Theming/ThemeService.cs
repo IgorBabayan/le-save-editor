@@ -1,13 +1,17 @@
-using System.Windows;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
+using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Styling;
 
 namespace LE.SaveEditor.Services.Theming;
 
 public sealed class ThemeService : IThemeService
 {
     /// <summary>Folder (inside the assembly) that holds one palette dictionary per theme.</summary>
-    private const string PaletteFolder = "Themes/Colors/";
+    private const string PaletteFolder = "avares://LE.SaveEditor/Themes/Colors/";
 
-    private readonly Dictionary<AppTheme, ResourceDictionary> _cache = new();
+    private readonly Dictionary<AppTheme, IResourceDictionary> _cache = new();
 
     public AppTheme CurrentTheme { get; private set; } = AppTheme.DefaultNight;
 
@@ -16,7 +20,8 @@ public sealed class ThemeService : IThemeService
         if (!Enum.IsDefined(theme))
             theme = AppTheme.DefaultNight;
 
-        var dictionaries = Application.Current.Resources.MergedDictionaries;
+        var app = Application.Current ?? throw new InvalidOperationException("The application is not running.");
+        var dictionaries = app.Resources.MergedDictionaries;
         var palette = GetPalette(theme);
 
         var index = -1;
@@ -36,27 +41,28 @@ public sealed class ThemeService : IThemeService
         }
         else
         {
-            // Palette must come before the style dictionaries that reference its brushes.
+            // Palette must come before the dictionaries that reference its brushes.
             dictionaries.Insert(0, palette);
         }
 
+        // Fluent parts that are not restyled (text selection, menus) follow the palette's brightness.
+        app.RequestedThemeVariant = theme == AppTheme.DefaultLight ? ThemeVariant.Light : ThemeVariant.Dark;
         CurrentTheme = theme;
     }
 
-    public ResourceDictionary GetPalette(AppTheme theme)
+    public IResourceDictionary GetPalette(AppTheme theme)
     {
         if (!_cache.TryGetValue(theme, out var palette))
         {
-            palette = new ResourceDictionary
-            {
-                Source = new Uri($"/LE.SaveEditor;component/{PaletteFolder}{theme}.xaml", UriKind.Relative)
-            };
+            // Loaded once per theme; every later switch reuses the same dictionary.
+            palette = (IResourceDictionary)AvaloniaXamlLoader.Load(new Uri($"{PaletteFolder}{theme}.axaml"));
             _cache[theme] = palette;
         }
 
         return palette;
     }
 
-    private static bool IsPalette(ResourceDictionary dictionary) =>
-        dictionary.Source?.OriginalString.Contains(PaletteFolder, StringComparison.OrdinalIgnoreCase) == true;
+    private bool IsPalette(IResourceProvider dictionary) =>
+        dictionary is ResourceInclude { Source: { } source } && source.OriginalString.StartsWith(PaletteFolder, StringComparison.OrdinalIgnoreCase)
+        || dictionary is IResourceDictionary d && _cache.ContainsValue(d);
 }

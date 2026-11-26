@@ -1,0 +1,528 @@
+<views:ChromeWindow x:Class="LE.SaveEditor.Presentation.Views.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:LE.SaveEditor.Presentation.Views"
+        xmlns:converters="using:LE.SaveEditor.Presentation.Converters"
+        xmlns:shellVm="using:LE.SaveEditor.Presentation.ViewModels.Shell"
+        xmlns:notificationsVm="using:LE.SaveEditor.Presentation.ViewModels.Notifications"
+        xmlns:models="using:LE.SaveEditor.Services.Saves.Models"
+        xmlns:notifications="using:LE.SaveEditor.Services.Notifications"
+        xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
+        xmlns:toastViews="using:LE.SaveEditor.Presentation.Views.Toasts"
+        xmlns:characterViews="using:LE.SaveEditor.Presentation.Views.Characters"
+        x:DataType="shellVm:MainViewModel"
+        Title="Last Epoch Save Editor" Height="1310" Width="1300"
+        CanResize="False"
+        Icon="/App.ico"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource WindowForegroundBrush}">
+
+    <!--
+        The title bar is drawn here (see ChromeWindow): drag it to move the window.
+        The window can be neither resized nor maximized (CanResize=False; MainWindow.axaml.cs restores it if the
+        system maximizes it anyway). The Maximize caption button is still shown, but always disabled.
+    -->
+
+    <views:ChromeWindow.Styles>
+        <Style Selector="TextBlock#TitleText.inactive">
+            <Setter Property="Foreground" Value="{DynamicResource TitleBarInactiveForegroundBrush}" />
+        </Style>
+    </views:ChromeWindow.Styles>
+
+    <views:ChromeWindow.Resources>
+        <!-- One row of the character list (shared by the Softcore and Hardcore tabs). -->
+        <DataTemplate x:Key="CharacterListItemTemplate" x:DataType="models:CharacterSave">
+            <!-- Columns: mastery / class icon, text. -->
+            <Grid ColumnDefinitions="Auto,*">
+
+                <!-- Mastery icon when the character has a mastery, otherwise the class icon. -->
+                <Grid Grid.Column="0"
+                      Width="40"
+                      Height="40"
+                      Margin="0,0,10,0"
+                      VerticalAlignment="Center">
+                    <ToolTip.Tip>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0} · {1}">
+                                    <Binding Path="ClassDisplayName" />
+                                    <Binding Path="MasteryDisplayName" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </ToolTip.Tip>
+
+                    <Image Name="CharacterIcon"
+                           Source="{Binding Converter={StaticResource CharacterIconConverter}}"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapInterpolationMode="HighQuality" />
+
+                    <!-- Placeholder until the database generator has downloaded the icons. -->
+                    <mi:MaterialIcon Kind="AccountCircleOutline"
+                                     Width="32"
+                                     Height="32"
+                                     IsVisible="{Binding #CharacterIcon.Source, Converter={x:Static ObjectConverters.IsNull}}"
+                                      Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                </Grid>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <DockPanel LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left"
+                                   Text="{Binding CharacterName}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <Border DockPanel.Dock="Right"
+                                Theme="{StaticResource BadgeBorderStyle}"
+                                ToolTip.Tip="Solo Self-Found"
+                                IsVisible="{Binding SoloSelfFound}">
+                            <TextBlock Text="SSF"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource WarningForegroundBrush}" />
+                        </Border>
+                    </DockPanel>
+                    <TextBlock Margin="0,2,0,0" Theme="{StaticResource SecondaryTextStyle}" TextTrimming="CharacterEllipsis">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}Level {0} {1} · {2}">
+                                <Binding Path="Level" />
+                                <Binding Path="ClassDisplayName" />
+                                <Binding Path="MasteryDisplayName" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock Margin="0,2,0,0"
+                               FontSize="11"
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding LastPlayedLocal, StringFormat='Last played {0:g}', TargetNullValue='Never played'}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </views:ChromeWindow.Resources>
+
+    <views:ChromeWindow.KeyBindings>
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+        <!-- macOS: Command+S. -->
+        <KeyBinding Gesture="Meta+S" Command="{Binding SaveCommand}" />
+        <KeyBinding Gesture="F5" Command="{Binding ReloadCommand}" />
+    </views:ChromeWindow.KeyBindings>
+
+    <Border x:Name="RootBorder"
+            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderThickness="1">
+        <Grid RowDefinitions="32,*">
+
+            <!-- ===== Title bar ===== -->
+            <!-- Columns: icon + title, free drag area, custom buttons, min / max / close. -->
+            <Grid x:Name="TitleBar"
+                  Grid.Row="0"
+                  Classes="titlebar"
+                  ColumnDefinitions="Auto,*,Auto,Auto"
+                  Background="{DynamicResource TitleBarBackgroundBrush}">
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <TextBlock x:Name="TitleText"
+                               Text="{Binding $parent[Window].Title}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Custom buttons placed next to the standard caption buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- Writes the changes of the selected character into its save file; enabled while there are any. -->
+                    <Button x:Name="SaveButton"
+                            Theme="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip.Tip="Save changes (Ctrl+S)"
+                            AutomationProperties.Name="Save changes"
+                            Command="{Binding SaveCommand}">
+                        <mi:MaterialIcon Kind="ContentSaveOutline" Width="18" Height="18" />
+                    </Button>
+
+                    <!-- Reads the save files again (e.g. after the game wrote them); asks before discarding unsaved changes. -->
+                    <Button x:Name="ReloadButton"
+                            Theme="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip.Tip="Reload save files (F5)"
+                            AutomationProperties.Name="Reload save files"
+                            Command="{Binding ReloadCommand}">
+                        <mi:MaterialIcon Kind="Refresh" Width="18" Height="18" />
+                    </Button>
+
+                    <!-- Generates the game database, or updates it if it already exists (LE.SaveEditor.DB). -->
+                    <Button x:Name="DatabaseButton"
+                            Theme="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip.Tip="Generate / update database"
+                            AutomationProperties.Name="Generate or update database"
+                            Command="{Binding GenerateDatabaseCommand}">
+                        <mi:MaterialIcon Kind="DatabaseRefreshOutline" Width="18" Height="18" />
+                    </Button>
+
+                    <!--
+                        Notification center. While the popup is open the toggle is not hit-testable:
+                        a click on it then only closes the popup (light dismiss) instead of reopening it.
+                    -->
+                    <ToggleButton x:Name="NotificationsButton"
+                                  x:DataType="notificationsVm:NotificationCenterViewModel"
+                                  DataContext="{ReflectionBinding NotificationCenter}"
+                                  Theme="{StaticResource TitleBarToggleButtonStyle}"
+                                  ToolTip.Tip="{Binding BellToolTip}"
+                                  IsChecked="{Binding IsOpen, Mode=TwoWay}"
+                                  IsHitTestVisible="{Binding !#NotificationsPopup.IsOpen}">
+                        <Panel>
+                            <mi:MaterialIcon Width="18" Height="18" Kind="BellOutline" IsVisible="{Binding !HasUnread}" />
+                            <mi:MaterialIcon Width="18" Height="18" Kind="Bell" IsVisible="{Binding HasUnread}" />
+                        </Panel>
+                    </ToggleButton>
+
+                    <Popup x:Name="NotificationsPopup"
+                           x:DataType="notificationsVm:NotificationCenterViewModel"
+                           DataContext="{ReflectionBinding NotificationCenter}"
+                           PlacementTarget="{Binding #NotificationsButton}"
+                           Placement="BottomEdgeAlignedRight"
+                           HorizontalOffset="8"
+                           VerticalOffset="-6"
+                           IsLightDismissEnabled="True"
+                           OverlayDismissEventPassThrough="False"
+                           IsOpen="{Binding IsOpen, Mode=TwoWay}">
+                        <!-- Outer 8px margin leaves room for the shadow; the offsets above compensate for it. -->
+                        <Grid Margin="8" Width="380">
+                            <!-- Shadow is drawn by a separate element so the content text stays crisp. -->
+                            <Border CornerRadius="8"
+                                    Background="{DynamicResource WindowBackgroundBrush}"
+                                    BoxShadow="0 2 16 0 #59000000" />
+
+                            <Border CornerRadius="8"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}"
+                                    Background="{DynamicResource WindowBackgroundBrush}">
+                                <Grid RowDefinitions="Auto,Auto,Auto">
+
+                                    <!-- Header -->
+                                    <DockPanel Grid.Row="0" Margin="14,10,8,10" LastChildFill="True">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="Mark all as read"
+                                                    Theme="{StaticResource TextLinkButtonStyle}"
+                                                    Command="{Binding MarkAllAsReadCommand}" />
+                                            <Button Content="Clear all"
+                                                    Theme="{StaticResource TextLinkButtonStyle}"
+                                                    Command="{Binding ClearAllCommand}" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="Notifications" Theme="{StaticResource SectionHeaderTextStyle}" />
+                                            <Border Margin="8,0,0,0"
+                                                    Padding="6,0"
+                                                    MinWidth="18"
+                                                    Height="18"
+                                                    CornerRadius="9"
+                                                    VerticalAlignment="Center"
+                                                    Background="{DynamicResource AccentBrush}"
+                                                    IsVisible="{Binding HasUnread}">
+                                                <TextBlock Text="{Binding UnreadCount}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentForegroundBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </DockPanel>
+
+                                    <Rectangle Grid.Row="1" Height="1" Fill="{DynamicResource WindowBorderBrush}" />
+
+                                    <!-- List / empty state -->
+                                    <Grid Grid.Row="2">
+                                        <TextBlock Margin="16,28"
+                                                   HorizontalAlignment="Center"
+                                                   Text="No notifications yet."
+                                                   Theme="{StaticResource SecondaryTextStyle}"
+                                                   IsVisible="{Binding IsEmpty}" />
+
+                                        <ScrollViewer MaxHeight="440"
+                                                      VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      IsVisible="{Binding HasNotifications}">
+                                            <ItemsControl Margin="4" ItemsSource="{Binding Notifications}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="notifications:Notification">
+                                                        <Grid Margin="0,1"
+                                                              Classes.read="{Binding IsRead}"
+                                                              Classes.success="{Binding Severity, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Success}"
+                                                              Classes.warning="{Binding Severity, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Warning}"
+                                                              Classes.error="{Binding Severity, Converter={x:Static converters:ValueConverters.EqualsParameter}, ConverterParameter=Error}">
+                                                            <Grid.Styles>
+                                                                <Style Selector="Grid.read Ellipse#UnreadDot">
+                                                                    <Setter Property="Opacity" Value="0" />
+                                                                </Style>
+                                                                <Style Selector="Grid.read TextBlock#NotificationTitle">
+                                                                    <Setter Property="FontWeight" Value="Normal" />
+                                                                </Style>
+                                                                <Style Selector="Grid.success mi|MaterialIcon#SeverityIcon">
+                                                                    <Setter Property="Kind" Value="CheckCircleOutline" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessForegroundBrush}" />
+                                                                </Style>
+                                                                <Style Selector="Grid.warning mi|MaterialIcon#SeverityIcon">
+                                                                    <Setter Property="Kind" Value="AlertOutline" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                                                                </Style>
+                                                                <Style Selector="Grid.error mi|MaterialIcon#SeverityIcon">
+                                                                    <Setter Property="Kind" Value="AlertCircleOutline" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                                                                </Style>
+                                                            </Grid.Styles>
+                                                            <!-- Clicking the row marks it as read. -->
+                                                            <Button Theme="{StaticResource ListRowButtonStyle}"
+                                                                    Command="{Binding $parent[ItemsControl].((notificationsVm:NotificationCenterViewModel)DataContext).MarkAsReadCommand}"
+                                                                    CommandParameter="{Binding}">
+                                                                <!-- Columns: unread dot, severity icon, text, room for the remove button. -->
+                                                                <Grid ColumnDefinitions="12,Auto,*,28">
+
+                                                                    <Ellipse Name="UnreadDot"
+                                                                             Grid.Column="0"
+                                                                             Width="6"
+                                                                             Height="6"
+                                                                             Margin="0,7,0,0"
+                                                                             HorizontalAlignment="Left"
+                                                                             VerticalAlignment="Top"
+                                                                             Fill="{DynamicResource AccentBrush}" />
+
+                                                                    <mi:MaterialIcon Name="SeverityIcon"
+                                                                                      Grid.Column="1"
+                                                                                      Width="18"
+                                                                                      Height="18"
+                                                                                      Margin="0,0,10,0"
+                                                                                      VerticalAlignment="Top"
+                                                                                      Kind="InformationOutline"
+                                                                                      Foreground="{DynamicResource AccentBrush}" />
+
+                                                                    <StackPanel Grid.Column="2">
+                                                                        <TextBlock Name="NotificationTitle"
+                                                                                   Text="{Binding Title}"
+                                                                                   FontSize="13"
+                                                                                   FontWeight="SemiBold"
+                                                                                   TextWrapping="Wrap" />
+                                                                        <TextBlock Margin="0,2,0,0"
+                                                                                   Text="{Binding Message}"
+                                                                                   Theme="{StaticResource SecondaryTextStyle}"
+                                                                                   IsVisible="{Binding HasMessage}" />
+                                                                        <TextBlock Margin="0,4,0,0"
+                                                                                   FontSize="11"
+                                                                                   Theme="{StaticResource SecondaryTextStyle}"
+                                                                                   Text="{Binding CreatedAtLocal, StringFormat='{}{0:g}'}" />
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </Button>
+
+                                                            <!-- Sibling of the row button (not nested), so its click does not also mark the row as read. -->
+                                                            <Button Margin="0,6,6,0"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Top"
+                                                                    ToolTip.Tip="Remove"
+                                                                    Theme="{StaticResource SubtleIconButtonStyle}"
+                                                                    Command="{Binding $parent[ItemsControl].((notificationsVm:NotificationCenterViewModel)DataContext).RemoveCommand}"
+                                                                    CommandParameter="{Binding}">
+                                                                <mi:MaterialIcon Kind="Close" Width="14" Height="14" />
+                                                            </Button>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Popup>
+
+                    <Button x:Name="SettingsButton"
+                            Theme="{StaticResource TitleBarToolButtonStyle}"
+                            ToolTip.Tip="Settings"
+                            Command="{Binding OpenSettingsCommand}">
+                        <mi:MaterialIcon Kind="CogOutline" Width="18" Height="18" />
+                    </Button>
+                    <Rectangle Width="1" Margin="4,8" Fill="{DynamicResource WindowBorderBrush}" />
+                </StackPanel>
+
+                <!-- Standard caption buttons -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal">
+                    <Button Theme="{StaticResource CaptionButtonStyle}"
+                            ToolTip.Tip="Minimize"
+                            Click="OnMinimizeClick">
+                        <mi:MaterialIcon Kind="WindowMinimize" Width="14" Height="14" />
+                    </Button>
+                    <!-- Shown for the familiar caption layout, but maximizing is not supported: always disabled. -->
+                    <Button Theme="{StaticResource CaptionButtonStyle}"
+                            IsEnabled="False"
+                            ToolTip.Tip="Maximize is not available"
+                            ToolTip.ShowOnDisabled="True">
+                        <mi:MaterialIcon Kind="WindowMaximize" Width="14" Height="14" />
+                    </Button>
+                    <Button Theme="{StaticResource CloseCaptionButtonStyle}"
+                            ToolTip.Tip="Close"
+                            Click="OnCloseClick">
+                        <mi:MaterialIcon Kind="WindowClose" Width="14" Height="14" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ===== Window content: characters (left) | details of the selected character (right) ===== -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" MinWidth="220" MaxWidth="600" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" MinWidth="300" />
+                </Grid.ColumnDefinitions>
+
+                <!-- ===== Characters ===== -->
+                <Grid Grid.Column="0" Background="{DynamicResource TitleBarBackgroundBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Margin="16,14,16,8"
+                               Text="Characters"
+                               Theme="{StaticResource SectionHeaderTextStyle}" />
+
+                    <!-- Softcore / Hardcore tabs; each keeps its own selection and SSF filter. -->
+                    <TabControl Grid.Row="1"
+                                Margin="16,0"
+                                Theme="{StaticResource PillTabControlStyle}"
+                                SelectedIndex="{Binding SelectedCharacterTabIndex, Mode=TwoWay}"
+                                IsVisible="{Binding HasCharacters}">
+                        <TabItem Header="Softcore">
+                            <!-- Negative side margins undo the TabControl margin, so the list spans the whole panel. -->
+                            <Grid Margin="-16,10,-16,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <CheckBox Grid.Row="0"
+                                          Margin="16,0,16,8"
+                                          Content="Show only SSF characters"
+                                          IsChecked="{Binding ShowOnlySsfSoftcore, Mode=TwoWay}" />
+
+                                <ListBox Grid.Row="1"
+                                         Theme="{StaticResource PlainListBoxStyle}"
+                                         ItemContainerTheme="{StaticResource ListRowItemStyle}"
+                                         ItemTemplate="{StaticResource CharacterListItemTemplate}"
+                                         ItemsSource="{Binding SoftcoreCharacters}"
+                                         SelectedItem="{Binding SelectedSoftcoreCharacter, Mode=TwoWay}"
+                                         IsVisible="{Binding HasVisibleSoftcoreCharacters}" />
+
+                                <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                                           Text="No softcore characters to show."
+                                           TextWrapping="Wrap"
+                                           Theme="{StaticResource SecondaryTextStyle}"
+                                           IsVisible="{Binding !HasVisibleSoftcoreCharacters}" />
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem Header="Hardcore">
+                            <!-- Negative side margins undo the TabControl margin, so the list spans the whole panel. -->
+                            <Grid Margin="-16,10,-16,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <CheckBox Grid.Row="0"
+                                          Margin="16,0,16,8"
+                                          Content="Show only SSF characters"
+                                          IsChecked="{Binding ShowOnlySsfHardcore, Mode=TwoWay}" />
+
+                                <ListBox Grid.Row="1"
+                                         Theme="{StaticResource PlainListBoxStyle}"
+                                         ItemContainerTheme="{StaticResource ListRowItemStyle}"
+                                         ItemTemplate="{StaticResource CharacterListItemTemplate}"
+                                         ItemsSource="{Binding HardcoreCharacters}"
+                                         SelectedItem="{Binding SelectedHardcoreCharacter, Mode=TwoWay}"
+                                         IsVisible="{Binding HasVisibleHardcoreCharacters}" />
+
+                                <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                                           Text="No hardcore characters to show."
+                                           TextWrapping="Wrap"
+                                           Theme="{StaticResource SecondaryTextStyle}"
+                                           IsVisible="{Binding !HasVisibleHardcoreCharacters}" />
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+
+                    <!-- Empty / loading states -->
+                    <StackPanel Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                                IsVisible="{Binding ShowNoSaveFolder}">
+                        <TextBlock Text="No save folder selected." TextWrapping="Wrap" Theme="{StaticResource SecondaryTextStyle}" />
+                        <Button Margin="0,12,0,0"
+                                HorizontalAlignment="Left"
+                                Content="Open settings"
+                                Theme="{StaticResource DialogButtonStyle}"
+                                Command="{Binding OpenSettingsCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                               Text="Loading characters…"
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               IsVisible="{Binding ShowLoading}" />
+
+                    <TextBlock Grid.Row="1" Margin="16,8" VerticalAlignment="Top"
+                               Text="No characters found in the save folder."
+                               TextWrapping="Wrap"
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               IsVisible="{Binding ShowNoCharacters}" />
+
+                    <!-- Files that could not be read -->
+                    <TextBlock Grid.Row="2"
+                               Margin="16,8,16,12"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource WarningForegroundBrush}"
+                               Text="{Binding LoadErrors.Count, StringFormat='{}{0} save file(s) could not be read'}"
+                               IsVisible="{Binding HasLoadErrors}">
+                        <ToolTip.Tip>
+                            <ItemsControl ItemsSource="{Binding LoadErrors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:SaveFileError">
+                                        <TextBlock Margin="0,2">
+                                            <Run Text="{Binding FilePath, Mode=OneWay}" FontWeight="SemiBold" />
+                                            <Run Text=": " />
+                                            <Run Text="{Binding Message, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ToolTip.Tip>
+                    </TextBlock>
+                </Grid>
+
+                <!-- 1px divider with a wider, invisible grab area for resizing. -->
+                <Rectangle Grid.Column="1" Width="1" Fill="{DynamicResource WindowBorderBrush}" />
+                <GridSplitter Grid.Column="1"
+                              Width="5"
+                              Margin="-2,0"
+                              MinWidth="0"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Stretch"
+                              ResizeDirection="Columns"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="Transparent" />
+
+                <!-- ===== Details of the selected character: Inventory / Waypoints tabs ===== -->
+                <Grid Grid.Column="2">
+                    <TextBlock HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Text="Select a character to see its details."
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               IsVisible="{Binding ShowSelectCharacterHint}" />
+
+                    <characterViews:CharacterView DataContext="{Binding CharacterDetails}"
+                                                  Margin="24,8,24,16"
+                                                  IsVisible="{Binding $parent[Window].((shellVm:MainViewModel)DataContext).HasSelectedCharacter}" />
+                </Grid>
+            </Grid>
+
+            <!-- ===== Toasts (bottom-right, above the content) ===== -->
+            <toastViews:ToastHost Grid.Row="1" ZIndex="10" />
+        </Grid>
+    </Border>
+</views:ChromeWindow>

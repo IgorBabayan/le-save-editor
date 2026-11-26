@@ -1,6 +1,8 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 
 namespace LE.SaveEditor.Presentation.Behaviors;
 
@@ -9,45 +11,53 @@ namespace LE.SaveEditor.Presentation.Behaviors;
 /// exactly that row and nothing else.
 /// </summary>
 /// <remarks>
-/// A plain <see cref="ListBox"/> captures the mouse on press and selects every row that comes under the pressed
-/// mouse ("drag selection"). When selecting a row changes the layout of the list (badges appear or disappear, rows
-/// change their height), another row slides under the cursor and gets selected instead of the clicked one.
-/// Handling the press here selects the clicked row without capturing the mouse; the release still bubbles as usual.
+/// When selecting a row changes the layout of the list (badges appear or disappear, rows change their height),
+/// another row may slide under the cursor before the press is processed. Handling the press here selects the clicked
+/// row right away; the release still bubbles as usual.
 /// </remarks>
 public static class SelectOnClick
 {
-    public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
-        "IsEnabled", typeof(bool), typeof(SelectOnClick), new PropertyMetadata(false, OnIsEnabledChanged));
+    public static readonly AttachedProperty<bool> IsEnabledProperty =
+        AvaloniaProperty.RegisterAttached<Control, bool>("IsEnabled", typeof(SelectOnClick));
 
-    public static bool GetIsEnabled(DependencyObject element) => (bool)element.GetValue(IsEnabledProperty);
-
-    public static void SetIsEnabled(DependencyObject element, bool value) => element.SetValue(IsEnabledProperty, value);
-
-    private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    static SelectOnClick()
     {
-        if (d is not ListBox listBox)
-            return;
-
-        listBox.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
-        if ((bool)e.NewValue)
-            listBox.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
+        IsEnabledProperty.Changed.AddClassHandler<Control>(OnIsEnabledChanged);
     }
 
-    private static void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    public static bool GetIsEnabled(AvaloniaObject element) => element.GetValue(IsEnabledProperty);
+
+    public static void SetIsEnabled(AvaloniaObject element, bool value) => element.SetValue(IsEnabledProperty, value);
+
+    private static void OnIsEnabledChanged(Control control, AvaloniaPropertyChangedEventArgs e)
+    {
+        // Only lists select rows; on anything else (e.g. a TextBox in a list row) the property does nothing.
+        if (control is not ListBox listBox)
+            return;
+
+        listBox.RemoveHandler(InputElement.PointerPressedEvent, OnPointerPressed);
+        if (e.NewValue is true)
+            listBox.AddHandler(InputElement.PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+    }
+
+    private static void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not ListBox listBox
-            || e.OriginalSource is not DependencyObject source
-            || ItemsControl.ContainerFromElement(listBox, source) is not ListBoxItem container
-            || !container.IsEnabled)
+            || !e.GetCurrentPoint(listBox).Properties.IsLeftButtonPressed
+            || e.Source is not Visual source)
+            return;
+
+        var container = source as ListBoxItem ?? source.FindAncestorOfType<ListBoxItem>();
+        if (container is null || !container.IsEnabled || container.FindAncestorOfType<ListBox>() != listBox)
             return;
 
         // Read the row's item before anything changes: selecting it may re-layout or recycle the containers.
-        var item = listBox.ItemContainerGenerator.ItemFromContainer(container);
-        if (ReferenceEquals(item, DependencyProperty.UnsetValue))
+        var index = listBox.IndexFromContainer(container);
+        if (index < 0)
             return;
 
-        container.Focus();
-        listBox.SelectedItem = item;
+        container.Focus(NavigationMethod.Pointer);
+        listBox.SelectedIndex = index;
         e.Handled = true;
     }
 }

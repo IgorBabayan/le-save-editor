@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 using LE.SaveEditor.Services.Saves;
@@ -88,7 +88,7 @@ public sealed partial class BackpackItemViewModel : ViewModelBase
     /// <summary>Neither equipment nor a known crafting material: a tile that only keeps its cells taken.</summary>
     public bool IsPlaceholder => !IsEquipment && !IsMaterial;
 
-    public ImageSource? MaterialIcon => _iconProvider?.Get(Material?.IconPath);
+    public IImage? MaterialIcon => _iconProvider?.Get(Material?.IconPath);
 
     public bool HasMaterialIcon => MaterialIcon is not null;
 

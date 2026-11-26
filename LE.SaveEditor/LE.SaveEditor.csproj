@@ -2,36 +2,46 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <UseWPF>true</UseWPF>
         <ApplicationIcon>App.ico</ApplicationIcon>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
         <!-- Major.Minor for releases; CI appends the build number as the patch part. -->
         <VersionPrefix>0.1.0</VersionPrefix>
+        <!-- Every binding is checked at build time and runs without reflection. -->
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <!-- Newest Avalonia 11.3 patch: the views use the Avalonia 11 APIs. -->
+        <AvaloniaVersion>11.3.*</AvaloniaVersion>
+    </PropertyGroup>
+
+    <!-- Runtime identifiers released by CI (.github/workflows): Windows, Linux, macOS (Intel and Apple silicon). -->
+    <PropertyGroup>
+        <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+      <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+      <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+      <!-- Inspector (F12) in debug builds only. -->
+      <PackageReference Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" Condition="'$(Configuration)' == 'Debug'" />
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+      <!-- Icon path data only (no UI dependency); drawn by Presentation/Controls/MaterialIcon. Same release as the WPF version. -->
       <PackageReference Include="Material.Icons" Version="3.0.3-nightly.0.2" />
-      <PackageReference Include="Material.Icons.WPF" Version="3.0.3-nightly.0.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.2.26504.105" />
       <!-- Read-only access to base.db (item bases for the item builder); same SQLite as LE.SaveEditor.DB. -->
       <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Page Update="Presentation\Views\MainWindow.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
+      <AvaloniaResource Include="App.ico" />
     </ItemGroup>
 
     <!--
-        LE.SaveEditor.DB runs as a separate, hidden process from Tools\LE.SaveEditor.DB (see Services\GameData\DatabaseGenerator.cs).
+        LE.SaveEditor.DB runs as a separate, hidden process from Tools/LE.SaveEditor.DB (see Services/GameData/DatabaseGenerator.cs).
         Its own folder keeps its dependencies (EF Core, SkiaSharp) apart from the editor's.
-        Local builds copy its build output there; releases publish it there (.github/workflows/release-installer.yml).
+        Local builds copy its build output there; releases publish it there (.github/workflows/*.yml).
     -->
     <PropertyGroup>
         <DatabaseGeneratorProject>$(MSBuildThisFileDirectory)..\LE.SaveEditor.DB\LE.SaveEditor.DB.csproj</DatabaseGeneratorProject>

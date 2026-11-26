@@ -1,5 +1,6 @@
 using System.IO;
-using System.Windows.Media;
+using System.Collections.Concurrent;
+using Avalonia.Media;
 using LE.SaveEditor.Services.Saves.Models;
 
 namespace LE.SaveEditor.Services.GameData;
@@ -23,7 +24,13 @@ public sealed class CharacterIconProvider(IIconProvider iconProvider) : ICharact
     /// <summary>Normalized file name → icon paths (<c>group/name</c>, no extension); built on first use.</summary>
     private Dictionary<string, List<string>>? _index;
 
-    public ImageSource? Get(CharacterClass characterClass, Mastery mastery)
+    /// <summary>
+    /// Found icon path per class / mastery name. The ranking below runs once per name instead of every time a
+    /// character row (or its converter) asks for its icon.
+    /// </summary>
+    private readonly ConcurrentDictionary<(string Name, string KindWord), string?> _resolved = new();
+
+    public IImage? Get(CharacterClass characterClass, Mastery mastery)
     {
         // A character with a mastery shows the mastery; without one (or if its image is missing) the base class.
         if (mastery is not (Mastery.None or Mastery.Unknown))
@@ -41,12 +48,18 @@ public sealed class CharacterIconProvider(IIconProvider iconProvider) : ICharact
     public void ClearCache()
     {
         lock (_sync)
+        {
             _index = null;
+            _resolved.Clear();
+        }
     }
 
     /// <param name="name">Enum name, e.g. <c>VoidKnight</c>.</param>
     /// <param name="kindWord">Word in a preferred folder or file name (<c>class</c> / <c>master</c>).</param>
-    private string? FindIconPath(string name, string kindWord)
+    private string? FindIconPath(string name, string kindWord) =>
+        _resolved.GetOrAdd((name, kindWord), static (key, self) => self.ResolveIconPath(key.Name, key.KindWord), this);
+
+    private string? ResolveIconPath(string name, string kindWord)
     {
         var index = GetIndex();
         if (index.Count == 0)

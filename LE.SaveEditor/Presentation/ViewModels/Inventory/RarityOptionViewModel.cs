@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData.Items;
 
@@ -14,9 +14,9 @@ public sealed partial class RarityOptionViewModel(ItemRarity rarity) : ViewModel
 
     public string Name => Rarity.ToString();
 
-    public Brush Foreground => RarityPalette.Foreground(Rarity);
+    public IBrush Foreground => RarityPalette.Foreground(Rarity);
 
-    public Brush Background => RarityPalette.Background(Rarity);
+    public IBrush Background => RarityPalette.Background(Rarity);
 
     [ObservableProperty]
     private bool _isSelected;

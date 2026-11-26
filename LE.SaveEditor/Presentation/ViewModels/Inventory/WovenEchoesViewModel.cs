@@ -1,5 +1,4 @@
-using System.Collections.ObjectModel;
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
 
@@ -8,10 +7,10 @@ namespace LE.SaveEditor.Presentation.ViewModels.Inventory;
 /// <summary>
 /// The "Woven echoes" section of the inventory, laid out like the game's "Woven Echoes" stash tab: the Encounters,
 /// Bosses, Crafting and Auras panels with their echoes in the game's rows, each with the amount the character's stash
-/// holds (dimmed at 0). Type an amount into an echo to add it (or 0 to remove it); echoes the tab has no slot for
-/// (placeholders like "Fading Echo", which the game shows as "ERROR", echoes the game does not show yet such as Pinnacle
-/// of Chaos, or echoes unknown to the database) are listed under "Other" while the stash holds some. The echoes live in
-/// the <c>wovenEchoesList</c> of the stash file and are written with the other stash changes when the character is saved.
+/// holds (dimmed at 0). Type an amount into an echo to add it (or 0 to remove it). Echoes the tab has no slot for
+/// (placeholders like "Fading Echo", or echoes the game does not show such as Pinnacle of Chaos) are not shown and stay
+/// in the save untouched. The echoes live in the <c>wovenEchoesList</c> of the stash file and are written with the other
+/// stash changes when the character is saved.
 /// </summary>
 public sealed partial class WovenEchoesViewModel : ViewModelBase
 {
@@ -75,42 +74,40 @@ public sealed partial class WovenEchoesViewModel : ViewModelBase
     public IReadOnlyList<IReadOnlyList<WovenEchoSlotViewModel>> Crafting { get; }
     public IReadOnlyList<IReadOnlyList<WovenEchoSlotViewModel>> Auras { get; }
 
-    /// <summary>Echoes the stash holds that the game's tab has no slot for, or that the database does not know.</summary>
-    public ObservableCollection<WovenEchoSlotViewModel> Others { get; } = [];
-
-    public bool HasOthers => Others.Count > 0;
-
     /// <summary>The base.db has no woven echoes (missing or generated without them): names and icons are missing.</summary>
     public bool IsDatabaseMissing => _catalog.GetWovenEchoes().Count == 0;
 
     /// <summary>The stash exists but none of its characters has unlocked the "Woven Echoes" tab in game yet.</summary>
     public bool IsTabLocked => Stash is { IsWovenEchoesTabUnlocked: false };
 
-    /// <summary>Line under the section, e.g. "Kept in STASH_CYCLE_8_0 · 3 echoes".</summary>
+    /// <summary>Line under the section, e.g. "Kept in STASH_CYCLE_8_0 · 3 echoes" (echoes of the tab's slots).</summary>
     public string Summary => Stash is { } stash
-        ? $"Kept in {stash.Stash.FileName} · {Count(stash.WovenEchoes.Values.Sum())}. Changes are written to the stash file when the character is saved."
+        ? $"Kept in {stash.Stash.FileName} · {Count(_fixed.Values.Sum(s => s.Amount))}. Changes are written to the stash file when the character is saved."
         : "No stash file was found for this character in the save folder, so its woven echoes cannot be edited.";
 
     private static string Count(int echoes) => echoes == 1 ? "1 echo" : $"{echoes:N0} echoes";
 
     private IReadOnlyList<IReadOnlyList<WovenEchoSlotViewModel>> CreateRows(int[][] rows) =>
         rows.Select(row => (IReadOnlyList<WovenEchoSlotViewModel>)row
-                .Select(id => _fixed[id] = CreateSlot(id, _catalog.FindWovenEcho(id), isInTab: true))
+                .Select(id => _fixed[id] = CreateSlot(id, _catalog.FindWovenEcho(id)))
                 .ToList())
             .ToList();
 
-    private WovenEchoSlotViewModel CreateSlot(int id, WovenEcho? echo, bool isInTab)
+    private WovenEchoSlotViewModel CreateSlot(int id, WovenEcho? echo)
     {
-        var slot = new WovenEchoSlotViewModel(id, echo, _iconProvider) { IsEditable = Stash is not null, IsInTab = isInTab };
+        var slot = new WovenEchoSlotViewModel(id, echo, _iconProvider) { IsEditable = Stash is not null };
         slot.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(WovenEchoSlotViewModel.Amount) && !_refreshing)
-                Stash?.SetWovenEchoAmount(slot.Id, slot.Amount);
+            if (e.PropertyName != nameof(WovenEchoSlotViewModel.Amount) || _refreshing)
+                return;
+
+            Stash?.SetWovenEchoAmount(slot.Id, slot.Amount);
+            OnPropertyChanged(nameof(Summary));
         };
         return slot;
     }
 
-    /// <summary>Shows the amounts of the stash; echoes the tab has no slot for get one under "Other".</summary>
+    /// <summary>Shows the amounts of the stash in the tab's slots.</summary>
     private void Refresh()
     {
         _refreshing = true;
@@ -119,33 +116,12 @@ public sealed partial class WovenEchoesViewModel : ViewModelBase
             var amounts = Stash?.WovenEchoes ?? new Dictionary<int, int>();
             foreach (var (id, slot) in _fixed)
                 slot.Amount = amounts.GetValueOrDefault(id);
-
-            // An "Other" slot set to 0 stays until the amounts change elsewhere, so it can be typed into again.
-            foreach (var other in Others.ToList())
-            {
-                if (!amounts.ContainsKey(other.Id) && other.Amount > 0)
-                    Others.Remove(other);
-                else
-                    other.Amount = amounts.GetValueOrDefault(other.Id);
-            }
-
-            var known = Others.Select(o => o.Id).ToHashSet();
-            foreach (var (id, quantity) in amounts.OrderBy(a => a.Key))
-            {
-                if (quantity <= 0 || _fixed.ContainsKey(id) || known.Contains(id))
-                    continue;
-
-                var slot = CreateSlot(id, _catalog.FindWovenEcho(id), isInTab: false);
-                slot.Amount = quantity;
-                Others.Add(slot);
-            }
         }
         finally
         {
             _refreshing = false;
         }
 
-        OnPropertyChanged(nameof(HasOthers));
         OnPropertyChanged(nameof(Summary));
     }
 }
@@ -161,10 +137,7 @@ public sealed partial class WovenEchoSlotViewModel(int id, WovenEcho? echo, IIco
 
     public string Name => Echo?.Name ?? $"Woven echo #{Id}";
 
-    /// <summary>The echo has a slot in the game's Woven Echoes tab (set for the slots of the section's panels).</summary>
-    public bool IsInTab { get; init; }
-
-    public ImageSource? Icon => iconProvider.Get(Echo?.IconPath);
+    public IImage? Icon => iconProvider.Get(Echo?.IconPath);
 
     public bool HasIcon => Icon is not null;
 
@@ -181,10 +154,7 @@ public sealed partial class WovenEchoSlotViewModel(int id, WovenEcho? echo, IIco
     /// <summary>Tooltip: the name and what the echo holds.</summary>
     public string ToolTip => Echo switch
     {
-        { CannotDrop: false } when !IsInTab =>
-            $"{Name}\n\nThe game's Woven Echoes tab has no slot for this echo, so the game does not show it.",
         null => $"{Name} — not in the game database (generate or update it with the database button in the title bar)",
-        { CannotDrop: true } => $"{Name}\n\nThe game does not drop this echo; a placeholder like this one shows as \"ERROR\" in the game. Set it to 0 to remove it.",
         { } known => string.IsNullOrWhiteSpace(known.Description) ? Name : $"{Name}\n\n{known.Description}"
     };
 

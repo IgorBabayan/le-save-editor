@@ -1,0 +1,681 @@
+<UserControl x:Class="LE.SaveEditor.Presentation.Views.Inventory.ItemInspectorView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:inventoryVm="using:LE.SaveEditor.Presentation.ViewModels.Inventory"
+             xmlns:mi="using:LE.SaveEditor.Presentation.Controls"
+             xmlns:behaviors="using:LE.SaveEditor.Presentation.Behaviors"
+             xmlns:viewModels="using:LE.SaveEditor.Presentation.ViewModels"
+             x:DataType="inventoryVm:ItemBuilderViewModel"
+             Width="460"
+             Focusable="True"
+             Foreground="{DynamicResource WindowForegroundBrush}">
+
+    <!--
+        Compact item builder shown next to an equipment slot, laid out like an object inspector:
+        a name column and a value column, rows with a chevron expand into sub-properties
+        (rarity pills, the item list, implicit / unique stats, affix slots with their tier and stats).
+    -->
+    <UserControl.Resources>
+        <!-- Width of the name column; values start right after it. -->
+        <GridLength x:Key="InspectorNameWidth">200</GridLength>
+        <Thickness x:Key="InspectorValueMargin">208,0,6,0</Thickness>
+        <Thickness x:Key="IndentLevel1">14,0,0,0</Thickness>
+        <Thickness x:Key="IndentLevel2">28,0,0,0</Thickness>
+
+        <!-- Read-only (or slider) row: Header in the name column, Content in the value column. Padding indents the name. -->
+        <ControlTheme x:Key="InspectorRowStyle" TargetType="HeaderedContentControl">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border MinHeight="26"
+                            BorderThickness="0,0,0,1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{StaticResource InspectorNameWidth}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    BorderThickness="0,0,1,0"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}">
+                                <Border Margin="{TemplateBinding Padding}" Padding="22,4,6,4">
+                                    <ContentPresenter Name="PART_HeaderPresenter"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="{TemplateBinding Foreground}"
+                                                      Content="{TemplateBinding Header}"
+                                                      ContentTemplate="{TemplateBinding HeaderTemplate}" />
+                                </Border>
+                            </Border>
+                            <ContentPresenter Name="PART_ContentPresenter"
+                                              Grid.Column="1"
+                                              Margin="8,3,6,3"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <!--
+            Expandable row: the whole row toggles, a chevron shows the state. The value is laid over the row
+            (InspectorValueMargin) by the parent grid, so it can hold its own buttons.
+        -->
+        <ControlTheme x:Key="InspectorExpanderStyle" TargetType="ToggleButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Bd"
+                            MinHeight="26"
+                            Background="{TemplateBinding Background}"
+                            BorderThickness="0,0,0,1"
+                            BorderBrush="{DynamicResource ControlBorderBrush}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{StaticResource InspectorNameWidth}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    BorderThickness="0,0,1,0"
+                                    BorderBrush="{DynamicResource ControlBorderBrush}">
+                                <DockPanel Margin="{TemplateBinding Padding}">
+                                    <mi:MaterialIcon Name="Chevron"
+                                                     DockPanel.Dock="Left"
+                                                     Width="14"
+                                                     Height="14"
+                                                     Margin="4,0,0,0"
+                                                     VerticalAlignment="Center"
+                                                     Kind="ChevronRight"
+                                                     Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                                    <ContentPresenter Name="PART_ContentPresenter"
+                                                      Margin="4,4,6,4"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="{TemplateBinding Foreground}"
+                                                      Content="{TemplateBinding Content}"
+                                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:checked /template/ mi|MaterialIcon#Chevron">
+                <Setter Property="Kind" Value="ChevronDown" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#Bd">
+                <Setter Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+            </Style>
+            <Style Selector="^:focus-visible /template/ Border#Bd">
+                <Setter Property="Background" Value="{DynamicResource ListItemHoverBackgroundBrush}" />
+            </Style>
+            <!-- Nothing to expand (e.g. an empty affix slot): no chevron, the label keeps its place. -->
+            <Style Selector="^:disabled /template/ mi|MaterialIcon#Chevron">
+                <Setter Property="Opacity" Value="0" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Cursor" Value="Arrow" />
+            </Style>
+        </ControlTheme>
+
+        <!-- Panel under an expanded row (rarity pills, item list, affix picker). -->
+        <ControlTheme x:Key="InspectorDropDownBorderStyle" TargetType="Border">
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
+        </ControlTheme>
+
+        <!-- Small link button inside a value cell. -->
+        <ControlTheme x:Key="InspectorLinkButtonStyle" TargetType="Button" BasedOn="{StaticResource TextLinkButtonStyle}">
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </ControlTheme>
+
+        <!-- One implicit / unique / affix stat: its tooltip line in the name column, a slider over the 0…255 roll as value. -->
+        <DataTemplate x:Key="StatRowTemplate" x:DataType="inventoryVm:ItemStatViewModel">
+            <HeaderedContentControl Theme="{StaticResource InspectorRowStyle}"
+                                    Padding="{Binding $parent[ItemsControl].Tag}">
+                <HeaderedContentControl.Header>
+                    <TextBlock TextWrapping="Wrap" Text="{Binding DisplayText}" />
+                </HeaderedContentControl.Header>
+                <Grid ColumnDefinitions="*,Auto">
+                    <!-- Fixed 0…255 range (the roll the game stores): no binding order can clamp the value. -->
+                    <Slider Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Minimum="0"
+                            Maximum="{x:Static inventoryVm:ItemStatViewModel.MaxRoll}"
+                            TickFrequency="1"
+                            SmallChange="1"
+                            LargeChange="16"
+                            IsSnapToTickEnabled="True"
+                            IsEnabled="{Binding IsEditable, Mode=OneTime}"
+                            Value="{Binding Roll}" />
+                    <TextBlock Grid.Column="1"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Theme="{StaticResource SecondaryTextStyle}"
+                               Text="{Binding RangeText}" />
+                </Grid>
+            </HeaderedContentControl>
+        </DataTemplate>
+
+        <!-- Affix picker shown under the slot being filled (DataContext: AffixSlotViewModel). -->
+        <DataTemplate x:Key="AffixPickerTemplate" x:DataType="inventoryVm:AffixSlotViewModel">
+            <Border Theme="{StaticResource InspectorDropDownBorderStyle}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,6" LastChildFill="True">
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource InspectorLinkButtonStyle}"
+                                Content="Cancel"
+                                Command="{Binding $parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).CloseAffixPickerCommand}" />
+                        <TextBox Name="AffixSearch"
+                                 Padding="6,3"
+                                 ToolTip.Tip="Filter affixes by name, title or category"
+                                 Text="{Binding $parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).AffixSearchText}"
+                                 Loaded="OnAffixSearchLoaded" />
+                    </DockPanel>
+                    <Grid>
+                        <ListBox MaxHeight="260"
+                                 ItemsSource="{Binding $parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).AffixRows}"
+                                 behaviors:SelectOnClick.IsEnabled="True"
+                                 SelectedItem="{Binding $parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).SelectedAffixOption}"
+                                 Theme="{StaticResource PlainListBoxStyle}"
+                                 ItemContainerTheme="{StaticResource ListRowItemStyle}">
+                            <!-- Group titles use the app-wide ListGroupHeader template. -->
+                            <ListBox.DataTemplates>
+                                <DataTemplate DataType="inventoryVm:AffixOptionViewModel" x:DataType="inventoryVm:AffixOptionViewModel">
+                                    <StackPanel>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Grid.Column="0" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Margin="8,0,0,0"
+                                                       FontSize="11"
+                                                       Theme="{StaticResource SecondaryTextStyle}"
+                                                       Text="{Binding Details}" />
+                                        </Grid>
+                                        <TextBlock Margin="0,2,0,0"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   Theme="{StaticResource SecondaryTextStyle}"
+                                                   Text="{Binding TopTierText}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.DataTemplates>
+                        </ListBox>
+                        <TextBlock Margin="8,12"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Theme="{StaticResource SecondaryTextStyle}"
+                                   Text="No affixes of this kind can be crafted on this item."
+                                   IsVisible="{Binding !$parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).HasAffixOptions}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- One affix slot: label + affix name (or "Add prefix"); expands into its tier and stats. -->
+        <DataTemplate x:Key="AffixSlotRowTemplate" x:DataType="inventoryVm:AffixSlotViewModel">
+            <StackPanel Classes.sealed="{Binding IsSealed}"
+                        Classes.enchant="{Binding IsEnchant}"
+                        Classes.uniqueAffix="{Binding IsUniqueAffix}"
+                        Classes.corrupted="{Binding IsCorrupted}">
+                <StackPanel.Styles>
+                    <Style Selector="StackPanel.sealed TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                    </Style>
+                    <!-- The enchantment of a Heretical idol, in the game's enchantment blue. -->
+                    <Style Selector="StackPanel.enchant TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{StaticResource ItemTooltipEnchantBrush}" />
+                    </Style>
+                    <!-- The unique's own legendary affix (e.g. Blood Rage on Unsated Rage). -->
+                    <Style Selector="StackPanel.uniqueAffix TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                    </Style>
+                    <Style Selector="StackPanel.corrupted TextBlock#SlotLabel">
+                        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                    </Style>
+                    <!-- The picker exists only for the slot being filled (one list, one selection binding). -->
+                    <Style Selector="ContentControl.picking" x:DataType="inventoryVm:AffixSlotViewModel">
+                        <Setter Property="Content" Value="{Binding}" />
+                        <Setter Property="ContentTemplate" Value="{StaticResource AffixPickerTemplate}" />
+                    </Style>
+                </StackPanel.Styles>
+                <Grid>
+                    <ToggleButton Name="Toggle"
+                                  Theme="{StaticResource InspectorExpanderStyle}"
+                                  Padding="{StaticResource IndentLevel1}"
+                                  IsChecked="True"
+                                  IsEnabled="{Binding HasAffix}">
+                        <TextBlock Name="SlotLabel" FontWeight="SemiBold" Text="{Binding Label}" />
+                    </ToggleButton>
+
+                    <!-- Value: the affix name with Change / Remove, or "Add …" for an empty slot. -->
+                    <DockPanel Margin="{StaticResource InspectorValueMargin}" LastChildFill="True">
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource InspectorLinkButtonStyle}"
+                                Content="Remove"
+                                Command="{Binding RemoveCommand}"
+                                IsVisible="{Binding HasAffix}" />
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource InspectorLinkButtonStyle}"
+                                Content="Change"
+                                Command="{Binding ChooseCommand}"
+                                IsVisible="{Binding HasAffix}" />
+                        <Button HorizontalAlignment="Left"
+                                Margin="-6,0,0,0"
+                                Theme="{StaticResource InspectorLinkButtonStyle}"
+                                Content="{Binding AddText}"
+                                Command="{Binding ChooseCommand}"
+                                IsVisible="{Binding !HasAffix}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   IsHitTestVisible="False"
+                                   TextTrimming="CharacterEllipsis"
+                                   Text="{Binding Name}"
+                                   ToolTip.Tip="{Binding Name}"
+                                   IsVisible="{Binding HasAffix}" />
+                    </DockPanel>
+                </Grid>
+
+                <!-- Sub-properties: tier, then a slider per stat of that tier. -->
+                <StackPanel IsVisible="{Binding #Toggle.IsChecked}">
+                    <HeaderedContentControl Theme="{StaticResource InspectorRowStyle}"
+                                            Padding="{StaticResource IndentLevel2}"
+                                            Header="Tier"
+                                            IsVisible="{Binding HasTiers}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Minimum="1"
+                                    Maximum="{Binding MaxTier}"
+                                    TickFrequency="1"
+                                    SmallChange="1"
+                                    LargeChange="1"
+                                    IsSnapToTickEnabled="True"
+                                    Value="{Binding TierNumber}" />
+                            <TextBlock Grid.Column="1"
+                                       Margin="6,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="11"
+                                       Theme="{StaticResource SecondaryTextStyle}"
+                                       Text="{Binding TierText}" />
+                        </Grid>
+                    </HeaderedContentControl>
+                    <ItemsControl ItemsSource="{Binding Stats}"
+                                  ItemTemplate="{StaticResource StatRowTemplate}"
+                                  Tag="{StaticResource IndentLevel2}"
+                                  Focusable="False" />
+                </StackPanel>
+
+                <!-- The picker exists only for the slot being filled (one list, one selection binding). -->
+                <ContentControl Focusable="False" Classes.picking="{Binding IsPicking}" IsVisible="{Binding IsPicking}" />
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding ApplyCommand}" />
+    </UserControl.KeyBindings>
+
+    <Grid>
+        <!-- Shadow on its own layer, so the content stays crisp. -->
+        <Border CornerRadius="8"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                BoxShadow="0 3 18 0 #73000000" />
+        <Border CornerRadius="8"
+                BorderThickness="1"
+                BorderBrush="{Binding RarityForeground}"
+                Background="{DynamicResource WindowBackgroundBrush}">
+            <Grid RowDefinitions="Auto,*,Auto">
+
+                <!-- ===== Header: icon, name and type of the item, tinted with the rarity ===== -->
+                <Border Grid.Row="0"
+                        Padding="12,10,6,10"
+                        CornerRadius="7,7,0,0"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="{Binding RarityForeground}"
+                        Background="{Binding RarityBackground}">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+
+                        <Border Grid.Column="0"
+                                Width="48"
+                                Height="48"
+                                Margin="0,0,10,0"
+                                CornerRadius="4"
+                                BorderThickness="1"
+                                BorderBrush="{Binding RarityForeground}">
+                            <Grid>
+                                <Image Margin="4"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapInterpolationMode="HighQuality"
+                                       Source="{Binding Icon}" />
+                                <mi:MaterialIcon Width="22"
+                                                  Height="22"
+                                                  Kind="ShieldOutline"
+                                                  Opacity="0.6"
+                                                  Foreground="{Binding RarityForeground}"
+                                                  IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNull}}">
+                                    <!-- Placeholder while the item has no icon. -->
+                                </mi:MaterialIcon>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock FontSize="15"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Foreground="{Binding RarityForeground}"
+                                       Text="{Binding ItemName}" />
+                            <TextBlock Margin="0,2,0,0"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Theme="{StaticResource SecondaryTextStyle}"
+                                       Text="{Binding Subtitle}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" VerticalAlignment="Top" Orientation="Horizontal">
+                            <Button Theme="{StaticResource SubtleIconButtonStyle}"
+                                    ToolTip.Tip="Open the full item builder"
+                                    Click="OnExpandClick">
+                                <mi:MaterialIcon Width="16" Height="16" Kind="ArrowExpand" />
+                            </Button>
+                            <Button Theme="{StaticResource SubtleIconButtonStyle}"
+                                    ToolTip.Tip="Remove this item from the character"
+                                    Command="{Binding RemoveCommand}"
+                                    IsVisible="{Binding CanRemove}">
+                                <mi:MaterialIcon Width="16" Height="16" Kind="DeleteOutline" />
+                            </Button>
+                            <Button Theme="{StaticResource SubtleIconButtonStyle}"
+                                    ToolTip.Tip="Close (Esc)"
+                                    Command="{Binding CancelCommand}">
+                                <mi:MaterialIcon Width="16" Height="16" Kind="Close" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ===== Properties ===== -->
+                <ScrollViewer x:Name="PropertiesScroll"
+                              Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <!-- base.db missing: nothing can be listed. -->
+                        <TextBlock Margin="12"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource WarningForegroundBrush}"
+                                   Text="{Binding EmptyBasesText}"
+                                   IsVisible="{Binding !IsDatabaseAvailable}" />
+
+                        <!-- Rarity: the value is the current rarity; expanding shows the rarity pills. -->
+                        <Grid>
+                            <ToggleButton x:Name="RarityToggle" Theme="{StaticResource InspectorExpanderStyle}" Content="Rarity" />
+                            <StackPanel Margin="{StaticResource InspectorValueMargin}"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        IsHitTestVisible="False">
+                                <Ellipse Width="8"
+                                         Height="8"
+                                         Margin="0,0,6,0"
+                                         VerticalAlignment="Center"
+                                         Fill="{Binding SelectedRarity.Foreground}" />
+                                <TextBlock VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Foreground="{Binding SelectedRarity.Foreground}"
+                                           Text="{Binding SelectedRarity.Name}" />
+                            </StackPanel>
+                        </Grid>
+                        <Border Theme="{StaticResource InspectorDropDownBorderStyle}"
+                                Padding="22,8,8,2"
+                                IsVisible="{Binding #RarityToggle.IsChecked}">
+                            <!-- Pills ask the view model; only it marks a rarity as selected (a declined change moves nothing). -->
+                            <ItemsControl ItemsSource="{Binding Rarities}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="inventoryVm:RarityOptionViewModel">
+                                        <Button Theme="{StaticResource RarityPillButtonStyle}"
+                                                Command="{Binding $parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).SelectRarityCommand}"
+                                                CommandParameter="{Binding}"
+                                                Click="OnRarityPillClick" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+
+                        <!-- Item: the value is the selected base / unique / set item; expanding shows the searchable list
+                             with the search box focused. -->
+                        <Grid>
+                            <ToggleButton x:Name="ItemToggle"
+                                          Theme="{StaticResource InspectorExpanderStyle}"
+                                          Content="{Binding ListHeader}"
+                                          IsEnabled="{Binding IsDatabaseAvailable}" />
+                            <TextBlock Margin="{StaticResource InspectorValueMargin}"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"
+                                       FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{Binding RarityForeground}"
+                                       Text="{Binding ItemName}" />
+                        </Grid>
+                        <Border Theme="{StaticResource InspectorDropDownBorderStyle}"
+                                IsVisible="{Binding #ItemToggle.IsChecked}">
+                            <StackPanel>
+                                <TextBox x:Name="ItemSearch"
+                                         Margin="0,0,0,6"
+                                         Padding="6,3"
+                                         ToolTip.Tip="Search bases, unique and set items by name, type or class"
+                                         Text="{Binding SearchText}" />
+                                <CheckBox Margin="0,0,0,6"
+                                          FontSize="12"
+                                          Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                          Content="{Binding OnlyUsableText}"
+                                          ToolTip.Tip="Hide items this character's class cannot equip"
+                                          IsChecked="{Binding ShowOnlyUsable}" />
+                                <Grid>
+                                    <ListBox x:Name="ItemList"
+                                             MaxHeight="300"
+                                             ItemsSource="{Binding BaseRows}"
+                                             SelectedItem="{Binding SelectedBaseOption}"
+                                             behaviors:SelectOnClick.IsEnabled="True"
+                                             Theme="{StaticResource PlainListBoxStyle}"
+                                             ItemContainerTheme="{StaticResource ListRowItemStyle}">
+                                        <!-- Group titles use the app-wide ListGroupHeader template. -->
+                                        <ListBox.DataTemplates>
+                                            <DataTemplate DataType="inventoryVm:BaseOptionViewModel" x:DataType="inventoryVm:BaseOptionViewModel">
+                                                <!-- Other classes' items stay selectable but are dimmed. -->
+                                                <Grid ToolTip.Tip="{Binding ToolTip}" Classes.unusable="{Binding !IsUsable}">
+                                                    <Grid.Styles>
+                                                        <Style Selector="Grid.unusable">
+                                                            <Setter Property="Opacity" Value="0.5" />
+                                                        </Style>
+                                                    </Grid.Styles>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="32" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Image Grid.Column="0"
+                                                           Width="28"
+                                                           Height="28"
+                                                           Stretch="Uniform"
+                                                           RenderOptions.BitmapInterpolationMode="HighQuality"
+                                                           Source="{Binding Icon}" />
+                                                    <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{Binding TitleForeground}"
+                                                                   Text="{Binding Name}" />
+                                                        <TextBlock FontSize="10"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                                   Text="{Binding TypeLine}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                        <!-- Found by a search in another list than the selected rarity's. -->
+                                                        <TextBlock HorizontalAlignment="Right"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{Binding TitleForeground}"
+                                                                   Text="{Binding KindLabel}"
+                                                                   IsVisible="{Binding IsFromOtherList}" />
+                                                        <TextBlock HorizontalAlignment="Right"
+                                                                   FontSize="11"
+                                                                   Theme="{StaticResource SecondaryTextStyle}"
+                                                                   Text="{Binding Base.LevelRequirement, StringFormat='Lv {0}'}"
+                                                                   IsVisible="{Binding HasLevelRequirement}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.DataTemplates>
+                                    </ListBox>
+                                    <TextBlock Margin="8,12"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding EmptyBasesText}"
+                                               IsVisible="{Binding !HasBases}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Read-only facts of the selection. -->
+                        <HeaderedContentControl Theme="{StaticResource InspectorRowStyle}"
+                                                Header="Level requirement"
+                                                IsVisible="{Binding HasLevelText}">
+                            <TextBlock Theme="{StaticResource SecondaryTextStyle}" Text="{Binding SelectedBase.LevelRequirement}" />
+                        </HeaderedContentControl>
+                        <Border Padding="12,6"
+                                BorderThickness="0,0,0,1"
+                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                IsVisible="{Binding IsSelectedBaseForOtherClass}">
+                            <TextBlock FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource WarningForegroundBrush}"
+                                       Text="{Binding ClassWarningText}" />
+                        </Border>
+
+                        <StackPanel IsVisible="{Binding HasSelectedBase}">
+                            <!-- ===== Implicit stats ===== -->
+                            <Grid>
+                                <ToggleButton x:Name="ImplicitsToggle"
+                                              Theme="{StaticResource InspectorExpanderStyle}"
+                                              Content="Implicit stats"
+                                              IsChecked="True" />
+                                <TextBlock Margin="{StaticResource InspectorValueMargin}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"
+                                           Theme="{StaticResource SecondaryTextStyle}"
+                                           Text="{Binding Stats.Count, StringFormat='({0})'}" />
+                            </Grid>
+                            <StackPanel IsVisible="{Binding #ImplicitsToggle.IsChecked}">
+                                <!-- base.db from before stat names were stored: names read "Property 10". -->
+                                <TextBlock Margin="36,6,12,6"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningForegroundBrush}"
+                                           Text="Stat names are missing because the game database is out of date. Update it with the database button in the title bar."
+                                           IsVisible="{Binding IsDatabaseOutdated}" />
+                                <HeaderedContentControl Theme="{StaticResource InspectorRowStyle}"
+                                                        Padding="{StaticResource IndentLevel1}"
+                                                        Header="None"
+                                                        Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                        IsVisible="{Binding !HasStats}" />
+                                <ItemsControl ItemsSource="{Binding Stats}"
+                                              ItemTemplate="{StaticResource StatRowTemplate}"
+                                              Tag="{StaticResource IndentLevel1}"
+                                              Focusable="False" />
+                            </StackPanel>
+
+                            <!-- ===== Unique / set modifiers and effects ===== -->
+                            <StackPanel IsVisible="{Binding HasUniqueSection}">
+                                <Grid>
+                                    <ToggleButton x:Name="UniqueToggle" Theme="{StaticResource InspectorExpanderStyle}" IsChecked="True">
+                                        <TextBlock Foreground="{Binding RarityForeground}" Text="{Binding ModStatsHeader}" />
+                                    </ToggleButton>
+                                    <TextBlock Margin="{StaticResource InspectorValueMargin}"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding ModStats.Count, StringFormat='({0})'}" />
+                                </Grid>
+                                <StackPanel IsVisible="{Binding #UniqueToggle.IsChecked}">
+                                    <ItemsControl ItemsSource="{Binding ModStats}"
+                                                  ItemTemplate="{StaticResource StatRowTemplate}"
+                                                  Tag="{StaticResource IndentLevel1}"
+                                                  Focusable="False" />
+                                    <!-- Effects that do not roll, e.g. "You are immune to Blind and Chill". -->
+                                    <ItemsControl ItemsSource="{Binding Effects}" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <Border Padding="36,4,8,4" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource ControlBorderBrush}">
+                                                    <TextBlock FontStyle="Italic"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{Binding $parent[UserControl].((inventoryVm:ItemBuilderViewModel)DataContext).RarityForeground}"
+                                                               Text="{Binding}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- ===== Affix slots ===== -->
+                            <StackPanel IsVisible="{Binding HasAffixSlots}">
+                                <Grid>
+                                    <ToggleButton x:Name="AffixesToggle"
+                                                  Theme="{StaticResource InspectorExpanderStyle}"
+                                                  Content="{Binding AffixesHeader}"
+                                                  IsChecked="True" />
+                                    <TextBlock Margin="{StaticResource InspectorValueMargin}"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False"
+                                               Theme="{StaticResource SecondaryTextStyle}"
+                                               Text="{Binding AffixSummary}" />
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding AffixSlots}"
+                                              ItemTemplate="{StaticResource AffixSlotRowTemplate}"
+                                              Focusable="False"
+                                              IsVisible="{Binding #AffixesToggle.IsChecked}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ===== Footer ===== -->
+                <Border Grid.Row="2"
+                        Padding="10,8"
+                        CornerRadius="0,0,7,7"
+                        BorderThickness="0,1,0,0"
+                        BorderBrush="{DynamicResource ControlBorderBrush}"
+                        Background="{DynamicResource TitleBarBackgroundBrush}">
+                    <DockPanel LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   Theme="{StaticResource SecondaryTextStyle}"
+                                   Text="Ctrl+Enter apply · Esc cancel" />
+                        <Button DockPanel.Dock="Right"
+                                Margin="8,0,0,0"
+                                Theme="{StaticResource DialogButtonStyle}"
+                                Content="Cancel"
+                                Command="{Binding CancelCommand}" />
+                        <Button DockPanel.Dock="Right"
+                                Theme="{StaticResource AccentButtonStyle}"
+                                Content="Apply"
+                                Command="{Binding ApplyCommand}" />
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
@@ -179,7 +179,7 @@ public sealed partial class ResourceSlotViewModel(int subTypeId, CraftingMateria
 
     public string Name => Material?.Name ?? $"Resource #{SubTypeId}";
 
-    public ImageSource? Icon => iconProvider.Get(Material?.IconPath);
+    public IImage? Icon => iconProvider.Get(Material?.IconPath);
 
     public bool HasIcon => Icon is not null;
 

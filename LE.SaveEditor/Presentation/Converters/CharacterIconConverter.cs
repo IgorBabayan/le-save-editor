@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
+using Avalonia;
+using Avalonia.Data.Converters;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.Saves.Models;
 
@@ -12,16 +12,18 @@ namespace LE.SaveEditor.Presentation.Converters;
 /// </summary>
 public sealed class CharacterIconConverter : IValueConverter
 {
-    // WPF creates converters from XAML, so the provider comes from the root container
-    // (not available in the XAML designer, where the placeholder is shown instead).
+    // XAML creates converters, so the provider comes from the root container
+    // (not available in the XAML previewer, where the placeholder is shown instead).
+    private static ICharacterIconProvider? _provider;
+
     private static ICharacterIconProvider? Provider =>
-        Application.Current is App ? App.Services.GetService<ICharacterIconProvider>() : null;
+        _provider ??= Application.Current is App ? App.Services.GetService<ICharacterIconProvider>() : null;
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         value is CharacterSave character
             ? Provider?.Get(character.CharacterClass, character.Mastery)
             : null;
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

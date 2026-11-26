@@ -1,4 +1,4 @@
-using System.Windows.Media;
+using Avalonia.Media;
 using LE.SaveEditor.Presentation.Services;
 using LE.SaveEditor.Services.GameData;
 using LE.SaveEditor.Services.GameData.Items;
@@ -30,13 +30,13 @@ public sealed partial class EquipmentSlotViewModel(EquipmentSlot slot, IIconProv
 
     public bool HasItem => Item is not null;
 
-    public ImageSource? Icon => iconProvider.Get(Item?.Base.IconPath);
+    public IImage? Icon => iconProvider.Get(Item?.Base.IconPath);
 
     public bool HasIcon => Icon is not null;
 
-    public Brush? RarityForeground => Item is null ? null : RarityPalette.Foreground(Item.Rarity);
+    public IBrush? RarityForeground => Item is null ? null : RarityPalette.Foreground(Item.Rarity);
 
-    public Brush? RarityBackground => Item is null ? null : RarityPalette.Background(Item.Rarity);
+    public IBrush? RarityBackground => Item is null ? null : RarityPalette.Background(Item.Rarity);
 
     /// <summary>Plain tooltip of an empty slot.</summary>
     public string ToolTip => $"{Label} — click to build an item";
