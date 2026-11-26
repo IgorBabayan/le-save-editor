@@ -2,6 +2,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 
 namespace LE.SaveEditor.Presentation.Behaviors;
@@ -87,7 +88,7 @@ public static class NumericInput
         string? text;
         try
         {
-            text = (await clipboard.GetTextAsync())?.Trim();
+            text = (await clipboard.TryGetTextAsync())?.Trim();
         }
         catch (Exception)
         {

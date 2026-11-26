@@ -59,7 +59,8 @@ public sealed class ItemBaseCatalog(IIconProvider iconProvider) : IItemBaseCatal
 
         public Dictionary<(int BaseTypeId, int SubTypeId), ItemBase> BasesByKey { get; } = FirstByKey(Bases, b => (b.BaseTypeId, b.SubTypeId));
 
-        public Dictionary<int, ItemBase> UniquesById { get; } = FirstByKey(Uniques, u => u.UniqueId);
+        public Dictionary<int, ItemBase> UniquesById { get; } =
+            FirstByKey(Uniques.Where(u => u.UniqueId is not null), u => u.UniqueId!.Value);
 
         public Dictionary<int, AffixDefinition[]> AffixesById { get; } =
             Affixes.GroupBy(a => a.Id).ToDictionary(g => g.Key, g => g.ToArray());
