@@ -203,7 +203,8 @@ jobs:
           -p:DebugType=none
           -o "publish/${{ env.APP }}/Contents/MacOS"
 
-      # In Contents/Resources: codesign rejects sub-folders of Contents/MacOS ("bundle format unrecognized").
+      # In Contents/Resources/DatabaseTool: codesign rejects sub-folders of Contents/MacOS, and takes any folder with a
+      # dot in its name (LE.SaveEditor.DB) for a nested bundle ("bundle format unrecognized").
       # The editor looks for the tool there on macOS (Services/GameData/DatabaseGenerator.cs).
       - name: Publish database generator (self-contained)
         run: >
@@ -213,7 +214,7 @@ jobs:
           --self-contained true
           -p:Version=${{ env.VERSION }}
           -p:DebugType=none
-          -o "publish/${{ env.APP }}/Contents/Resources/Tools/LE.SaveEditor.DB"
+          -o "publish/${{ env.APP }}/Contents/Resources/DatabaseTool"
 
       - name: Build app bundle
         run: |
@@ -241,21 +242,31 @@ jobs:
           </dict>
           </plist>
           EOF
-          chmod +x "$contents/MacOS/LE.SaveEditor" "$contents/Resources/Tools/LE.SaveEditor.DB/LE.SaveEditor.DB"
+          chmod +x "$contents/MacOS/LE.SaveEditor" "$contents/Resources/DatabaseTool/LE.SaveEditor.DB"
           # Ad-hoc signature (required to run on Apple silicon; the app is not notarized, so the first start is
           # right-click → Open). As Avalonia's macOS guide does: every file in Contents/MacOS is signed on its own
           # (.NET keeps its managed .dll files there, and codesign treats everything in that folder as code), the
           # Mach-O files of the generator in Contents/Resources too, then the bundle itself (no --deep).
+          # codesign errors are also written as annotations: they are readable without signing in to GitHub.
+          sign() {
+            if ! out=$(codesign --force --sign - "$1" 2>&1); then
+              echo "::error title=codesign::$1: ${out//$'\n'/ | }"
+              return 1
+            fi
+          }
           find "$contents/MacOS" -type f -print0 | while IFS= read -r -d '' file; do
-            codesign --force --sign - "$file"
+            sign "$file"
           done
           find "$contents/Resources" -type f -print0 | while IFS= read -r -d '' file; do
-            if file -b "$file" | grep -q 'Mach-O'; then
-              codesign --force --sign - "$file"
-            fi
+            case "$(file -b "$file")" in
+              *Mach-O*) sign "$file" ;;
+            esac
           done
-          codesign --force --sign - "publish/${APP}"
-          codesign --verify --verbose=2 "publish/${APP}"
+          sign "publish/${APP}"
+          if ! out=$(codesign --verify --verbose=2 "publish/${APP}" 2>&1); then
+            echo "::error title=codesign verify::${out//$'\n'/ | }"
+            exit 1
+          fi
           mkdir -p dist
           ditto -c -k --keepParent "publish/${APP}" "dist/LE.SaveEditor-${VERSION}-${RUNTIME}.zip"
           ls -l dist
