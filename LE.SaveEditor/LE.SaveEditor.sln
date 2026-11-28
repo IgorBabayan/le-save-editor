@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LE.SaveEditor", "LE.SaveEdi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LE.SaveEditor.DB", "..\LE.SaveEditor.DB\LE.SaveEditor.DB.csproj", "{B88BD5CB-61D5-4ADB-B427-753FAC5A9153}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LE.SaveEditor.Tests", "..\LE.SaveEditor.Tests\LE.SaveEditor.Tests.csproj", "{CBB30961-2FEA-45D8-9939-08F566055D1B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{B88BD5CB-61D5-4ADB-B427-753FAC5A9153}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B88BD5CB-61D5-4ADB-B427-753FAC5A9153}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B88BD5CB-61D5-4ADB-B427-753FAC5A9153}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBB30961-2FEA-45D8-9939-08F566055D1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBB30961-2FEA-45D8-9939-08F566055D1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBB30961-2FEA-45D8-9939-08F566055D1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBB30961-2FEA-45D8-9939-08F566055D1B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -6,6 +6,7 @@ name: Release - Windows, Linux and macOS
 #   - Linux x64:   .tar.gz archive,
 #   - macOS:       LE Save Editor.app in a .zip, for Apple silicon (arm64) and Intel (x64),
 # then publishes one GitHub Release (shown in the "Releases" panel of the repo page) with every package attached.
+# Every build (merged PR or manual run) starts only after the unit tests (LE.SaveEditor.Tests) have passed.
 # The newest run is marked as "Latest".
 on:
   pull_request:
@@ -23,14 +24,45 @@ concurrency:
 env:
   PROJECT: LE.SaveEditor/LE.SaveEditor.csproj
   DB_PROJECT: LE.SaveEditor.DB/LE.SaveEditor.DB.csproj
+  TEST_PROJECT: LE.SaveEditor.Tests/LE.SaveEditor.Tests.csproj
   CONFIGURATION: Release
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  version:
+  # Gate: no version, package or release is made unless every test passes.
+  test:
     # Skip PRs that were closed without merging.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merged commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run tests
+        run: >
+          dotnet test ${{ env.TEST_PROJECT }}
+          -c ${{ env.CONFIGURATION }}
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          if-no-files-found: ignore
+
+  version:
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
